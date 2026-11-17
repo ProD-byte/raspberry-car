@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+</head>
+<body>
+<title>Raspberry Car Sandwich</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Werkstatt-Skizze – 3D-Bühne oben, darunter Bedienung, Bauteil-Info und die vier Ebenen als Karten (oben → unten) */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --fg: #172026;
+  --muted: #56656f;
+  --line: #d3dbe0;
+  --scene: #dfe6ea;
+  --ground: #c9d3d9;
+  --focus: #1f6feb;
+  --l0: #c97a1e;
+  --l1: #23897d;
+  --l2: #3f6db5;
+  --l3: #c4472f;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+    --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+  --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 5vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 65ch; }
+.stage {
+  position: relative; background: var(--scene); border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; height: min(68vh, 620px); min-height: 360px;
+  touch-action: none;
+}
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.dims {
+  position: absolute; left: 10px; top: 10px; font-family: var(--font-mono); font-size: 12px;
+  color: var(--muted); background: color-mix(in srgb, var(--surface) 82%, transparent);
+  padding: 4px 8px; border-radius: 6px; pointer-events: none;
+}
+.info {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; display: grid; gap: 2px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; font-size: 14px; pointer-events: none; max-width: 520px;
+}
+.info b { font-family: var(--font-display); font-size: 16px; }
+.info span { color: var(--muted); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.loading[hidden] { display: none; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.controls label.range { display: flex; align-items: center; gap: 10px; font-size: 14px; min-width: 0; flex: 1 1 240px; }
+.controls input[type=range] { flex: 1; accent-color: var(--l2); min-width: 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: 500 14px var(--font-body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, .layer:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.layer {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; display: grid; gap: 8px; cursor: pointer; min-width: 0;
+  border-top: 4px solid var(--c); align-content: start;
+}
+.layer[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--c); }
+.layer h2 { font-family: var(--font-display); font-size: 18px; margin: 0; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.layer h2 small { font-family: var(--font-mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+.why { margin: 0; font-size: 14px; color: var(--muted); }
+.layer ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 2px; }
+.stage-tag { font-family: var(--font-mono); font-size: 12px; color: var(--c); }
+.wiring-sec { display: grid; gap: 10px; }
+.wiring-sec h2 { font-family: var(--font-display); font-size: 24px; margin: 8px 0 0; }
+.wiring-sec h3 { font-family: var(--font-display); font-size: 16px; margin: 10px 0 0; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.tbl table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+.tbl th, .tbl td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.tbl tr:last-child td { border-bottom: 0; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); }
+code { font-family: var(--font-mono); font-size: 13px; }
+.notes { font-size: 14px; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Raspberry Car · 3D-Skizze mit echten Bauteilen</div>
+    <h1>Das Auto als Sandwich in vier Ebenen</h1>
+    <p class="lead">Alle Bauteile in echter Größe nachgebaut. Ziehen zum Drehen, zwei Finger oder Mausrad zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="loading" id="loading">3D-Modell wird gebaut …</div>
+    <div class="dims">ca. 18 × 19 × 19 cm · vorne = Kamera</div>
+    <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Akku, den Pico oder den LiDAR.</span></div>
+  </div>
+
+  <div class="controls">
+    <label class="range" for="explode">Ebenen auseinanderziehen <input id="explode" type="range" min="0" max="100" value="35"></label>
+    <div class="toggles">
+      <button id="rotate" type="button" aria-pressed="true">Drehen</button>
+      <button id="clear" type="button" aria-pressed="false">Platten durchsichtig</button>
+      <button id="laser" type="button" aria-pressed="true">LiDAR-Strahl</button>
+      <button id="reset" type="button">Ansicht zurücksetzen</button>
+    </div>
+  </div>
+
+  <div class="layers" id="layers">
+    <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="3" style="--c: var(--l3)">
+      <h2>Ebene 4 · Dach <small>45 mm Abstand</small></h2>
+      <p class="why">Freie Sicht rundum und zum Himmel.</p>
+      <ul><li>360°-LiDAR LD19</li><li>GPS-Keramikantenne</li><li>2 LTE-Flachantennen</li><li>Status-LEDs vorne</li></ul>
+      <span class="stage-tag">Stufe 4 und 6</span>
+    </div>
+    <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="2" style="--c: var(--l2)">
+      <h2>Ebene 3 · Gehirn <small>28 mm Abstand</small></h2>
+      <p class="why">Rechenleistung, gut belüftet, Kamera mit Blick nach vorne.</p>
+      <ul><li>Raspberry Pi 5 + Active Cooler</li><li>AI HAT+ auf Stapel-Stiftleiste</li><li>Kamera Modul 3 Wide</li><li>Pololu 5 V / 5,5 A</li><li>4G/GPS-USB-Modul</li></ul>
+      <span class="stage-tag">Stufe 3, 5 und 6</span>
+    </div>
+    <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="1" style="--c: var(--l1)">
+      <h2>Ebene 2 · Antrieb <small>28 mm Abstand</small></h2>
+      <p class="why">Echtzeit-Steuerung mit kurzen Wegen zu den Motoren.</p>
+      <ul><li>Pico 2 W auf dem Freenove-Board</li><li>2× DRV8833 Motortreiber</li><li>MP1584 5 V für den Pico</li><li>BNO085 nahe der Fahrzeugmitte</li></ul>
+      <span class="stage-tag">Stufe 1 (Gyro in Stufe 4)</span>
+    </div>
+    <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="0" style="--c: var(--l0)">
+      <h2>Ebene 1 · Fahrwerk &amp; Energie <small>Bodenplatte</small></h2>
+      <p class="why">Das Schwerste ganz unten, für einen tiefen Schwerpunkt.</p>
+      <ul><li>4× JGA25-370 mit Encoder + 65-mm-Räder</li><li>Akku 2S2P (4× Samsung 35E) unter der Platte</li><li>BMS, Ladeboard mit USB-C hinten</li><li>Sicherung, Hauptschalter, INA226</li><li>4× VL53L1X-Nahsensoren</li></ul>
+      <span class="stage-tag">Stufe 1–2 (Nahsensoren in Stufe 4)</span>
+    </div>
+  </div>
+
+  <section class="wiring-sec">
+    <h2>Verdrahtungsplan</h2>
+    <p class="lead">Genau so sind die Kabel im 3D-Modell verlegt. Tippe im Modell auf ein Kabel, dann steht unten, von wo nach wo es geht.</p>
+    <div id="wiring"></div>
+    <h3>Belegung am Pico (Klemmen auf dem Freenove-Board)</h3>
+    <div class="tbl" id="picomap"></div>
+    <div class="notes">
+      <p><strong>Diode an VSYS:</strong> Zwischen MP1584 OUT+ und Pico VSYS kommt eine Schottky-Diode 1N5819 (Ring zur Pico-Seite). So stören sich USB vom Pi und der Wandler nicht.</p>
+      <p><strong>Pi 5 über USB-C ohne Netzteil-Erkennung:</strong> In der Datei <code>config.txt</code> kommt die Zeile <code>usb_max_current_enable=1</code>, sonst begrenzt der Pi den Strom an seinen USB-Buchsen.</p>
+      <p><strong>Aderendhülsen:</strong> Jedes Kabel in einer Schraubklemme bekommt eine Aderendhülse. Wo zwei Kabel in einen Punkt gehen, eine Zwillings-Aderendhülse.</p>
+      <p><strong>Encoder-Farben</strong> unterscheiden sich je nach Händler. Vor dem Anschließen mit dem Datenblatt vom Motor vergleichen.</p>
+    </div>
+  </section>
+
+  <div class="notes">
+    <p><strong>Kabel:</strong> Zwischen den Ebenen laufen die Kabel durch drei Durchbrüche in den Platten (links, rechts, hinten). Rot/Schwarz ist Strom, Grau sind USB- und Datenkabel, orange sind Flachbandkabel.</p>
+    <p><strong>Platten:</strong> je ca. 170 × 130 × 3 mm, gedruckt, passen auf jedes 220-mm-Druckbett. Befestigt mit M3-Abstandsbolzen aus Messing.</p>
+    <p><strong>Maße sind noch grob.</strong> Die genauen Positionen legen wir fest, wenn die Teile da sind und gemessen werden können.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const loading = document.getElementById('loading');
+  if (!window.THREE || !THREE.OrbitControls) { loading.textContent = 'Die 3D-Ansicht konnte nicht geladen werden. Bitte Seite neu laden.'; return; }
+
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function start() {
+    loading.hidden = true;
+
+    // ---------- Renderer & Szene ----------
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.78;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage.insertBefore(renderer.domElement, stage.firstChild);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, 1, 2, 6000);
+    const HOME = { pos: V(400, 320, 470), target: V(0, 105, 0) };
+    camera.position.copy(HOME.pos);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.copy(HOME.target);
+    controls.enableDamping = true;
+    controls.minDistance = 90;
+    controls.maxDistance = 1100;
+    controls.autoRotate = !reduceMotion;
+    controls.autoRotateSpeed = 0.9;
+
+    if (THREE.RoomEnvironment) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x7d8a96, scene.environment ? 0.25 : 0.65));
+    const sun = new THREE.DirectionalLight(0xffffff, scene.environment ? 0.75 : 1.0);
+    sun.position.set(180, 420, 220);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1000 });
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+    const rim = new THREE.DirectionalLight(0xdfe8ff, 0.45);
+    rim.position.set(-300, 200, -260);
+    scene.add(rim);
+
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 1 });
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(320, 72), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.userData.noPick = true;
+    scene.add(ground);
+
+    // ---------- Hilfsfunktionen ----------
+    function std(color, o = {}) {
+      const m = new THREE.MeshStandardMaterial({
+        color, metalness: o.metal ?? 0.05, roughness: o.rough ?? 0.6, map: o.map || null,
+        emissive: o.emissive ?? 0x000000, emissiveIntensity: o.ei ?? 1, envMapIntensity: o.env ?? 0.55
+      });
+      m.userData.base = o.opacity ?? 1;
+      return m;
+    }
+    function add(parent, geo, mat, x = 0, y = 0, z = 0, r) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if (r) m.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
+      m.castShadow = true; m.receiveShadow = true;
+      parent.add(m); return m;
+    }
+    // Quader: y = Unterkante
+    const box = (p, w, h, d, x, y, z, color, o) => add(p, new THREE.BoxGeometry(w, h, d), std(color, o), x, y + h / 2, z);
+    // Abgerundeter Quader: y = Unterkante
+    const rbox = (p, w, h, d, x, y, z, color, o = {}) => {
+      const r = Math.min(o.r ?? 0.8, w / 2 - 0.01, h / 2 - 0.01, d / 2 - 0.01);
+      const geo = THREE.RoundedBoxGeometry ? new THREE.RoundedBoxGeometry(w, h, d, 3, r) : new THREE.BoxGeometry(w, h, d);
+      return add(p, geo, std(color, o), x, y + h / 2, z);
+    };
+    let seed = 1234;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    function smd(p, w, d, n, y = 1.6, cx = 0, cz = 0) {
+      const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1.6, 0.55, 0.8), std(0xffffff, { rough: 0.45 }), n);
+      const cols = [0x1d1d1d, 0x8b6b46, 0x1d1d1d, 0x70757a, 0xb08d57, 0x1d1d1d];
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = V(1, 1, 1);
+      for (let i = 0; i < n; i++) {
+        q.setFromAxisAngle(V(0, 1, 0), rnd() < 0.5 ? 0 : Math.PI / 2);
+        m.compose(V(cx + (rnd() - 0.5) * (w - 5), y + 0.27, cz + (rnd() - 0.5) * (d - 5)), q, one);
+        im.setMatrixAt(i, m); im.setColorAt(i, new THREE.Color(cols[i % cols.length]));
+      }
+      p.add(im);
+    }
+    // Zylinder entlang y: y = Unterkante
+    const cylY = (p, r, h, x, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, h, o.seg || 28), std(color, o), x, y + h / 2, z);
+    // Zylinder entlang z von z0 bis z1, Mitte (x,y)
+    const cylZ = (p, r, z0, z1, x, y, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), o.seg || 32), std(color, o), x, y, (z0 + z1) / 2, [Math.PI / 2, 0, 0]);
+    // Zylinder entlang x von x0 bis x1, Mitte (y,z)
+    const cylX = (p, r, x0, x1, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), o.seg || 28), std(color, o), (x0 + x1) / 2, y, z, [0, 0, Math.PI / 2]);
+
+    function canvasTex(wmm, hmm, ppm, draw) {
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(16, Math.round(wmm * ppm)); cv.height = Math.max(16, Math.round(hmm * ppm));
+      const c = cv.getContext('2d');
+      c.scale(cv.width / wmm, cv.height / hmm);
+      draw(c, wmm, hmm);
+      const t = new THREE.CanvasTexture(cv);
+      t.encoding = THREE.sRGBEncoding;
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return t;
+    }
+    const silk = (c, s, x, y, size, o = {}) => {
+      c.save(); c.fillStyle = o.color || '#f1f3f1';
+      c.font = `${o.weight || 600} ${size}px "JetBrains Mono", ui-monospace, monospace`;
+      c.textAlign = o.align || 'left'; c.textBaseline = 'middle';
+      c.translate(x, y); if (o.rot) c.rotate(o.rot); c.fillText(s, 0, 0); c.restore();
+    };
+    const pad = (c, x, y, w, h) => { c.fillStyle = '#d8b46a'; c.fillRect(x - w / 2, y - h / 2, w, h); };
+    const hole = (c, x, y, r) => {
+      c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(x, y, r + 0.9, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#222'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    };
+    function shade(hex, f) { const col = new THREE.Color(hex); col.multiplyScalar(f); return col; }
+
+    // Leiterplatte: Oberseite mit Aufdruck. Origin = Mitte, Unterkante y.
+    function pcb(p, w, d, color, x, y, z, draw, t = 1.6) {
+      const tex = canvasTex(w, d, 10, (c) => { c.fillStyle = color; c.fillRect(0, 0, w, d); if (draw) draw(c, w, d); });
+      const side = std(shade(color, 0.8), { rough: 0.7 });
+      const mats = [side, side, std(0xffffff, { map: tex, rough: 0.45, metal: 0.05 }), std(shade(color, 0.7)), side, side];
+      return add(p, new THREE.BoxGeometry(w, t, d), mats, x, y + t / 2, z);
+    }
+    function chip(p, w, d, h, x, y, z, label, o = {}) {
+      let mats = std(o.color ?? 0x1c1d1f, { rough: 0.5 });
+      if (label) {
+        const tex = canvasTex(w, d, 24, (c) => { c.fillStyle = '#1c1d1f'; c.fillRect(0, 0, w, d); silk(c, label, w / 2, d / 2, Math.min(d * 0.32, w / label.length * 1.5), { align: 'center', color: '#b9bcbf', weight: 400 }); });
+        const s = std(0x1c1d1f, { rough: 0.5 });
+        mats = [s, s, std(0xffffff, { map: tex, rough: 0.5 }), s, s, s];
+      }
+      add(p, new THREE.BoxGeometry(w, h, d), mats, x, y + h / 2, z);
+      if (o.legs) {
+        const legMat = std(0xc9ccd0, { metal: 0.8, rough: 0.3 });
+        add(p, new THREE.BoxGeometry(w * 0.85, 0.3, d + 2), legMat, x, y + 0.2, z);
+      }
+    }
+    // Stiftleiste entlang x
+    function pins(p, n, rows, x, y, z, o = {}) {
+      const pitch = 2.54, len = n * pitch, wid = rows * pitch;
+      const baseH = o.female ? (o.h || 8.5) : 2.5;
+      box(p, len, baseH, wid, x, y, z, 0x151617, { rough: 0.7 });
+      const pinH = o.female ? 0.6 : (o.pinH || 6);
+      const geo = new THREE.BoxGeometry(0.64, pinH, 0.64);
+      const im = new THREE.InstancedMesh(geo, std(o.female ? 0x050505 : 0xd8b04a, { metal: o.female ? 0 : 0.85, rough: 0.3 }), n * rows);
+      const m = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < n; i++) for (let r = 0; r < rows; r++) {
+        m.makeTranslation(x - len / 2 + pitch / 2 + i * pitch, y + baseH + pinH / 2 - (o.female ? 0.5 : 0), z - wid / 2 + pitch / 2 + r * pitch);
+        im.setMatrixAt(k++, m);
+      }
+      im.castShadow = true; p.add(im);
+    }
+    // Schraubklemmenleiste entlang x
+    function terminals(p, n, pitch, x, y, z, color, facing = 1) {
+      const len = n * pitch;
+      box(p, len, 9, 7.5, x, y, z, color, { rough: 0.55 });
+      const screw = new THREE.InstancedMesh(new THREE.CylinderGeometry(1.35, 1.35, 0.8, 14), std(0xc7cbcf, { metal: 0.9, rough: 0.3 }), n);
+      const holeM = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch * 0.55, 3, 0.6), std(0x0d0d0d), n);
+      const m = new THREE.Matrix4();
+      for (let i = 0; i < n; i++) {
+        const px = x - len / 2 + pitch / 2 + i * pitch;
+        m.makeTranslation(px, y + 9.2, z - facing * 1.2); screw.setMatrixAt(i, m);
+        m.makeTranslation(px, y + 3.5, z + facing * 3.8); holeM.setMatrixAt(i, m);
+      }
+      p.add(screw); p.add(holeM);
+    }
+    function wire(p, pts, color, r = 0.8) {
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      return add(p, new THREE.TubeGeometry(curve, Math.max(24, pts.length * 14), r, 8, false), std(color, { rough: 0.45 }));
+    }
+    function ribbon(p, pts, width, color) {
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      const sh = new THREE.Shape();
+      sh.moveTo(-0.15, -width / 2); sh.lineTo(0.15, -width / 2); sh.lineTo(0.15, width / 2); sh.lineTo(-0.15, width / 2); sh.lineTo(-0.15, -width / 2);
+      const geo = new THREE.ExtrudeGeometry(sh, { steps: 60, bevelEnabled: false, extrudePath: curve });
+      return add(p, geo, std(color, { rough: 0.5 }));
+    }
+    function part(parent, name, desc, x, y, z, ry = 0) {
+      const g = new THREE.Group();
+      g.position.set(x, y, z); g.rotation.y = ry;
+      g.userData.part = { name, desc };
+      parent.add(g); return g;
+    }
+
+    // ---------- Platten & Ebenen ----------
+    const PL = { w: 170, d: 130, t: 3, r: 10 };
+    const LEVEL = [46.5, 74.5, 102.5, 150.5];      // Unterkante jeder Platte
+    const TOP = LEVEL.map((y) => y + PL.t);
+    const STANDOFFS = [[78, 58], [78, -58], [-78, 58], [-78, -58]];
+    const SLOTS = { A: { x: 20, z: -50, w: 30, d: 9 }, B: { x: 20, z: 50, w: 30, d: 9 }, C: { x: -74, z: 0, w: 9, d: 30 } };
+    const layerNames = ['Ebene 1 · Fahrwerk & Energie', 'Ebene 2 · Antrieb', 'Ebene 3 · Gehirn', 'Ebene 4 · Dach'];
+    const layerVars = ['--l0', '--l1', '--l2', '--l3'];
+
+    function roundedRect(path, cx, cz, w, d, r, isHole) {
+      const x0 = cx - w / 2, x1 = cx + w / 2, y0 = -cz - d / 2, y1 = -cz + d / 2;
+      r = Math.min(r, w / 2, d / 2);
+      path.moveTo(x0 + r, y0); path.lineTo(x1 - r, y0); path.quadraticCurveTo(x1, y0, x1, y0 + r);
+      path.lineTo(x1, y1 - r); path.quadraticCurveTo(x1, y1, x1 - r, y1); path.lineTo(x0 + r, y1);
+      path.quadraticCurveTo(x0, y1, x0, y1 - r); path.lineTo(x0, y0 + r); path.quadraticCurveTo(x0, y0, x0 + r, y0);
+    }
+    function plateGeo(extra) {
+      const s = new THREE.Shape(); roundedRect(s, 0, 0, PL.w, PL.d, PL.r);
+      STANDOFFS.forEach(([x, z]) => { const h = new THREE.Path(); h.absarc(x, -z, 1.7, 0, Math.PI * 2, true); s.holes.push(h); });
+      Object.values(SLOTS).concat(extra || []).forEach((sl) => { const h = new THREE.Path(); roundedRect(h, sl.x, sl.z, sl.w, sl.d, 3); s.holes.push(h); });
+      const g = new THREE.ExtrudeGeometry(s, { depth: PL.t, bevelEnabled: true, bevelThickness: 0.4, bevelSize: 0.4, bevelSegments: 1, curveSegments: 10 });
+      g.rotateX(-Math.PI / 2);
+      return g;
+    }
+    function labelSprite(text, color) {
+      const cv = document.createElement('canvas'); cv.width = 960; cv.height = 112;
+      const c = cv.getContext('2d');
+      c.font = '600 50px "Space Grotesk", "Segoe UI", sans-serif';
+      const tw = Math.min(950, c.measureText(text).width + 60);
+      c.fillStyle = color; c.beginPath();
+      if (c.roundRect) c.roundRect(4, 4, tw, 104, 30); else c.rect(4, 4, tw, 104);
+      c.fill(); c.fillStyle = '#fff'; c.textBaseline = 'middle'; c.fillText(text, 34, 58);
+      const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+      sp.scale.set(133, 15.5, 1); sp.center.set(0, 0.5); sp.renderOrder = 10; sp.userData.noPick = true; sp.userData.label = true;
+      return sp;
+    }
+
+    const layers = [];
+    const plateMats = [];
+    const plateTex = canvasTex(8, 8, 32, (c) => {
+      c.fillStyle = '#ffffff'; c.fillRect(0, 0, 8, 8);
+      c.strokeStyle = 'rgba(0,0,0,0.10)'; c.lineWidth = 0.18;
+      for (let i = -8; i <= 16; i += 0.45) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i - 8, 8); c.stroke(); }
+    });
+    plateTex.wrapS = plateTex.wrapT = THREE.RepeatWrapping;
+    plateTex.repeat.set(1 / 8, 1 / 8);
+    function makeLayer(i, extraHoles) {
+      const g = new THREE.Group();
+      g.userData.layerIndex = i;
+      const col = new THREE.Color(tok(layerVars[i]) || '#888');
+      const pm = std(col.clone().multiplyScalar(0.62), { rough: 0.85, map: plateTex, env: 0.35 });
+      pm.userData.isPlate = true; plateMats.push(pm);
+      const plate = add(g, plateGeo(extraHoles), pm, 0, LEVEL[i], 0);
+      plate.userData.part = { name: `Platte ${layerNames[i]}`, desc: '3D-gedruckt, ca. 170 × 130 × 3 mm, mit Durchbrüchen für die Kabel.' };
+      if (i > 0) {
+        const h = LEVEL[i] - TOP[i - 1];
+        STANDOFFS.forEach(([x, z]) => {
+          const s = cylY(g, 2.75, h, x, TOP[i - 1], z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 });
+          s.userData.part = { name: `Abstandsbolzen M3 × ${Math.round(h)} mm`, desc: 'Messing, verbindet die Ebenen. Jede Ebene lässt sich einzeln abschrauben.' };
+          cylY(g, 2.7, 1.8, x, TOP[i], z, 0x9aa0a6, { metal: 0.9, rough: 0.3, seg: 6 });
+        });
+      }
+      const lab = labelSprite(layerNames[i], '#' + col.getHexString());
+      lab.position.set(-85, TOP[i] + 10, PL.d / 2 + 34);
+      g.add(lab);
+      scene.add(g);
+      layers.push({ g, i });
+      return g;
+    }
+
+    // =====================================================================
+    // ANSCHLUSSPUNKTE – jedes Kabel endet an einem dieser Punkte
+    // =====================================================================
+    const ANCH = {};
+    function anchor(key, g, x, y, z, d, label) { ANCH[key] = { g, p: V(x, y, z), d: V(...(d || [0, 1, 0])), label: label || key }; }
+    const PIN = { 1: 'GP0', 2: 'GP1', 3: 'GND', 4: 'GP2', 5: 'GP3', 6: 'GP4', 7: 'GP5', 8: 'GND', 9: 'GP6', 10: 'GP7', 11: 'GP8', 12: 'GP9', 13: 'GND', 14: 'GP10', 15: 'GP11', 16: 'GP12', 17: 'GP13', 18: 'GND', 19: 'GP14', 20: 'GP15', 21: 'GP16', 22: 'GP17', 23: 'GND', 24: 'GP18', 25: 'GP19', 26: 'GP20', 27: 'GP21', 28: 'GND', 29: 'GP22', 30: 'RUN', 31: 'GP26', 32: 'GP27', 33: 'GND', 34: 'GP28', 35: 'VREF', 36: '3V3', 37: '3V3_EN', 38: 'GND', 39: 'VSYS', 40: 'VBUS' };
+
+    // =====================================================================
+    // EBENE 1 – Fahrwerk & Energie
+    // =====================================================================
+    const L0 = makeLayer(0, [{ x: -30, z: 10, w: 16, d: 7 }]);
+    const AXLE = 32.5;
+    const MOTORS = { VL: [55, 1, 'vorne links'], HL: [-55, 1, 'hinten links'], VR: [55, -1, 'vorne rechts'], HR: [-55, -1, 'hinten rechts'] };
+
+    function motor(key, x, s, nm) {
+      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Der Encoder (grüne Scheibe) zählt die Umdrehungen. Am weißen Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, 0);
+      cylZ(g, 12, s * 4, s * 35, 0, 0, 0xb8bec4, { metal: 0.85, rough: 0.28 });
+      cylZ(g, 12.2, s * 33, s * 35, 0, 0, 0x8f969c, { metal: 0.8, rough: 0.3 });
+      cylZ(g, 12.6, s * 35, s * 57, 0, 0, 0xd5d8db, { metal: 0.75, rough: 0.33 });
+      [-1, 1].forEach((k) => cylZ(g, 1.3, s * 57, s * 57.6, k * 8, 6, 0x5d6266, { metal: 0.8, seg: 10 }));
+      cylZ(g, 3.6, s * 57, s * 59, 0, 0, 0xcfd2d5, { metal: 0.8 });
+      cylZ(g, 2, s * 59, s * 69, 0, 0, 0xa3a9ae, { metal: 0.95, rough: 0.2 });
+      cylZ(g, 11.5, s * 2.4, s * 4, 0, 0, 0x2e6b3a, { rough: 0.5 });
+      cylZ(g, 6, s * 0.6, s * 2.4, 0, 0, 0x202224);
+      box(g, 10, 4, 3.5, 0, -15, s * 3.2, 0xf1efe8);
+      box(g, 32, 26, 2, 0, -12, s * 60, 0x6b7177, { metal: 0.7, rough: 0.35 });
+      box(g, 32, 2, 18, 0, 12, s * 52, 0x6b7177, { metal: 0.7, rough: 0.35 });
+      [-10, 10].forEach((k) => cylZ(g, 1.6, s * 61, s * 62, k, 6, 0x2a2c2e, { seg: 6 }));
+      ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, -15, s * 3.2, [0, -1, 0], `Motor ${nm} ${n}`));
+    }
+    function wheel(x, s) {
+      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen mit Kunststofffelge, sitzt mit Kupplung auf der 4-mm-Welle.', x, AXLE, s * 80);
+      const prof = [[19, -13], [28.5, -13], [31.2, -12.2], [32.5, -10.5], [32.5, 10.5], [31.2, 12.2], [28.5, 13], [19, 13]].map(([r, y]) => new THREE.Vector2(r, y));
+      add(g, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
+      const n = 30, tread = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 1.2, 20), std(0x18191b, { rough: 0.95 }), n);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = V(1, 1, 1);
+      for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; q.setFromAxisAngle(V(0, 0, 1), a); m.compose(V(Math.cos(a) * 32.6, Math.sin(a) * 32.6, 0), q, sc); tread.setMatrixAt(i, m); }
+      tread.castShadow = true; g.add(tread);
+      cylZ(g, 19.5, -12, 12, 0, 0, 0xe2b23b, { rough: 0.45, seg: 40 });
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; cylZ(g, 3.6, s * 12, s * 12.4, Math.cos(a) * 12, Math.sin(a) * 12, 0x6d5a1f, { seg: 16 }); }
+      cylZ(g, 6.5, s * 12, s * 14, 0, 0, 0x2a2b2d, { seg: 6 });
+    }
+    Object.entries(MOTORS).forEach(([k, [x, s, nm]]) => { motor(k, x, s, nm); wheel(x, s); });
+
+    const cellTex = canvasTex(58, 65, 8, (c, w, h) => {
+      c.fillStyle = '#2f8fb3'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#1f6f8f'; c.fillRect(0, 0, w, 4); c.fillRect(0, h - 4, w, 4);
+      silk(c, 'SAMSUNG SDI', w * 0.25, h / 2, 4.2, { align: 'center', rot: -Math.PI / 2 });
+      silk(c, 'INR18650-35E', w * 0.42, h / 2, 3.6, { align: 'center', rot: -Math.PI / 2, weight: 400 });
+      silk(c, '3500mAh  3.6V', w * 0.56, h / 2, 2.8, { align: 'center', rot: -Math.PI / 2, weight: 400 });
+    });
+    (function battery() {
+      const g = part(L0, 'Akku 2S2P: 4× Samsung INR18650-35E', 'Zwei Halter mit je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Hängt unter der Bodenplatte.', 0, 21, 0);
+      [[-21, 1, '1'], [21, -1, '2']].forEach(([hx, dir, grp]) => {
+        box(g, 40, 2, 77, hx, 0, 0, 0x151617, { rough: 0.7 });
+        [-37, 37].forEach((ez) => box(g, 40, 21, 3, hx, 0, ez, 0x151617, { rough: 0.7 }));
+        box(g, 1.4, 7, 71, hx, 2, 0, 0x151617);
+        [-1, 1].forEach((k) => [-34.6, 34.6].forEach((ez) => cylZ(g, 3, ez - Math.sign(ez) * 0.6, ez + Math.sign(ez) * 0.6, hx + k * 9.6, 11.4, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 12 })));
+        [-9.6, 9.6].forEach((cx) => {
+          const side = std(0xffffff, { map: cellTex, rough: 0.35, metal: 0.1 });
+          const capM = std(0xc9cdd1, { metal: 0.9, rough: 0.25 });
+          add(g, new THREE.CylinderGeometry(9.2, 9.2, 65, 40), [side, capM, capM], hx + cx, 11.4, 0, [dir * Math.PI / 2, 0, 0]);
+          cylZ(g, 3.5, dir * 32.5, dir * 33.6, hx + cx, 11.4, 0xc9cdd1, { metal: 0.9, rough: 0.25, seg: 16 });
+        });
+        // Lötfahnen an den Enden
+        box(g, 30, 2, 0.6, hx, 10.4, dir * 36.2, 0xc9cdd1, { metal: 0.9, rough: 0.3 });
+        box(g, 30, 2, 0.6, hx, 10.4, -dir * 36.2, 0xc9cdd1, { metal: 0.9, rough: 0.3 });
+        anchor(`G${grp}+`, g, hx, 11.4, dir * 38.6, [0, 0, dir], `Akku Gruppe ${grp} Plus`);
+        anchor(`G${grp}-`, g, hx, 11.4, -dir * 38.6, [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
+      });
+    })();
+
+    (function bms() {
+      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+.', -30, TOP[0], 30);
+      const pads = [['B-', 4], ['BM', 9], ['B+', 14], ['P-', 36], ['P+', 41]];
+      pcb(g, 45, 20, '#244f9e', 0, 0, 0, (c, w, h) => {
+        pads.forEach(([t, x]) => { pad(c, x, 2.6, 3.6, 3); silk(c, t, x, 6.6, 1.9, { align: 'center' }); });
+        silk(c, '2S 20A BALANCE', w / 2, h - 2.8, 2.2, { align: 'center' });
+      });
+      [-11, -4, 4, 11].forEach((x) => chip(g, 5, 4, 1.5, x, 1.6, 2, '', { legs: true }));
+      smd(g, 45, 20, 10, 1.6, 0, 3);
+      pads.forEach(([t, x]) => anchor(`BMS_${t}`, g, x - 22.5, 1.9, -7.4, [0, 1, 0], `BMS ${t.replace('-', '−')}`));
+    })();
+    (function charger() {
+      const g = part(L0, 'Ladeboard DDTCCRUB 2S, Lötbrücken auf 2S und 1A', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku. Die USB-C-Buchse schaut hinten aus dem Auto.', -64, TOP[0], -32);
+      pcb(g, 40, 20, '#2c7a3c', 0, 0, 0, (c, w, h) => {
+        silk(c, 'DDTCCRUB', w * 0.62, h - 2.6, 2.2, { align: 'center' });
+        pad(c, w - 3, 5, 4, 5); pad(c, w - 3, 15, 4, 5);
+        silk(c, 'BAT', w - 7.4, 5, 1.8, { align: 'center' }); silk(c, 'GND', w - 7.4, 15, 1.8, { align: 'center' });
+        silk(c, 'CR', 23, 3, 1.6); silk(c, 'OK', 27, 3, 1.6);
+      });
+      box(g, 9, 3.3, 7.6, -17.5, 1.6, 0, 0xc4c8cc, { metal: 0.9, rough: 0.25 });
+      box(g, 0.4, 1.6, 6, -22.05, 2.45, 0, 0x111111);
+      const ind = canvasTex(8, 8, 20, (c) => { c.fillStyle = '#7d8186'; c.fillRect(0, 0, 8, 8); silk(c, '100', 4, 4, 3, { align: 'center', color: '#1b1b1b', weight: 400 }); });
+      const ig = std(0x7d8186, { rough: 0.6 });
+      add(g, new THREE.BoxGeometry(8, 4.5, 8), [ig, ig, std(0xffffff, { map: ind }), ig, ig, ig], -6, 1.6 + 2.25, 2);
+      chip(g, 5, 4, 1.5, 4, 1.6, 3, 'CN3302', { legs: true });
+      chip(g, 5, 4, 1.5, 10, 1.6, 3, '4468', { legs: true });
+      box(g, 1.6, 0.8, 1, 3.5, 1.6, -7, 0xff4a3a, { emissive: 0xff2a1a, ei: 0.8 });
+      box(g, 1.6, 0.8, 1, 7.5, 1.6, -7, 0x3fe07a, { emissive: 0x20c060, ei: 0.4 });
+      smd(g, 30, 20, 9, 1.6, 2, 0);
+      anchor('CH_BAT', g, 17, 1.9, -5, [0, 1, 0], 'Ladeboard BAT');
+      anchor('CH_GND', g, 17, 1.9, 5, [0, 1, 0], 'Ladeboard GND');
+    })();
+    (function ina226() {
+      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Schraubklemme VIN+ (vom Schalter) und VIN− (zum Verteiler). Datenleitungen zum Pico über I²C.', 4, TOP[0], -12);
+      const names = ['VBS', 'GND', 'VCC', 'SCL', 'SDA', 'ALE'];
+      pcb(g, 20, 25, '#4a2f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'INA226', w / 2, h / 2 + 2, 2.2, { align: 'center' });
+        silk(c, 'VIN+', 7.5, 7.6, 1.5, { align: 'center' }); silk(c, 'VIN-', 12.5, 7.6, 1.5, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 3.65 + 2.54 * i, h - 5.2, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+      });
+      const sh = canvasTex(6.3, 3.2, 30, (c) => { c.fillStyle = '#1b1b1b'; c.fillRect(0, 0, 6.3, 3.2); silk(c, 'R002', 3.15, 1.6, 1.4, { align: 'center', color: '#ddd', weight: 400 }); });
+      const shm = std(0x1b1b1b);
+      add(g, new THREE.BoxGeometry(6.3, 1.2, 3.2), [shm, shm, std(0xffffff, { map: sh }), shm, shm, shm], 0, 1.6 + 0.6, 1);
+      chip(g, 3, 3, 1, -4, 1.6, 5, '', { legs: true });
+      terminals(g, 2, 5, 0, 1.6, -8.5, 0x2a62c4, -1);
+      pins(g, 6, 1, 0, 1.6, 10.5, { pinH: 5 });
+      smd(g, 20, 14, 6, 1.6, 0, 2);
+      anchor('INA_VIN+', g, -2.5, 5.1, -12.3, [0, 0, -1], 'INA226 VIN+');
+      anchor('INA_VIN-', g, 2.5, 5.1, -12.3, [0, 0, -1], 'INA226 VIN−');
+      names.forEach((n, i) => anchor(`INA_${n}`, g, -6.35 + 2.54 * i, 8.8, 10.5, [0, 1, 0], `INA226 ${n}`));
+    })();
+    (function fuse() {
+      const g = part(L0, 'Sicherungshalter mit 10-A-Kfz-Sicherung', 'Sitzt direkt hinter dem BMS im Plus. Brennt bei einem Kurzschluss durch, bevor Kabel heiß werden.', 22, TOP[0], 32);
+      rbox(g, 30, 9, 12, 0, 0, 0, 0x1a1b1d, { rough: 0.55, r: 2 });
+      box(g, 10, 4, 4, 0, 9, 0, 0xd8321f, { rough: 0.4 });
+      box(g, 10.5, 1.5, 12.5, 0, 6.5, 0, 0x1a1b1d);
+      anchor('FUSE_IN', g, -15, 4.5, 0, [-1, 0, 0], 'Sicherung Eingang');
+      anchor('FUSE_OUT', g, 15, 4.5, 0, [1, 0, 0], 'Sicherung Ausgang');
+    })();
+    (function sw() {
+      const g = part(L0, 'Hauptschalter (Kippschalter 10 A)', 'Schaltet das ganze Auto an und aus. Sitzt an der linken Seite zwischen den Rädern.', 0, TOP[0], 56);
+      rbox(g, 16, 6, 10, 0, 0, 0, 0x3b3f43, { rough: 0.6, r: 1.5 });
+      box(g, 12, 9, 8, 0, 6, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3 });
+      cylY(g, 3.2, 2, 0, 15, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3, seg: 6 });
+      add(g, new THREE.CylinderGeometry(1, 1.4, 12, 14), std(0xd7dbdf, { metal: 0.9, rough: 0.2 }), 2.5, 22, 0, [0, 0, -0.35]);
+      [-3.5, 3.5].forEach((x) => box(g, 2.4, 3, 1.4, x, 1, -5.6, 0xc9cdd1, { metal: 0.9, rough: 0.3 }));
+      anchor('SW_1', g, -3.5, 2.5, -6.3, [0, 0, -1], 'Hauptschalter Anschluss 1');
+      anchor('SW_2', g, 3.5, 2.5, -6.3, [0, 0, -1], 'Hauptschalter Anschluss 2');
+    })();
+    function wago(parent, key, name, desc, x, y, z) {
+      const g = part(parent, name, desc, x, y, z);
+      rbox(g, 15, 8.5, 20.5, 0, 0, 0, 0xc5cdd3, { rough: 0.25, metal: 0.05, opacity: 0.85, r: 1.2 });
+      for (let i = 0; i < 5; i++) {
+        box(g, 9, 2.2, 3, 2.5, 8.5, -8.2 + 4.1 * i, 0xf08a24, { rough: 0.45 });
+        box(g, 0.6, 2.4, 2.4, -7.55, 2.3, -8.2 + 4.1 * i, 0x2a2d30);
+        anchor(`${key}${i + 1}`, g, -7.8, 3.5, -8.2 + 4.1 * i, [-1, 0, 0], `${name.split(' (')[0]} Platz ${i + 1}`);
+      }
+      return g;
+    }
+    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt.', 45, TOP[0], -12);
+    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu.', 45, TOP[0], -36);
+    function tof(key, x, z, ry, name) {
+      const g = part(L0, `Nahsensor VL53L1X (${name})`, 'Misst per Laser bis ca. 4 m und erkennt niedrige Hindernisse. Angeschlossen über STEMMA-QT-Kabel (I²C, verriegelnd) und eine XSHUT-Leitung zum Pico.', x, 26, z, ry);
+      box(g, 3, 20, 22, -2.6, -2, 0, 0x2a2e33, { rough: 0.85 });
+      box(g, 1.6, 13, 20, 0, 0, 0, 0x5a3a8c);
+      box(g, 1.2, 2.4, 4.9, 1.4, 6, 0, 0x111111);
+      [-5.5, 5.5].forEach((zz) => box(g, 3.2, 3, 4.5, -0.2, 13, zz, 0xf2efe6));
+      box(g, 0.8, 2, 0.8, -0.2, 13, 0, 0xd8b04a, { metal: 0.85 });
+      box(g, 3, 8, 3, -2.6, 18, 0, 0x2a2e33);
+      anchor(`T${key}_Q1`, g, -1.8, 14.5, -5.5, [-1, 0, 0], `VL53L1X ${name} QT 1`);
+      anchor(`T${key}_Q2`, g, -1.8, 14.5, 5.5, [-1, 0, 0], `VL53L1X ${name} QT 2`);
+      anchor(`T${key}_X`, g, -0.6, 14.6, 0, [-1, 0, 0], `VL53L1X ${name} XSHUT`);
+    }
+    tof('VL', 86, 42, -0.5, 'vorne links'); tof('V', 88, 0, 0, 'vorne'); tof('VR', 86, -42, 0.5, 'vorne rechts'); tof('H', -88, 0, Math.PI, 'hinten');
+
+    // =====================================================================
+    // EBENE 2 – Antrieb
+    // =====================================================================
+    const L1 = makeLayer(1);
+    (function freenove() {
+      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen. Linke Reihe Pin 1–20, rechte Reihe Pin 40–21. Jedes Kabel mit Aderendhülse.', -24, TOP[1] + 5, 0);
+      [[-35, -24], [35, -24], [-35, 24], [35, 24]].forEach(([x, z]) => cylY(g, 2, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }));
+      pcb(g, 78, 56, '#22693a', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 20; i++) {
+          const cx = 39 - 33.25 + 3.5 * i;
+          silk(c, PIN[i + 1], cx, h / 2 + 15.5, 1.25, { align: 'center', rot: -Math.PI / 2 });
+          silk(c, PIN[40 - i], cx, h / 2 - 15.5, 1.25, { align: 'center', rot: -Math.PI / 2 });
+        }
+        [[3, 3], [w - 3, 3], [3, h - 3], [w - 3, h - 3]].forEach(([x, y]) => hole(c, x, y, 1.6));
+      });
+      terminals(g, 20, 3.5, 0, 1.6, -23, 0x2c8a40, -1);
+      terminals(g, 20, 3.5, 0, 1.6, 23, 0x2c8a40, 1);
+      pins(g, 20, 1, 0, 1.6, -8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, 8.89, { female: true, h: 8.5 });
+      for (let i = 0; i < 20; i++) {
+        const x = -33.25 + 3.5 * i;
+        anchor(`P${i + 1}`, g, x, 5.1, 27.0, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
+        anchor(`P${40 - i}`, g, x, 5.1, -27.0, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
+      }
+      // Pico 2 W
+      const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt.', 0, 1.6 + 8.5, 0);
+      pcb(p, 51, 21, '#2f7d3b', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 20; i++) { const px = 1.61 + i * 2.54; [0.6, h - 0.6].forEach((py) => { c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(px, py, 0.8, 0, Math.PI * 2); c.fill(); }); }
+        silk(c, 'Raspberry Pi Pico 2 W', w * 0.55, h - 3.6, 1.9, { align: 'center' });
+        silk(c, 'BOOTSEL', 12.5, 4, 1.4, { align: 'center' });
+      });
+      box(p, 7.6, 2.7, 5.8, -22.6, 1.6, 0, 0xc6cacd, { metal: 0.9, rough: 0.25 });
+      chip(p, 7, 7, 0.9, -2, 1.6, 0, 'RP2350');
+      chip(p, 4, 3, 0.8, -10, 1.6, 4, '');
+      box(p, 11, 1.4, 10.5, 14.5, 1.6, 0, 0xcfd3d6, { metal: 0.9, rough: 0.28 });
+      box(p, 3.4, 1.2, 4.2, -12.5, 1.6, -5, 0xf5f5f0);
+      box(p, 1.2, 0.6, 0.8, -18.5, 1.6, -6, 0x3fe07a, { emissive: 0x20c060, ei: 0.6 });
+      smd(p, 30, 18, 16, 1.6, -4, 0);
+      rbox(p, 9, 5.5, 9, -31, 1.4, 0, 0x2a2c2f, { r: 1.2 });
+      box(p, 5, 1.8, 6.6, -25.8, 2.1, 0, 0xc6cacd, { metal: 0.9 });
+      anchor('PICO_USB', p, -35.6, 4.2, 0, [-1, 0, 0], 'Pico Micro-USB');
+    })();
+    function drv(n, s) {
+      const nm = s > 0 ? 'links' : 'rechts';
+      const g = part(L1, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden ${nm}en Motoren. Kabel direkt an die Lötpunkte gelötet.`, 52, TOP[1] + 2, s * 30);
+      const ins = ['VM', 'GND', 'IN1', 'IN2', 'IN3', 'IN4'], outs = ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'EEP', 'ULT'];
+      cylY(g, 1.6, 2, -7, -2, -6, 0xc9a24a, { metal: 0.8, seg: 6 }); cylY(g, 1.6, 2, 7, -2, 6, 0xc9a24a, { metal: 0.8, seg: 6 });
+      pcb(g, 18.5, 16, '#9a2f3a', 0, 0, 0, (c, w, h) => {
+        const rowIn = 8 - s * 6.6, rowOut = 8 + s * 6.6;
+        for (let i = 0; i < 6; i++) {
+          const x = 2.4 + i * 2.75;
+          pad(c, x, rowIn, 1.6, 1.6); pad(c, x, rowOut, 1.6, 1.6);
+          silk(c, ins[i], x, rowIn + (rowIn < 8 ? 2.6 : -2.6), 0.95, { align: 'center', rot: -Math.PI / 2 });
+          silk(c, outs[i], x, rowOut + (rowOut < 8 ? 2.6 : -2.6), 0.95, { align: 'center', rot: -Math.PI / 2 });
+        }
+      });
+      chip(g, 5, 4.4, 1, 3, 1.6, 0, 'DRV', { legs: true });
+      smd(g, 8, 6, 3, 1.6, -5, 0);
+      ins.forEach((p, i) => anchor(`D${n}_${p}`, g, -6.85 + 2.75 * i, 1.9, -s * 6.6, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+      outs.forEach((p, i) => anchor(`D${n}_${p}`, g, -6.85 + 2.75 * i, 1.9, s * 6.6, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+    }
+    drv('L', 1); drv('R', -1);
+    (function mp1584() {
+      const g = part(L1, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs.', 52, TOP[1] + 2, 0);
+      pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
+        pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
+        silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
+        silk(c, 'OUT+', w - 6, 3, 1.4, { align: 'center' }); silk(c, 'OUT-', w - 6, h - 3, 1.4, { align: 'center' });
+      });
+      rbox(g, 6.5, 3.5, 6.5, 2, 1.6, 2, 0x6f7377, { rough: 0.55, r: 0.8 });
+      chip(g, 3, 2, 1, -4, 1.6, -3, '', { legs: true });
+      [[-5, 4], [7, -4]].forEach(([x, z]) => box(g, 3.2, 1.6, 1.6, x, 1.6, z, 0x9c7a4a));
+      anchor('MP_IN+', g, -9, 1.9, -5.5, [0, 1, 0], 'MP1584 IN+');
+      anchor('MP_IN-', g, -9, 1.9, 5.5, [0, 1, 0], 'MP1584 IN−');
+      anchor('MP_OUT+', g, 9, 1.9, -5.5, [0, 1, 0], 'MP1584 OUT+');
+      anchor('MP_OUT-', g, 9, 1.9, 5.5, [0, 1, 0], 'MP1584 OUT−');
+    })();
+    (function bno() {
+      const g = part(L1, 'Lagesensor BNO085 (Gyroskop + Kompass)', 'Misst Drehung, Neigung und Himmelsrichtung. Sitzt nahe der Fahrzeugmitte. Über seinen STEMMA-QT-Ausgang geht der I²C-Bus weiter zu den Nahsensoren.', 27, TOP[1] + 2, 0);
+      const names = ['VIN', '3Vo', 'GND', 'SCL', 'SDA', 'INT', 'RST', 'DI'];
+      pcb(g, 25.4, 20.3, '#3a3f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'BNO085', w / 2, 3.5, 2, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 3.81 + 2.54 * i, h - 5, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+        hole(c, 2.5, 2.5, 1.2); hole(c, w - 2.5, 2.5, 1.2);
+      });
+      chip(g, 5.2, 3.8, 1, 0, 1.6, -1, 'BNO');
+      pins(g, 8, 1, 0, 1.6, 8.2, { pinH: 4 });
+      box(g, 3, 3, 6, 11.2, 1.6, -4, 0xf2efe6);
+      smd(g, 16, 10, 6, 1.6, -2, -3);
+      names.forEach((n, i) => anchor(`BNO_${n}`, g, -8.89 + 2.54 * i, 7.9, 8.2, [0, 1, 0], `BNO085 ${n}`));
+      anchor('BNO_QT', g, 12.9, 3.1, -4, [1, 0, 0], 'BNO085 STEMMA-QT');
+    })();
+    wago(L1, 'W3A', '3,3-V-Verteiler A (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der linken Motoren und an Verteiler B.', 25, TOP[1], 24);
+    wago(L1, 'W3B', '3,3-V-Verteiler B (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der rechten Motoren, den BNO085 und den INA226.', 25, TOP[1], -24);
+
+    // =====================================================================
+    // EBENE 3 – Gehirn
+    // =====================================================================
+    const L2 = makeLayer(2);
+    const PI = { x: -8, y: TOP[2] + 5, z: 0 };
+    let piFan = null;
+    (function pi5() {
+      const g = part(L2, 'Raspberry Pi 5 (8 GB)', 'Das Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App. Strom über USB-C vom Pololu, USB-Geräte hinten.', PI.x, PI.y, PI.z);
+      [[-39, -24.5], [19, -24.5], [-39, 24.5], [19, 24.5]].forEach(([x, z]) => cylY(g, 2.2, 5, x + 20, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }));
+      pcb(g, 85, 56, '#2b7a3d', 0, 0, 0, (c, w, h) => {
+        [[23.5, 3.5], [81.5, 3.5], [23.5, 52.5], [81.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
+        silk(c, 'Raspberry Pi 5', 60, h - 10, 2.6, { align: 'center' });
+        silk(c, 'CAM/DISP 0', 30.5, h - 10, 1.3, { align: 'center' }); silk(c, 'CAM/DISP 1', 24.5, h - 4.5, 1.3, { align: 'center' });
+        silk(c, 'PCIe', 80, h / 2 + 10, 1.4, { align: 'center' });
+      });
+      const usb = (z, blue) => {
+        rbox(g, 17.5, 15.6, 13.2, -36.9, 1.6, z, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+        [4.8, 11.6].forEach((yy) => { box(g, 0.6, 5.6, 12, -45.8, 1.6 + yy - 2.8, z, 0x0e0e0f); box(g, 0.7, 1.8, 10, -45.6, 1.6 + yy - 1.2, z, blue ? 0x2a5fd0 : 0x161616); });
+      };
+      usb(-18.8, false); usb(0.5, true);
+      rbox(g, 21, 13.5, 16, -38.5, 1.6, 19.5, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+      box(g, 0.6, 9, 12, -49.1, 4, 19.5, 0x0e0e0f);
+      [[31.3, 9, 3.3], [16.7, 7.5, 3.5], [3.3, 7.5, 3.5]].forEach(([x, w, h]) => box(g, w, h, 7.5, x, 1.6, 26.6, 0xc5c9cd, { metal: 0.9, rough: 0.25 }));
+      pins(g, 20, 2, 10, 1.6, -24.6, { pinH: 6 });
+      [-12, -18].forEach((x) => box(g, 2.6, 2.2, 13, x, 1.6, 15, 0xf2efe6));
+      box(g, 2.6, 2.2, 17, 40.5, 1.6, 0, 0xf2efe6);
+      chip(g, 7, 7, 0.9, -24, 1.6, -5, 'RP1');
+      smd(g, 30, 30, 40, 1.6, -22, 2); smd(g, 20, 20, 14, 1.6, 30, -8);
+      box(g, 2, 1, 3, 40, 1.6, 21, 0x111111);
+      const ac = new THREE.Group(); ac.position.set(2, 1.6, -2); g.add(ac);
+      box(ac, 38, 1.6, 42, 0, 0, 0, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
+      for (let i = 0; i < 9; i++) box(ac, 0.9, 7, 18, -16 + i * 2.5, 1.6, -10, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
+      rbox(ac, 20, 8.6, 22, 7, 0, 8, 0x1d1f21, { rough: 0.6, r: 1.5 });
+      cylY(ac, 9.5, 0.4, 7, 8.6, 8, 0x0f1011, { seg: 40 });
+      piFan = new THREE.Group(); piFan.position.set(7, 9.0, 8); ac.add(piFan);
+      for (let i = 0; i < 9; i++) { const bl = box(piFan, 7.5, 0.4, 2.2, 0, 0, 0, 0x2a2c2f); bl.position.set(Math.cos(i * 0.698) * 5.5, 0.2, Math.sin(i * 0.698) * 5.5); bl.rotation.y = -i * 0.698 + 0.5; }
+      cylY(ac, 4.5, 0.9, 7, 8.6, 8, 0xd6d9dc, { seg: 32 });
+      [[-17, -19], [17, 19]].forEach(([x, z]) => cylY(ac, 1.6, 3, x, 1.6, z, 0x111111, { seg: 10 }));
+      pins(g, 20, 2, 10, 1.6 + 8.5, -24.6, { female: true, h: 14 });
+      // Stecker
+      const plug = (x, y, z) => { rbox(g, 13, 7, 14, x, y - 3.5, z, 0x2a2c2f, { r: 1.5 }); };
+      plug(-52.5, 1.6 + 4.8, -18.8); plug(-52.5, 1.6 + 11.6, -18.8); plug(-52.5, 1.6 + 4.8, 0.5);
+      rbox(g, 11, 6, 13, 31.3, 0.2, 36.8, 0x2a2c2f, { r: 1.5 });
+      anchor('PI_U2L', g, -59.2, 1.6 + 4.8, -18.8, [-1, 0, 0], 'Pi 5 USB 2.0 unten');
+      anchor('PI_U2H', g, -59.2, 1.6 + 11.6, -18.8, [-1, 0, 0], 'Pi 5 USB 2.0 oben');
+      anchor('PI_U3L', g, -59.2, 1.6 + 4.8, 0.5, [-1, 0, 0], 'Pi 5 USB 3.0 unten');
+      anchor('PI_USBC', g, 31.3, 3.2, 43.4, [0, 0, 1], 'Pi 5 USB-C (Strom)');
+    })();
+    (function aiHat() {
+      const g = part(L2, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden.', PI.x + 10, PI.y + 1.6 + 8.5 + 14, 0);
+      pcb(g, 65, 56.5, '#2b7a3d', 0, 0, 0, (c, w, h) => {
+        [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
+        for (let i = 0; i < 20; i++) [1.27, 3.81].forEach((dy) => hole(c, 8.4 + i * 2.54, 2.6 + dy - 1.27, 0.5));
+        silk(c, 'Raspberry Pi AI HAT+', 26, h - 8, 2.4, { align: 'center' });
+        silk(c, '13 TOPS', 26, h - 4.6, 1.8, { align: 'center', weight: 400 });
+      });
+      chip(g, 15, 15, 1.4, 8, 1.6, 4, 'HAILO-8L');
+      box(g, 2.6, 2.2, 17, 30.5, 1.6, 0, 0xf2efe6);
+      smd(g, 50, 40, 26, 1.6, -4, 6);
+    })();
+    ribbon(L2, [V(PI.x + 41.8, PI.y + 1.6 + 8.5 + 14 + 2.6, 0), V(PI.x + 47, PI.y + 20, 0), V(PI.x + 47, PI.y + 8, 0), V(PI.x + 41.8, PI.y + 3.8, 0)], 16, 0xb8752b)
+      .userData.part = { name: 'PCIe-Flachbandkabel: AI HAT+ → Pi 5 PCIe', desc: 'Liegt dem AI HAT+ bei. Verbindet den KI-Chip mit dem schnellen PCIe-Anschluss des Pi 5.' };
+    (function camera3() {
+      const g = part(L2, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera mit Autofokus für das Live-Video. Das Flachbandkabel (22 auf 15 Pin) geht zum Anschluss CAM/DISP 0 am Pi 5.', 80, TOP[2], 0);
+      box(g, 3, 36, 32, -1.5, 0, 0, 0x3f6db5, { rough: 0.85 });
+      box(g, 8, 3, 32, -5, 0, 0, 0x3f6db5, { rough: 0.85 });
+      const ct = canvasTex(24, 25, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, 'Camera Module 3', w / 2, h - 4.5, 1.5, { align: 'center' }); });
+      const cs = std(0x23663a);
+      add(g, new THREE.BoxGeometry(1, 25, 24), [std(0xffffff, { map: ct }), cs, cs, cs, cs, cs], 0.5, 22, 0);
+      rbox(g, 4.5, 8.5, 8.5, 3.2, 21.5, 0, 0x151617, { rough: 0.5, r: 0.8 });
+      cylX(g, 5.2, 5.4, 8.4, 25.8, 0, 0x151617, { rough: 0.4 });
+      cylX(g, 3.6, 8.4, 8.8, 25.8, 0, 0x1b2a3a, { metal: 0.6, rough: 0.05 });
+    })();
+    ribbon(L2, [V(81, TOP[2] + 10.5, 0), V(76, TOP[2] + 2, 2), V(56, TOP[2] + 3, 10), V(40, PI.y + 6, 15), V(PI.x - 6, PI.y + 6, 15), V(PI.x - 12, PI.y + 4.2, 15)], 13, 0xc58a3a)
+      .userData.part = { name: 'Kamerakabel: Camera Module 3 → Pi 5 CAM/DISP 0', desc: 'Flachbandkabel 22 auf 15 Pin (beim Pi 5 nötig). Kontakte zeigen zur Platine.' };
+    (function pololu() {
+      const g = part(L2, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1, VOUT/GND über einen USB-C-Stecker in den Pi.', 58, TOP[2] + 2, 40);
+      const names = ['EN', 'VIN', 'GND', 'GND', 'VOUT', 'PG'];
+      pcb(g, 25.4, 20.3, '#1f5f8a', 0, 0, 0, (c, w, h) => {
+        silk(c, 'POLOLU 5V 5.5A', w / 2, h - 2.6, 1.6, { align: 'center' });
+        names.forEach((n, i) => { pad(c, 3 + i * 3.9, 2, 1.8, 1.8); silk(c, n, 3 + i * 3.9, 5.2, 1.0, { align: 'center', rot: -Math.PI / 2 }); });
+      });
+      rbox(g, 10, 5, 10, -4, 1.6, 2, 0x6f7377, { rough: 0.55, r: 1 });
+      chip(g, 4, 4, 1, 7, 1.6, 3, '');
+      smd(g, 20, 12, 8, 1.6, 3, 3);
+      anchor('PO_VIN', g, -9.7 + 3.9, 1.9, -8.15, [0, 1, 0], 'Pololu VIN');
+      anchor('PO_GNDA', g, -9.7 + 7.8, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
+      anchor('PO_GNDB', g, -9.7 + 11.7, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
+      anchor('PO_VOUT', g, -9.7 + 15.6, 1.9, -8.15, [0, 1, 0], 'Pololu VOUT');
+    })();
+    (function lte() {
+      const g = part(L2, '4G/LTE- und GPS-Modul SIM7600G-H (USB)', 'Mobilfunk für die Steuerung von überall und GPS für die Position draußen. Antennen an MAIN, AUX und GNSS, USB-Kabel zum Pi.', -50, TOP[2] + 1, -48);
+      const lt = canvasTex(60, 26, 10, (c, w, h) => { c.fillStyle = '#1b1d20'; c.fillRect(0, 0, w, h); silk(c, '4G LTE + GNSS', w / 2 + 4, h / 2 - 2.5, 3.4, { align: 'center', color: '#e8e8e8' }); silk(c, 'SIM7600G-H', w / 2 + 4, h / 2 + 3.5, 2.2, { align: 'center', color: '#9aa', weight: 400 }); silk(c, 'MAIN', 2, 5, 1.6, { color: '#ccc' }); silk(c, 'AUX', 2, 21, 1.6, { color: '#ccc' }); silk(c, 'GNSS', 10, 5, 1.6, { color: '#ccc' }); });
+      const ls = std(0x1b1d20, { rough: 0.5 });
+      add(g, new THREE.BoxGeometry(60, 11, 26), [ls, ls, std(0xffffff, { map: lt, rough: 0.5 }), ls, ls, ls], 0, 5.5, 0);
+      box(g, 4, 4, 9, 31, 3.5, 0, 0xc5c9cd, { metal: 0.9, rough: 0.25 });
+      [[-24, 8, 'MAIN'], [-24, -8, 'AUX'], [-16, 8, 'GNSS']].forEach(([x, z, n]) => { cylY(g, 1.3, 2, x, 11, z, 0xd4b058, { metal: 0.9, seg: 12 }); anchor(`LTE_${n}`, g, x, 13, z, [0, 1, 0], `4G-Modul ${n}`); });
+      anchor('LTE_USB', g, 33.4, 5.5, 0, [1, 0, 0], '4G-Modul USB');
+    })();
+
+    // =====================================================================
+    // EBENE 4 – Dach
+    // =====================================================================
+    const L3 = makeLayer(3);
+    let lidarHead = null, sweep = null;
+    (function lidar() {
+      const g = part(L3, '360°-LiDAR LDROBOT LD19', 'Ein Laser dreht sich und misst ringsum bis 12 m. Daraus entstehen Karte und Grundriss. 4-poliges Kabel zum USB-Adapter.', 0, TOP[3], 0);
+      rbox(g, 46, 13, 54, 0, 0, 0, 0x1b1d20, { rough: 0.45, r: 3 });
+      box(g, 44, 0.6, 52, 0, 13, 0, 0x2b2e32, { rough: 0.4 });
+      box(g, 1.5, 3, 6, -23.4, 3.5, 12, 0xf2efe6);
+      lidarHead = new THREE.Group(); lidarHead.position.y = 13.6; g.add(lidarHead);
+      cylY(lidarHead, 19, 4, 0, 0, 0, 0x1b1d20, { seg: 48 });
+      add(lidarHead, new THREE.CylinderGeometry(18.4, 18.4, 9, 48), std(0x5a1414, { metal: 0.5, rough: 0.08 }), 0, 8.5, 0);
+      cylY(lidarHead, 19, 7.4, 0, 13, 0, 0x1b1d20, { seg: 48, rough: 0.4 });
+      cylY(lidarHead, 6, 0.4, 0, 20.4, 0, 0x34383c, { seg: 32 });
+      sweep = new THREE.Group(); sweep.userData.noPick = true; lidarHead.add(sweep);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 240, 6), new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.85 }));
+      beam.rotation.z = Math.PI / 2; beam.position.set(140, 8.5, 0); beam.userData.fx = true; sweep.add(beam);
+      const fan = new THREE.Mesh(new THREE.CircleGeometry(260, 32, -0.35, 0.35), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false }));
+      fan.rotation.x = -Math.PI / 2; fan.position.y = 8.5; fan.userData.fx = true; sweep.add(fan);
+      anchor('LID_CON', g, -24.4, 5, 12, [-1, 0, 0], 'LiDAR-Anschluss');
+    })();
+    (function lidarAdapter() {
+      const g = part(L3, 'USB-Adapter für den LiDAR', 'Liegt dem LD19 bei. Wandelt das Signal des LiDAR auf USB um.', -36, TOP[3], 34);
+      pcb(g, 18, 14, '#1f5f8a', 0, 0, 0, (c, w, h) => silk(c, 'LD19 USB', w / 2, h / 2, 1.8, { align: 'center' }));
+      box(g, 3, 3, 6, 7, 1.6, 0, 0xf2efe6);
+      rbox(g, 8, 5, 8, -11, 0.6, 0, 0x2a2c2f, { r: 1 });
+      anchor('LAD_IN', g, 8.8, 3.1, 0, [1, 0, 0], 'LiDAR-Adapter Eingang');
+      anchor('LAD_USB', g, -15.2, 3.1, 0, [-1, 0, 0], 'LiDAR-Adapter USB');
+    })();
+    (function gps() {
+      const g = part(L3, 'GPS-Keramikantenne', 'Braucht freie Sicht zum Himmel, deshalb auf dem Dach. Kabel zum GNSS-Anschluss des 4G-Moduls.', -52, TOP[3], 0);
+      box(g, 26, 2.4, 26, 0, 0, 0, 0x1b1d20);
+      box(g, 25, 4, 25, 0, 2.4, 0, 0xd9cbb0, { rough: 0.8 });
+      box(g, 16, 0.3, 16, 0, 6.4, 0, 0xcfd3d6, { metal: 0.9, rough: 0.25 });
+      anchor('GPS', g, -13.4, 1.2, -6, [-1, 0, 0], 'GPS-Antenne');
+    })();
+    [[45, 'L', 'links'], [-45, 'R', 'rechts']].forEach(([z, k, nm]) => {
+      const g = part(L3, `LTE-Flachantenne ${nm}`, 'Klebeantenne für den Mobilfunk. Flach, damit sie den LiDAR nicht verdeckt.', -45, TOP[3], z);
+      box(g, 42, 0.8, 10, 0, 0, 0, 0x111214, { rough: 0.5 });
+      box(g, 30, 0.2, 2, 2, 0.8, 0, 0x6d6f72, { metal: 0.7 });
+      anchor(`ANT_${k}`, g, -21.4, 0.5, 0, [-1, 0, 0], `LTE-Antenne ${nm}`);
+    });
+    (function leds() {
+      const g = part(L3, 'Status-LEDs (WS2812, 4 Stück)', 'Zeigen an, ob das Auto bereit ist, fährt, lädt oder ein Problem hat. 5 V, GND und Daten vom Pico (GP28).', 82, TOP[3], 0);
+      box(g, 6, 1, 34, 0, 0, 0, 0x111214);
+      [-12, -4, 4, 12].forEach((z, k) => box(g, 5, 1.6, 5, 0, 1, z, 0xf4f4f4, { emissive: [0x2fe070, 0x2fe070, 0x2a9cff, 0x2fe070][k], ei: 0.9 }));
+      [['5V', -16.2], ['DIN', -14.2], ['GND', -12.2]].forEach(([n, z]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${n}`); });
+    })();
+
+    // =====================================================================
+    // VERDRAHTUNG – jede Leitung von Anschluss zu Anschluss
+    // =====================================================================
+    const COL = {
+      rot: [0xc8231d, 'rot'], schwarz: [0x1a1a1a, 'schwarz'], gelb: [0xe6c229, 'gelb'], weiss: [0xeeeeee, 'weiß'],
+      blau: [0x2a62c4, 'blau'], gruen: [0x2fa84f, 'grün'], orange: [0xe07b28, 'orange'], violett: [0x8a5ad6, 'violett'],
+      grau: [0x6b7178, 'grau'], braun: [0x7a4b2a, 'braun'], qt: [0x26282b, 'schwarz (STEMMA-QT)']
+    };
+    const WIRES = [];
+    const W = (grp, from, to, col, r, via, purpose) => WIRES.push({ grp, from, to, col: COL[col], r, via, purpose });
+
+    // Akku & Schutz
+    W('Akku & Schutz', 'G1-', 'BMS_B-', 'schwarz', 1.0, 'H', 'Minus des Akkus');
+    W('Akku & Schutz', 'G1+', 'G2-', 'rot', 1.0, null, 'Reihenverbindung der beiden Zellengruppen');
+    W('Akku & Schutz', 'G2-', 'BMS_BM', 'gelb', 0.6, 'H', 'Mittelabgriff, damit das BMS jede Gruppe einzeln überwacht');
+    W('Akku & Schutz', 'G2+', 'BMS_B+', 'rot', 1.0, 'H', 'Plus des Akkus');
+    W('Akku & Schutz', 'BMS_P-', 'CH_GND', 'schwarz', 0.8, null, 'Ladestrom Minus');
+    W('Akku & Schutz', 'BMS_P+', 'CH_BAT', 'rot', 0.8, null, 'Ladestrom Plus');
+    W('Akku & Schutz', 'BMS_P+', 'FUSE_IN', 'rot', 1.0, null, 'Plus zur Sicherung');
+    W('Akku & Schutz', 'FUSE_OUT', 'SW_1', 'rot', 1.0, null, 'Plus zum Hauptschalter');
+    W('Akku & Schutz', 'SW_2', 'INA_VIN+', 'rot', 1.0, null, 'Geschaltetes Plus durch den Strommesser');
+    W('Akku & Schutz', 'INA_VIN-', 'WP1', 'rot', 1.0, null, 'Plus in den Verteiler');
+    W('Akku & Schutz', 'BMS_P-', 'WM1', 'schwarz', 1.0, null, 'Masse in den Verteiler');
+    W('Akku & Schutz', 'INA_VBS', 'INA_VIN-', 'rot', 0.4, null, 'Spannungsmessung des INA226');
+
+    // Stromversorgung der Ebenen
+    W('Stromverteilung', 'WP2', 'DL_VM', 'rot', 0.8, 'B', 'Motorstrom Treiber links');
+    W('Stromverteilung', 'WM2', 'DL_GND', 'schwarz', 0.8, 'B', 'Masse Treiber links');
+    W('Stromverteilung', 'WP3', 'DR_VM', 'rot', 0.8, 'A', 'Motorstrom Treiber rechts');
+    W('Stromverteilung', 'WM3', 'DR_GND', 'schwarz', 0.8, 'A', 'Masse Treiber rechts');
+    W('Stromverteilung', 'WP4', 'MP_IN+', 'rot', 0.7, 'A', 'Eingang 5-V-Wandler für den Pico');
+    W('Stromverteilung', 'WM4', 'MP_IN-', 'schwarz', 0.7, 'A', 'Masse 5-V-Wandler');
+    W('Stromverteilung', 'MP_OUT+', 'P39', 'rot', 0.6, null, '5 V an VSYS – mit Schottky-Diode 1N5819 in der Leitung (Ring zur Pico-Seite)');
+    W('Stromverteilung', 'MP_OUT-', 'P38', 'schwarz', 0.6, null, 'Masse Pico');
+    W('Stromverteilung', 'WP5', 'PO_VIN', 'rot', 1.2, 'B', 'Eingang 5-V-Wandler für den Pi');
+    W('Stromverteilung', 'WM5', 'PO_GNDA', 'schwarz', 1.2, 'B', 'Masse Pololu');
+    W('Stromverteilung', 'PO_VOUT', 'PI_USBC', 'rot', 1.1, null, '5 V in den Pi (USB-C-Stecker zum Anlöten)');
+    W('Stromverteilung', 'PO_GNDB', 'PI_USBC', 'schwarz', 1.1, null, 'Masse in den Pi');
+
+    // Motoren
+    const MW = { VL: ['L', 'OUT1', 'OUT2', 9, 10, 8, 'W3A2', 'B'], HL: ['L', 'OUT3', 'OUT4', 11, 12, 3, 'W3A3', 'B'], VR: ['R', 'OUT1', 'OUT2', 26, 27, 28, 'W3B2', 'A'], HR: ['R', 'OUT3', 'OUT4', 31, 32, 33, 'W3B3', 'A'] };
+    Object.entries(MW).forEach(([k, [d, o1, o2, pa, pb, pg, w3, via]]) => {
+      const nm = MOTORS[k][2];
+      const grp = `Motor ${nm}`;
+      W(grp, `M${k}_M1`, `D${d}_${o1}`, 'rot', 0.6, via, 'Motorstrom');
+      W(grp, `M${k}_M2`, `D${d}_${o2}`, 'weiss', 0.6, via, 'Motorstrom');
+      W(grp, `M${k}_GND`, `P${pg}`, 'schwarz', 0.4, via, 'Encoder Masse');
+      W(grp, `M${k}_VCC`, w3, 'blau', 0.4, via, 'Encoder 3,3 V');
+      W(grp, `M${k}_A`, `P${pa}`, 'gelb', 0.4, via, 'Encoder Kanal A');
+      W(grp, `M${k}_B`, `P${pb}`, 'gruen', 0.4, via, 'Encoder Kanal B');
+    });
+
+    // Steuerleitungen
+    [['L', [4, 5, 6, 7]], ['R', [21, 22, 24, 25]]].forEach(([d, pins4]) => {
+      ['IN1', 'IN2', 'IN3', 'IN4'].forEach((n, i) => W('Steuerleitungen Motortreiber', `P${pins4[i]}`, `D${d}_${n}`, ['orange', 'gelb', 'gruen', 'blau'][i], 0.4, null, `PWM ${n} Treiber ${d === 'L' ? 'links' : 'rechts'}`));
+    });
+    W('Steuerleitungen Motortreiber', 'P29', 'DL_EEP', 'violett', 0.4, null, 'Treiber an/aus (Not-Stopp)');
+    W('Steuerleitungen Motortreiber', 'DL_EEP', 'DR_EEP', 'violett', 0.4, null, 'Treiber an/aus, weiter zum rechten Treiber');
+
+    // 3,3 V
+    W('3,3 V für Sensoren', 'P36', 'W3A1', 'orange', 0.5, null, '3,3 V vom Pico in Verteiler A');
+    W('3,3 V für Sensoren', 'W3A5', 'W3B1', 'orange', 0.5, null, 'Brücke zu Verteiler B');
+    W('3,3 V für Sensoren', 'W3B4', 'BNO_VIN', 'orange', 0.4, null, 'Versorgung BNO085 (und über STEMMA-QT die Nahsensoren)');
+    W('3,3 V für Sensoren', 'W3B5', 'INA_VCC', 'orange', 0.4, 'A', 'Versorgung INA226');
+
+    // I²C-Sensorbus
+    W('Sensorbus I²C', 'P14', 'BNO_SDA', 'blau', 0.4, null, 'I²C SDA (GP10)');
+    W('Sensorbus I²C', 'P15', 'BNO_SCL', 'gelb', 0.4, null, 'I²C SCL (GP11)');
+    W('Sensorbus I²C', 'P18', 'BNO_GND', 'schwarz', 0.4, null, 'Masse Sensoren');
+    W('Sensorbus I²C', 'BNO_SDA', 'INA_SDA', 'blau', 0.4, 'A', 'I²C SDA weiter zum INA226');
+    W('Sensorbus I²C', 'BNO_SCL', 'INA_SCL', 'gelb', 0.4, 'A', 'I²C SCL weiter zum INA226');
+    W('Sensorbus I²C', 'P23', 'INA_GND', 'schwarz', 0.4, 'A', 'Masse INA226');
+    W('Sensorbus I²C', 'BNO_QT', 'TVL_Q1', 'qt', 1.0, 'B', 'STEMMA-QT-Kabel: Bus zu den Nahsensoren');
+    W('Sensorbus I²C', 'TVL_Q2', 'TV_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel weiter');
+    W('Sensorbus I²C', 'TV_Q2', 'TVR_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel weiter');
+    W('Sensorbus I²C', 'TVR_Q2', 'TH_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel zum hinteren Sensor');
+    [['VL', 16], ['V', 17], ['VR', 19], ['H', 20]].forEach(([k, p]) => W('Sensorbus I²C', `P${p}`, `T${k}_X`, 'violett', 0.4, k === 'H' ? 'C' : 'B', 'XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt'));
+
+    // LEDs
+    W('Status-LEDs', 'P34', 'LED_DIN', 'gruen', 0.4, 'A', 'Daten (GP28)');
+    W('Status-LEDs', 'MP_OUT+', 'LED_5V', 'rot', 0.5, 'A', '5 V für die LEDs');
+    W('Status-LEDs', 'P13', 'LED_GND', 'schwarz', 0.5, 'A', 'Masse LEDs');
+
+    // USB & Antennen
+    W('USB & Antennen', 'PICO_USB', 'PI_U2L', 'grau', 1.6, 'C', 'Pico ↔ Pi: Befehle und Messwerte');
+    W('USB & Antennen', 'LID_CON', 'LAD_IN', 'qt', 0.8, null, 'LiDAR-Daten (4-polig)');
+    W('USB & Antennen', 'LAD_USB', 'PI_U2H', 'grau', 1.4, 'C', 'LiDAR-Daten zum Pi');
+    W('USB & Antennen', 'LTE_USB', 'PI_U3L', 'grau', 1.6, null, 'Mobilfunk und GPS zum Pi');
+    W('USB & Antennen', 'GPS', 'LTE_GNSS', 'qt', 0.6, 'C', 'Antennenkabel GPS');
+    W('USB & Antennen', 'ANT_L', 'LTE_MAIN', 'qt', 0.6, 'C', 'Antennenkabel LTE Haupt');
+    W('USB & Antennen', 'ANT_R', 'LTE_AUX', 'qt', 0.6, 'C', 'Antennenkabel LTE Neben');
+
+    // Anschlusspunkte auflösen (Ebenen stehen noch auf 0)
+    scene.updateMatrixWorld(true);
+    Object.values(ANCH).forEach((a) => {
+      let o = a.g; while (o && o.userData.layerIndex === undefined) o = o.parent;
+      a.L = o ? o.userData.layerIndex : 0;
+      a.w = a.g.localToWorld(a.p.clone());
+      const q = new THREE.Quaternion(); a.g.getWorldQuaternion(q);
+      a.dw = a.d.clone().applyQuaternion(q).normalize();
+      a.under = a.w.y < LEVEL[a.L];
+    });
+    const HOLE0 = { x: -30, z: 10, w: 16, d: 7 };
+
+    let explode = 0.35;
+    const off = (i) => explode * i * 58;
+    const dynGroup = new THREE.Group(); scene.add(dynGroup);
+    const viaCount = {};
+    WIRES.forEach((wd, i) => { const k = wd.via || 'none'; wd.lane = viaCount[k] = (viaCount[k] ?? -1) + 1; wd.idx = i; });
+    function clean(pts) { const out = [pts[0]]; for (let i = 1; i < pts.length; i++) if (pts[i].distanceTo(out[out.length - 1]) > 0.4) out.push(pts[i]); return out; }
+    function routePts(wd) {
+      const A = ANCH[wd.from], B = ANCH[wd.to];
+      const a = A.w.clone(); a.y += off(A.L);
+      const b = B.w.clone(); b.y += off(B.L);
+      const a1 = a.clone().addScaledVector(A.dw, 4), b1 = b.clone().addScaledVector(B.dw, 4);
+      const lane = (wd.lane % 7) * 0.8;
+      if (!wd.via) {
+        const H = (A.under && B.under) ? Math.min(a1.y, b1.y) - 1.5 - lane : Math.max(a1.y, b1.y) + 2.5 + lane;
+        return clean([a, a1, V(a1.x, H, a1.z), V(b1.x, H, b1.z), b1, b]);
+      }
+      const S = wd.via === 'H' ? HOLE0 : SLOTS[wd.via];
+      const t = (wd.lane % 7) - 3, u = (Math.floor(wd.lane / 7) % 3) - 1;
+      const sx = S.x + (S.w > S.d ? t * (S.w / 8) : u * 2.2), sz = S.z + (S.w > S.d ? u * 2.2 : t * (S.d / 8));
+      let lo = { p: a, p1: a1, A }, hi = { p: b, p1: b1, A: B }, swapped = false;
+      if (a.y > b.y) { [lo, hi] = [hi, lo]; swapped = true; }
+      const Hlo = lo.A.under ? Math.min(lo.p1.y, LEVEL[lo.A.L] + off(lo.A.L) - 2.5) - lane * 0.6 : lo.p1.y + 2.5 + lane;
+      const Hhi = hi.p1.y + 2.5 + lane;
+      const pts = [lo.p, lo.p1, V(lo.p1.x, Hlo, lo.p1.z), V(sx, Hlo, sz), V(sx, Hhi, sz), V(hi.p1.x, Hhi, hi.p1.z), hi.p1, hi.p];
+      return clean(swapped ? pts.reverse() : pts);
+    }
+    function rebuildLinks() {
+      dynGroup.children.slice().forEach((c) => { dynGroup.remove(c); c.geometry.dispose(); });
+      WIRES.forEach((wd) => {
+        const A = ANCH[wd.from], B = ANCH[wd.to];
+        if (!A || !B) { console.warn('Anschluss fehlt', wd.from, wd.to); return; }
+        const w = wire(dynGroup, routePts(wd), wd.col[0], wd.r);
+        w.castShadow = false;
+        w.userData.part = { name: `${A.label} → ${B.label}`, desc: `${wd.purpose}. Farbe: ${wd.col[1]}.` };
+        w.userData.layers = [A.L, B.L];
+        w.material.userData.base = 1;
+      });
+      applyHighlight();
+    }
+
+    // Verdrahtungstabelle auf der Seite
+    (function buildTable() {
+      const host = document.getElementById('wiring');
+      if (!host) return;
+      const groups = {};
+      WIRES.forEach((wd) => (groups[wd.grp] = groups[wd.grp] || []).push(wd));
+      const ribbonRows = [['Camera Module 3', 'Pi 5 CAM/DISP 0', 'Flachband 22→15 Pin', 0xc58a3a, 'Kamerabild'], ['AI HAT+ PCIe', 'Pi 5 PCIe', 'Flachband (liegt bei)', 0xb8752b, 'KI-Beschleuniger']];
+      const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+      const frag = document.createDocumentFragment();
+      Object.entries(groups).forEach(([g, rows]) => {
+        const h = document.createElement('h3'); h.textContent = g; frag.appendChild(h);
+        const wrap = document.createElement('div'); wrap.className = 'tbl';
+        const t = document.createElement('table');
+        t.innerHTML = '<thead><tr><th>Farbe</th><th>Von</th><th>Nach</th><th>Zweck</th></tr></thead>';
+        const tb = document.createElement('tbody');
+        rows.forEach((wd) => {
+          const tr = document.createElement('tr');
+          const c0 = document.createElement('td'); c0.innerHTML = `<span class="sw" style="background:${hex(wd.col[0])}"></span>`; c0.append(wd.col[1]);
+          const c1 = document.createElement('td'); c1.textContent = ANCH[wd.from].label;
+          const c2 = document.createElement('td'); c2.textContent = ANCH[wd.to].label;
+          const c3 = document.createElement('td'); c3.textContent = wd.purpose;
+          tr.append(c0, c1, c2, c3); tb.appendChild(tr);
+        });
+        t.appendChild(tb); wrap.appendChild(t); frag.appendChild(wrap);
+      });
+      const h = document.createElement('h3'); h.textContent = 'Flachbandkabel'; frag.appendChild(h);
+      const wrap = document.createElement('div'); wrap.className = 'tbl';
+      const t = document.createElement('table');
+      t.innerHTML = '<thead><tr><th>Art</th><th>Von</th><th>Nach</th><th>Zweck</th></tr></thead>';
+      const tb = document.createElement('tbody');
+      ribbonRows.forEach(([a, b, art, col, z]) => { const tr = document.createElement('tr'); tr.innerHTML = `<td><span class="sw" style="background:${hex(col)}"></span></td><td></td><td></td><td></td>`; tr.children[0].append(art); tr.children[1].textContent = a; tr.children[2].textContent = b; tr.children[3].textContent = z; tb.appendChild(tr); });
+      t.appendChild(tb); wrap.appendChild(t); frag.appendChild(wrap);
+      host.appendChild(frag);
+
+      // Pico-Belegung
+      const ph = document.getElementById('picomap');
+      if (!ph) return;
+      const used = {};
+      WIRES.forEach((wd) => { [[wd.from, wd.to], [wd.to, wd.from]].forEach(([p, o]) => { if (/^P\d+$/.test(p)) (used[p] = used[p] || []).push(ANCH[o].label); }); });
+      const t2 = document.createElement('table');
+      t2.innerHTML = '<thead><tr><th>Pin</th><th>Name</th><th>Angeschlossen an</th></tr></thead>';
+      const tb2 = document.createElement('tbody');
+      Object.keys(used).map((k) => +k.slice(1)).sort((x, y) => x - y).forEach((n) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td></td><td></td><td></td>';
+        tr.children[0].textContent = n; tr.children[1].textContent = PIN[n]; tr.children[2].textContent = used['P' + n].join(', ');
+        tb2.appendChild(tr);
+      });
+      t2.appendChild(tb2); ph.appendChild(t2);
+    })();
+
+    // ---------- Interaktion ----------
+    let selected = null;
+    let platesClear = false;
+    function eachMat(o, fn) { if (!o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); }
+    function setOpacity(o, f) {
+      eachMat(o, (m) => {
+        if (m.userData.base === undefined) return;
+        let base = m.userData.base;
+        if (m.userData.isPlate && platesClear) base = 0.28;
+        const op = base * f, tr = op < 0.999;
+        if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
+        m.opacity = op; m.depthWrite = !tr;
+      });
+    }
+    function applyHighlight() {
+      layers.forEach(({ g, i }) => {
+        const f = selected === null || selected === i ? 1 : 0.1;
+        g.traverse((o) => { if (o.userData.label) o.material.opacity = f < 1 ? 0.25 : 1; else setOpacity(o, f); });
+      });
+      dynGroup.children.forEach((w) => setOpacity(w, selected === null || w.userData.layers.includes(selected) ? 1 : 0.1));
+      document.querySelectorAll('.layer').forEach((el) => el.setAttribute('aria-pressed', String(Number(el.dataset.layer) === selected)));
+    }
+    function applyLayout() {
+      layers.forEach(({ g, i }) => { g.position.y = off(i); });
+      rebuildLinks();
+    }
+    function applyTheme() {
+      renderer.setClearColor(new THREE.Color(tok('--scene') || '#dfe6ea'));
+      groundMat.color.set(tok('--ground') || '#c9d3d9');
+    }
+
+    const info = document.getElementById('info');
+    const ray = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    let sel = null;
+    const selBox = new THREE.BoxHelper(undefined, 0x1f6feb);
+    selBox.visible = false; selBox.material.depthTest = false; selBox.renderOrder = 20; scene.add(selBox);
+    let down = null;
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      down = { x: e.clientX, y: e.clientY };
+      if (controls.autoRotate) { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); }
+    });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+      const r = renderer.domElement.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const hits = ray.intersectObjects([...layers.map((l) => l.g), dynGroup], true);
+      let found = null;
+      for (const h of hits) {
+        let o = h.object, skip = false;
+        if (o.userData.noPick || o.userData.fx) continue;
+        eachMat(o, (m) => { if (m.opacity < 0.2) skip = true; });
+        if (skip) continue;
+        while (o && !o.userData.part) o = o.parent;
+        if (o) { found = o; break; }
+      }
+      sel = found;
+      if (found) {
+        info.innerHTML = '';
+        const b = document.createElement('b'); b.textContent = found.userData.part.name;
+        const s = document.createElement('span'); s.textContent = found.userData.part.desc;
+        info.append(b, s);
+        selBox.setFromObject(found); selBox.visible = true;
+      } else {
+        info.innerHTML = '<b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Akku, den Pico oder den LiDAR.</span>';
+        selBox.visible = false;
+      }
+    });
+
+    const slider = document.getElementById('explode');
+    slider.addEventListener('input', () => { explode = slider.value / 100; applyLayout(); });
+    const rot = document.getElementById('rotate');
+    rot.setAttribute('aria-pressed', String(controls.autoRotate));
+    rot.addEventListener('click', () => { controls.autoRotate = !controls.autoRotate; rot.setAttribute('aria-pressed', String(controls.autoRotate)); });
+    const clearBtn = document.getElementById('clear');
+    clearBtn.addEventListener('click', () => { platesClear = !platesClear; clearBtn.setAttribute('aria-pressed', String(platesClear)); applyHighlight(); });
+    const laserBtn = document.getElementById('laser');
+    laserBtn.addEventListener('click', () => { sweep.visible = !sweep.visible; laserBtn.setAttribute('aria-pressed', String(sweep.visible)); });
+    document.getElementById('reset').addEventListener('click', () => { camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); });
+    document.querySelectorAll('.layer').forEach((el) => {
+      const act = () => { const n = Number(el.dataset.layer); selected = selected === n ? null : n; applyHighlight(); };
+      el.addEventListener('click', act);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } });
+    });
+
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+    new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    applyLayout(); applyTheme(); resize();
+    let last = performance.now();
+    (function loop(now) {
+      const dt = Math.min(0.05, ((now || last) - last) / 1000); last = now || last;
+      if (lidarHead && !reduceMotion) lidarHead.rotation.y += dt * 2.4;
+      if (piFan && !reduceMotion) piFan.rotation.y += dt * 9;
+      controls.update();
+      if (sel && selBox.visible) selBox.setFromObject(sel);
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+    try { start(); } catch (err) { loading.hidden = false; loading.textContent = 'Fehler beim Aufbau der 3D-Ansicht: ' + err.message; console.error(err); }
+  });
+})();
+</script>
+
+</body>
+</html>
