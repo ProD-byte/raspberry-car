@@ -9,6 +9,7 @@ Hinweise:
 - Encoder-Kabelfarben unterscheiden sich je nach Händler – vor dem Anschließen mit dem Datenblatt des Motors vergleichen.
 - Kabel zwischen den Ebenen laufen durch die Durchbrüche A (rechts), B (links), C (hinten) in den Platten.
 - Pi 5: `usb_max_current_enable=1` in `config.txt`.
+- **DRV8833-Modul** (MakerMind, roboter-bausatz.de RBS12954, schwarz, 16 × 18,5 mm): Die Beschriftung steht auf der **Unterseite**. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – gegenüber Reihe zu den Motoren: EEP, OUT1, OUT2, OUT3, OUT4, ULT. **ULT** ist der Schlaf-Eingang (LOW = Motoren aus) → daran hängt der Not-Stopp. **EEP** ist nur ein Fehler-Ausgang und bleibt frei. Die Lötbrücke **J1 („en/sleep“) offen lassen**, sonst ist ULT fest auf VCC und der Not-Stopp wirkt nicht. Das Modul hat keine Befestigungslöcher: mit doppelseitigem Schaumklebeband auf die Platte, Kabel direkt in die Lötaugen löten (keine Stiftleiste).
 
 ### Akku & Schutz
 
@@ -31,9 +32,9 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Verteiler Plus Platz 2 | DRV8833 links VM | Motorstrom Treiber links |
+| rot | Verteiler Plus Platz 2 | DRV8833 links VCC | Motorstrom Treiber links |
 | schwarz | Verteiler Minus Platz 2 | DRV8833 links GND | Masse Treiber links |
-| rot | Verteiler Plus Platz 3 | DRV8833 rechts VM | Motorstrom Treiber rechts |
+| rot | Verteiler Plus Platz 3 | DRV8833 rechts VCC | Motorstrom Treiber rechts |
 | schwarz | Verteiler Minus Platz 3 | DRV8833 rechts GND | Masse Treiber rechts |
 | rot | Verteiler Plus Platz 4 | MP1584 IN+ | Eingang 5-V-Wandler für den Pico |
 | schwarz | Verteiler Minus Platz 4 | MP1584 IN− | Masse 5-V-Wandler |
@@ -100,8 +101,8 @@ Hinweise:
 | gelb | Pico GP17 (Pin 22) | DRV8833 rechts IN2 | PWM IN2 Treiber rechts |
 | grün | Pico GP18 (Pin 24) | DRV8833 rechts IN3 | PWM IN3 Treiber rechts |
 | blau | Pico GP19 (Pin 25) | DRV8833 rechts IN4 | PWM IN4 Treiber rechts |
-| violett | Pico GP22 (Pin 29) | DRV8833 links EEP | Treiber an/aus (Not-Stopp) |
-| violett | DRV8833 links EEP | DRV8833 rechts EEP | Treiber an/aus, weiter zum rechten Treiber |
+| violett | Pico GP22 (Pin 29) | DRV8833 links ULT | Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang |
+| violett | DRV8833 links ULT | DRV8833 rechts ULT | Treiber an/aus, weiter zum rechten Treiber |
 
 ### 3,3 V für Sensoren
 
@@ -188,7 +189,7 @@ Hinweise:
 | 26 | GP20 | Motor vorne rechts A |
 | 27 | GP21 | Motor vorne rechts B |
 | 28 | GND | Motor vorne rechts GND |
-| 29 | GP22 | DRV8833 links EEP |
+| 29 | GP22 | DRV8833 links ULT |
 | 31 | GP26 | Motor hinten rechts A |
 | 32 | GP27 | Motor hinten rechts B |
 | 33 | GND | Motor hinten rechts GND |

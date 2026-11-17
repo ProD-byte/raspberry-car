@@ -15,7 +15,7 @@ Gebaut wird nur aus Standardmodulen, verbunden mit Schraubklemmen, Lötstellen u
 | 2 · Antrieb | Pico 2 W auf Freenove-Board, 2× DRV8833, MP1584, BNO085, 3,3-V-Verteiler | Echtzeit-Steuerung, kurze Wege |
 | 1 · Fahrwerk & Energie | 4× JGA25-370 mit Encoder + Räder, Akku 2S2P unter der Platte, BMS, Ladeboard (USB-C hinten), Sicherung, Schalter, INA226, Verteiler, 4× VL53L1X | Schwerpunkt ganz unten |
 
-Maße ca. 18 × 19 × 19 cm (mit Rädern und LiDAR). 3D-Modell: [`modell/raspberry-car-3d.html`](modell/raspberry-car-3d.html) im Browser öffnen.
+Maße ca. 18 × 19 × 19 cm (mit Rädern und LiDAR). 3D-Modell: [`modell/raspberry-car-3d.html`](modell/raspberry-car-3d.html) im Browser öffnen. Es startet mit der Ansicht **„Vorhandene Teile“** (nur was schon da ist, auf einer Matte mit 1-cm-Raster); „Ganzes Auto“ zeigt den kompletten Plan.
 
 ## Stufenplan
 
@@ -23,8 +23,8 @@ Jede Stufe funktioniert für sich. Wer nur Stufe 1 baut, hat schon ein fahrendes
 
 | Stufe | Teile | Ergebnis | Stand |
 |---|---|---|---|
-| 1 | Pico 2 W, Freenove-Board, 4 Motoren mit Rädern, 2× DRV8833 | fährt per Handy-Joystick (WLAN vom Pico) | Pico + Board bestellt |
-| 2 | 4× 18650, BMS, Ladeboard, INA226, Sicherung, Schalter, WAGO-Verteiler, MP1584 | Akku mit USB-C-Ladung, Akkuanzeige | Ladeboard ausgesucht |
+| 1 | Pico 2 W, Freenove-Board, 4 Motoren mit Rädern, 2× DRV8833 | fährt per Handy-Joystick (WLAN vom Pico) | Pico und 2× DRV8833 da, Board bestellt |
+| 2 | 4× 18650, BMS, Ladeboard, INA226, Sicherung, Schalter, WAGO-Verteiler, MP1584 | Akku mit USB-C-Ladung, Akkuanzeige | Ladeboard da |
 | 3 | Pi 5, Pololu 5 V, Kamera Modul 3 Wide | Live-Video | offen |
 | 4 | LiDAR LD19, BNO085, 4× VL53L1X | Karte, Grundriss, Hindernisse, selbst navigieren | offen |
 | 5 | AI HAT+ 13 TOPS | Personen erkennen, Folge mir | offen |

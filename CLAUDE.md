@@ -27,6 +27,8 @@ Siehe `docs/entscheidungen.md`. Kurz:
 | `docs/stromversorgung.md` | Akku, BMS, Laden, Sicherung, Verteilung, Tests vor dem ersten Anschließen |
 | `docs/entscheidungen.md` | Warum etwas so gewählt wurde |
 | `modell/raspberry-car-3d.html` | 3D-Modell (im Browser öffnen). Die Kabel im Modell sind aus derselben Tabelle wie `docs/verdrahtung.md` erzeugt (`WIRES` im Skript). |
+| (Ansicht) | Das 3D-Modell startet mit „Vorhandene Teile“. Kommt ein Teil an: in der Liste `VORHANDEN` im Skript eine Zeile ergänzen und in der Stückliste auf 📦 setzen. |
+| `modell/teile/` | Echte CAD-Modelle (.glb, aus STEP umgewandelt) + `teile.js` (eingebettet, damit es per Doppelklick läuft). GrabCAD-Modelle liegen in `modell/teile/lokal/` und sind **nicht im Git** (Lizenz). Quellen und Werkzeuge: `modell/teile/QUELLEN.md` |
 | `pico/` | MicroPython für den Pico 2 W. `pins.py` ist die Pinbelegung als Code. |
 | `pi/` | Software für den Pi 5 (kommt in Stufe 3) |
 | `gehaeuse/` | 3D-Druckdateien (kommen, wenn die Teile vermessen sind) |

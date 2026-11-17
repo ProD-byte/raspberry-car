@@ -9,7 +9,8 @@
 | Motorspannung | 6 V statt 12 V | Auto soll klein bleiben |
 | Motoren | JGA25-370, 6 V, Encoder, Räder 65 mm (im Set) | Kompakt, kräftig genug, Encoder für Geschwindigkeit/Strecke |
 | Räder | Normale Gummiräder (Panzerlenkung) | Im Motor-Set dabei; Mecanum später nachrüstbar |
-| Motortreiber | DRV8833 | Günstig, reicht bei 6 V; bis 10,8 V |
+| Motortreiber | DRV8833 (schwarzes 2-Kanal-Modul, MakerMind) | Günstig, reicht bei 6 V; bis 10,8 V. Not-Stopp über ULT (= nSLEEP) |
+| 3D-Modell | Echte Hersteller-CAD-Daten, wo es sie gibt; sonst nach Datenblatt/Fotos nachgebaut | Maße und Aussehen sollen stimmen, damit die Druckplatten passen |
 | Akku | 2S2P 18650 (Samsung 35E), kein LiPo | Li-Ion im Metallgehäuse ist robuster, darf im Auto geladen werden |
 | Akkuschutz | BMS 2S 20 A mit Balance | Pflicht: Überladen, Tiefentladen, Kurzschluss, Ausgleich |
 | Laden | DDTCCRUB 2S, Brücken 2S + 1A | Lieferbar, sicher an jedem USB-Ladegerät; über Nacht voll |

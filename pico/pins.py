@@ -14,7 +14,8 @@ DRV_R_IN2 = 17  # GP17 (Pin 22) -> Motor vorne rechts
 DRV_R_IN3 = 18  # GP18 (Pin 24) -> Motor hinten rechts
 DRV_R_IN4 = 19  # GP19 (Pin 25) -> Motor hinten rechts
 
-# Beide Treiber an/aus (EEP / nSLEEP). LOW = Motoren aus = Not-Stopp.
+# Beide Treiber an/aus: Anschluss ULT am Modul (= nSLEEP des DRV8833). LOW = Motoren aus = Not-Stopp.
+# Nicht EEP – das ist auf diesem Modul nur der Fehler-Ausgang. Lötbrücke J1 offen lassen.
 DRV_ENABLE = 22  # GP22 (Pin 29)
 
 # --- Encoder (Kanal A, Kanal B) – A und B liegen immer direkt nebeneinander (für PIO) ---

@@ -78,6 +78,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 
 .controls label.range { display: flex; align-items: center; gap: 10px; font-size: 14px; min-width: 0; flex: 1 1 240px; }
 .controls input[type=range] { flex: 1; accent-color: var(--l2); min-width: 0; }
 .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; background: var(--surface); }
+.modes button { border: 0; padding: 7px 12px; }
 button {
   font: 500 14px var(--font-body); color: var(--fg); background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
@@ -113,7 +115,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Raspberry Car · 3D-Skizze mit echten Bauteilen</div>
+    <div class="eyebrow">Raspberry Car · 3D-Modell mit echten Bauteilen</div>
     <h1>Das Auto als Sandwich in vier Ebenen</h1>
     <p class="lead">Alle Bauteile in echter Größe nachgebaut. Ziehen zum Drehen, zwei Finger oder Mausrad zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
   </header>
@@ -125,16 +127,20 @@ code { font-family: var(--font-mono); font-size: 13px; }
   </div>
 
   <div class="controls">
-    <label class="range" for="explode">Ebenen auseinanderziehen <input id="explode" type="range" min="0" max="100" value="35"></label>
+    <div class="modes" role="group" aria-label="Ansicht">
+      <button id="m-teile" type="button" aria-pressed="true">Vorhandene Teile</button>
+      <button id="m-auto" type="button" aria-pressed="false">Ganzes Auto</button>
+    </div>
+    <label class="range nur-auto" for="explode">Ebenen auseinanderziehen <input id="explode" type="range" min="0" max="100" value="35"></label>
     <div class="toggles">
       <button id="rotate" type="button" aria-pressed="true">Drehen</button>
-      <button id="clear" type="button" aria-pressed="false">Platten durchsichtig</button>
-      <button id="laser" type="button" aria-pressed="true">LiDAR-Strahl</button>
+      <button id="clear" class="nur-auto" type="button" aria-pressed="false">Platten durchsichtig</button>
+      <button id="laser" class="nur-auto" type="button" aria-pressed="true">LiDAR-Strahl</button>
       <button id="reset" type="button">Ansicht zurücksetzen</button>
     </div>
   </div>
 
-  <div class="layers" id="layers">
+  <div class="layers nur-auto" id="layers">
     <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="3" style="--c: var(--l3)">
       <h2>Ebene 4 · Dach <small>45 mm Abstand</small></h2>
       <p class="why">Freie Sicht rundum und zum Himmel.</p>
@@ -186,6 +192,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
+<script src="teile/teile.js"></script>
+<!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
+<script src="teile/lokal/teile-lokal.js"></script>
 <script>
 (function () {
   const stage = document.getElementById('stage');
@@ -372,11 +383,36 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const geo = new THREE.ExtrudeGeometry(sh, { steps: 60, bevelEnabled: false, extrudePath: curve });
       return add(p, geo, std(color, { rough: 0.5 }));
     }
+    const PARTS = {};   // alle Bauteile nach Namen (für die Ansicht „Vorhandene Teile“)
     function part(parent, name, desc, x, y, z, ry = 0) {
       const g = new THREE.Group();
       g.position.set(x, y, z); g.rotation.y = ry;
       g.userData.part = { name, desc };
+      PARTS[name] = g;
       parent.add(g); return g;
+    }
+    // Echtes CAD-Modell (aus teile/teile.js) laden. Klappt das nicht (offline, Datei fehlt),
+    // bleibt das einfache Ersatzmodell sichtbar. place(mesh) richtet das Modell aus.
+    function cadTeil(name, parent, ersatz, place, umfaerben) {
+      const b64 = window.RC_TEILE && window.RC_TEILE[name];
+      if (!b64 || !THREE.GLTFLoader) return;
+      const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)).buffer;
+      new THREE.GLTFLoader().parse(bin, '', (gltf) => {
+        gltf.scene.traverse((o) => {
+          if (!o.isMesh) return;
+          o.castShadow = true; o.receiveShadow = true;
+          eachMat(o, (m) => {
+            m.userData.base = 1; m.envMapIntensity = 0.55;
+            m.side = THREE.DoubleSide;   // manche STEP-Flächen zeigen nach innen
+            const c = m.color, grau = Math.abs(c.r - c.g) < 0.03 && Math.abs(c.g - c.b) < 0.03;
+            if (grau && c.r > 0.1 && c.r < 0.8) { m.metalness = 0.85; m.roughness = 0.3; }  // Blech, Pins
+            if (umfaerben) umfaerben(m);
+          });
+        });
+        parent.add(place(gltf.scene));
+        parent.remove(ersatz);
+        try { applyHighlight(); if (benchMode) placeBench(); } catch (e) { /* Szene noch im Aufbau */ }
+      }, (err) => console.warn('CAD-Modell ' + name + ' nicht geladen:', err));
     }
 
     // ---------- Platten & Ebenen ----------
@@ -533,26 +569,61 @@ code { font-family: var(--font-mono); font-size: 13px; }
       smd(g, 45, 20, 10, 1.6, 0, 3);
       pads.forEach(([t, x]) => anchor(`BMS_${t}`, g, x - 22.5, 1.9, -7.4, [0, 1, 0], `BMS ${t.replace('-', '−')}`));
     })();
+    // Ladeboard DDTCCRUB 2S (Walfront, Amazon B08LVN7FLH): 39 × 18 mm, ca. 6,3 mm hoch, 4 Befestigungslöcher.
+    // Nachgebaut nach Händlerangaben und Produktfotos. Oben USB-C mit VIN/GND, unten Lötflächen BAT und GND.
     (function charger() {
-      const g = part(L0, 'Ladeboard DDTCCRUB 2S, Lötbrücken auf 2S und 1A', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku. Die USB-C-Buchse schaut hinten aus dem Auto.', -64, TOP[0], -32);
-      pcb(g, 40, 20, '#2c7a3c', 0, 0, 0, (c, w, h) => {
-        silk(c, 'DDTCCRUB', w * 0.62, h - 2.6, 2.2, { align: 'center' });
-        pad(c, w - 3, 5, 4, 5); pad(c, w - 3, 15, 4, 5);
-        silk(c, 'BAT', w - 7.4, 5, 1.8, { align: 'center' }); silk(c, 'GND', w - 7.4, 15, 1.8, { align: 'center' });
-        silk(c, 'CR', 23, 3, 1.6); silk(c, 'OK', 27, 3, 1.6);
+      const g = part(L0, 'Ladeboard DDTCCRUB 2S', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku (Ladestrom ca. 0,55 A). Auf der Unterseite die Lötbrücken 2S und 1A setzen, sonst nichts. 39 × 18 mm, 4 Löcher für M2-Schrauben. Die USB-C-Buchse schaut hinten aus dem Auto.', -64, TOP[0], -32);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Aleksey Zablotskiy) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Breite x 0…18, Länge y −38,4…0 (USB bei −y), Bauteile zeigen nach −z, Unterseite z = 0
+      cadTeil('ddtccrub', g, ersatz, (m) => {
+        m.applyMatrix4(new THREE.Matrix4().set(0, 1, 0, 18.5, 0, 0, -1, 0, -1, 0, 0, 9, 0, 0, 0, 1));
+        return m;
+      }, (mat) => {   // reines CAD-Grün → Platinengrün wie auf den Fotos
+        const c = mat.color;
+        if (c.g > 0.9 && c.r < 0.05 && c.b < 0.05) { c.set(0x2aa848).convertSRGBToLinear(); mat.roughness = 0.5; }     // Lötstopplack
+        if (c.r > 0.9 && c.g > 0.9 && c.b > 0.02 && c.b < 0.3) { c.set(0x1c8a38).convertSRGBToLinear(); mat.roughness = 0.6; }  // Platinenkern
       });
-      box(g, 9, 3.3, 7.6, -17.5, 1.6, 0, 0xc4c8cc, { metal: 0.9, rough: 0.25 });
-      box(g, 0.4, 1.6, 6, -22.05, 2.45, 0, 0x111111);
-      const ind = canvasTex(8, 8, 20, (c) => { c.fillStyle = '#7d8186'; c.fillRect(0, 0, 8, 8); silk(c, '100', 4, 4, 3, { align: 'center', color: '#1b1b1b', weight: 400 }); });
-      const ig = std(0x7d8186, { rough: 0.6 });
-      add(g, new THREE.BoxGeometry(8, 4.5, 8), [ig, ig, std(0xffffff, { map: ind }), ig, ig, ig], -6, 1.6 + 2.25, 2);
-      chip(g, 5, 4, 1.5, 4, 1.6, 3, 'CN3302', { legs: true });
-      chip(g, 5, 4, 1.5, 10, 1.6, 3, '4468', { legs: true });
-      box(g, 1.6, 0.8, 1, 3.5, 1.6, -7, 0xff4a3a, { emissive: 0xff2a1a, ei: 0.8 });
-      box(g, 1.6, 0.8, 1, 7.5, 1.6, -7, 0x3fe07a, { emissive: 0x20c060, ei: 0.4 });
-      smd(g, 30, 20, 9, 1.6, 2, 0);
-      anchor('CH_BAT', g, 17, 1.9, -5, [0, 1, 0], 'Ladeboard BAT');
-      anchor('CH_GND', g, 17, 1.9, 5, [0, 1, 0], 'Ladeboard GND');
+      const L = 39, B = 18, LOCH = [[-17.9, 7.8], [-17.9, -7.8], [17.9, 7.8], [17.9, -7.8]];
+      pcb(ersatz, L, B, '#1f9a3e', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;   // Bauteil-Koordinaten → Leiterplatte
+        LOCH.forEach(([x, z]) => hole(c, X(x), Y(z), 1.05));
+        c.fillStyle = '#e8e8e8';
+        [[-15.4, 7.6], [-15.4, -7.6]].forEach(([x, z]) => c.fillRect(X(x) - 0.9, Y(z) - 0.9, 1.8, 1.8));
+        [[17.4, 2.4], [17.4, -2.3]].forEach(([x, z]) => {        // Lötflächen BAT / GND
+          c.fillStyle = '#d9dcdf'; c.fillRect(X(x) - 1.9, Y(z) - 1.8, 3.8, 3.6);
+          c.fillStyle = '#b9bdc1'; c.beginPath(); c.arc(X(x), Y(z), 0.7, 0, Math.PI * 2); c.fill();
+        });
+        c.strokeStyle = '#f1f3f1'; c.lineWidth = 0.18;
+        c.strokeRect(X(-12.9), Y(2.0), 6.6, 5.8); c.strokeRect(X(-1.8), Y(2.2), 5.9, 5.0);
+        const r = -Math.PI / 2;
+        silk(c, 'GND', X(-14.6), Y(6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'VIN', X(-14.6), Y(-6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'RCS', X(-13.2), Y(-1.2), 1.2, { align: 'center' });
+        silk(c, 'BAT', X(14.6), Y(7.4), 1.3, { align: 'center' });
+        silk(c, 'GND', X(14.6), Y(-7.4), 1.3, { align: 'center' });
+        silk(c, 'DDTCCRUB', X(14.7), Y(0), 1.25, { align: 'center' });
+        silk(c, 'OK', X(7.9), Y(-8.0), 1.2, { align: 'center' });
+        silk(c, 'CR', X(10.4), Y(-8.0), 1.2, { align: 'center' });
+      });
+      // USB-C-Buchse (8,9 × 3,2 mm), steht ca. 1 mm über den Rand
+      rbox(ersatz, 7.4, 3.2, 8.9, -16.6, 1.6, 0, 0xc4c8cc, { metal: 0.9, rough: 0.25, r: 1.4 });
+      box(ersatz, 0.3, 2.2, 7.0, -20.35, 2.1, 0, 0x111111);
+      // Speicherdrossel „100“ (10 µH)
+      const ind = canvasTex(6, 6, 24, (c) => { c.fillStyle = '#6f7378'; c.fillRect(0, 0, 6, 6); silk(c, '100', 3, 3, 2.2, { align: 'center', color: '#1b1b1b', weight: 400 }); });
+      const ig = std(0x6f7378, { rough: 0.6 });
+      add(ersatz, new THREE.BoxGeometry(6, 3.2, 6), [ig, ig, std(0xffffff, { map: ind }), ig, ig, ig], -9.6, 1.6 + 1.6, 4.9);
+      chip(ersatz, 5.3, 3.6, 2.2, 1.1, 1.6, 4.8, 'SS34');                       // Schottky-Diode
+      chip(ersatz, 4.9, 3.9, 1.5, -2.0, 1.6, -5.2, '4468', { legs: true });      // MOSFET
+      chip(ersatz, 4.9, 3.9, 1.5, 4.3, 1.6, -5.2, 'CN3302', { legs: true });     // Lade-IC
+      box(ersatz, 2.0, 0.5, 1.25, -11.7, 1.6, -2.6, 0x1d1d1d);                  // R100 (Strommessung)
+      [-10.6, -9.0, -7.4].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, -7.3, 0x9a7650, { rough: 0.5 }));
+      [8.7, 10.5, 12.3].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, 5.0, 0x9a7650, { rough: 0.5 }));
+      box(ersatz, 1.6, 0.6, 0.8, 7.9, 1.6, -5.8, 0x3fe07a, { emissive: 0x20c060, ei: 0.35 });  // LED OK
+      box(ersatz, 1.6, 0.6, 0.8, 10.4, 1.6, -5.8, 0xff4a3a, { emissive: 0xff2a1a, ei: 0.35 }); // LED CR
+      [7.9, 10.4].forEach((x) => box(ersatz, 1.6, 0.45, 0.8, x, 1.6, -3.2, 0x1d1d1d));
+      anchor('CH_BAT', g, 17.4, 1.9, 2.4, [0, 1, 0], 'Ladeboard BAT');
+      anchor('CH_GND', g, 17.4, 1.9, -2.3, [0, 1, 0], 'Ladeboard GND');
     })();
     (function ina226() {
       const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Schraubklemme VIN+ (vom Schalter) und VIN− (zum Verteiler). Datenleitungen zum Pico über I²C.', 4, TOP[0], -12);
@@ -641,42 +712,67 @@ code { font-family: var(--font-mono); font-size: 13px; }
         anchor(`P${i + 1}`, g, x, 5.1, 27.0, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
         anchor(`P${40 - i}`, g, x, 5.1, -27.0, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
       }
-      // Pico 2 W
-      const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt.', 0, 1.6 + 8.5, 0);
-      pcb(p, 51, 21, '#2f7d3b', 0, 0, 0, (c, w, h) => {
+      // Pico 2 W – steckt mit seinen (bei Waveshare vorgelöteten) Stiftleisten in den Buchsen des Freenove-Boards.
+      const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi (51 × 21 × 1 mm).', 0, 1.6 + 8.5 + 2.5, 0);
+      // Einfaches Ersatzmodell – wird ausgeblendet, sobald das echte CAD-Modell geladen ist
+      const ersatz = new THREE.Group(); p.add(ersatz);
+      // Vorgelötete Stiftleisten: 2,5 mm Kunststoff unter der Platine, Stifte 6 mm nach unten
+      [-8.89, 8.89].forEach((z) => {
+        box(p, 50.8, 2.5, 2.5, 0, -2.5, z, 0x151617, { rough: 0.7 });
+        const im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.64, 10.3, 0.64), std(0xd8b04a, { metal: 0.85, rough: 0.3 }), 20);
+        const mm = new THREE.Matrix4();
+        for (let i = 0; i < 20; i++) { mm.makeTranslation(-24.13 + 2.54 * i, -8.5 + 10.3 / 2, z); im.setMatrixAt(i, mm); }
+        im.castShadow = true; p.add(im);
+      });
+      cadTeil('pico2w', p, ersatz, (m) => {
+        // CAD: Breite entlang x (0…21), Länge entlang z (−51…0, USB bei −51), Oberseite y = 0
+        // → Länge entlang x, USB nach hinten (−x), Pin 1 auf +z wie auf dem Freenove-Board
+        m.position.set(-10.5, 1.0, 25.5);
+        const dreh = new THREE.Group(); dreh.rotation.y = Math.PI / 2; dreh.add(m); return dreh;
+      });
+      pcb(ersatz, 51, 21, '#2f7d3b', 0, 0, 0, (c, w, h) => {
         for (let i = 0; i < 20; i++) { const px = 1.61 + i * 2.54; [0.6, h - 0.6].forEach((py) => { c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(px, py, 0.8, 0, Math.PI * 2); c.fill(); }); }
         silk(c, 'Raspberry Pi Pico 2 W', w * 0.55, h - 3.6, 1.9, { align: 'center' });
         silk(c, 'BOOTSEL', 12.5, 4, 1.4, { align: 'center' });
       });
-      box(p, 7.6, 2.7, 5.8, -22.6, 1.6, 0, 0xc6cacd, { metal: 0.9, rough: 0.25 });
-      chip(p, 7, 7, 0.9, -2, 1.6, 0, 'RP2350');
-      chip(p, 4, 3, 0.8, -10, 1.6, 4, '');
-      box(p, 11, 1.4, 10.5, 14.5, 1.6, 0, 0xcfd3d6, { metal: 0.9, rough: 0.28 });
-      box(p, 3.4, 1.2, 4.2, -12.5, 1.6, -5, 0xf5f5f0);
-      box(p, 1.2, 0.6, 0.8, -18.5, 1.6, -6, 0x3fe07a, { emissive: 0x20c060, ei: 0.6 });
-      smd(p, 30, 18, 16, 1.6, -4, 0);
-      rbox(p, 9, 5.5, 9, -31, 1.4, 0, 0x2a2c2f, { r: 1.2 });
-      box(p, 5, 1.8, 6.6, -25.8, 2.1, 0, 0xc6cacd, { metal: 0.9 });
-      anchor('PICO_USB', p, -35.6, 4.2, 0, [-1, 0, 0], 'Pico Micro-USB');
+      box(ersatz, 7.6, 2.7, 5.8, -22.6, 1.6, 0, 0xc6cacd, { metal: 0.9, rough: 0.25 });
+      chip(ersatz, 7, 7, 0.9, -2, 1.6, 0, 'RP2350');
+      chip(ersatz, 4, 3, 0.8, -10, 1.6, 4, '');
+      box(ersatz, 11, 1.4, 10.5, 14.5, 1.6, 0, 0xcfd3d6, { metal: 0.9, rough: 0.28 });
+      box(ersatz, 3.4, 1.2, 4.2, -12.5, 1.6, -5, 0xf5f5f0);
+      box(ersatz, 1.2, 0.6, 0.8, -18.5, 1.6, -6, 0x3fe07a, { emissive: 0x20c060, ei: 0.6 });
+      smd(ersatz, 30, 18, 16, 1.6, -4, 0);
+      // Micro-USB-Stecker des Kabels zum Pi (Buchsenmitte ca. 2,3 mm über der Pico-Unterseite)
+      rbox(p, 9, 5.5, 9, -31, -0.45, 0, 0x2a2c2f, { r: 1.2 }).userData.nurImAuto = true;
+      box(p, 5, 1.8, 6.6, -25.8, 1.4, 0, 0xc6cacd, { metal: 0.9 }).userData.nurImAuto = true;
+      anchor('PICO_USB', p, -35.6, 2.3, 0, [-1, 0, 0], 'Pico Micro-USB');
     })();
+    // DRV8833-Modul (MakerMind / roboter-bausatz.de RBS12954): schwarze Platine 16 × 18,5 mm, keine Befestigungslöcher.
+    // Zwei Reihen mit je 6 Lötaugen im Raster 2,54 mm, Reihenabstand 15,24 mm. Beschriftung steht auf der Unterseite.
+    // Reihe Eingänge: IN4 IN3 GND VCC IN2 IN1 – gegenüber Reihe Ausgänge: EEP OUT1 OUT2 OUT3 OUT4 ULT.
+    // ULT = Schlaf-Eingang (LOW = Motoren aus), EEP = Fehler-Ausgang. Lötbrücke J1 („en/sleep“) offen lassen!
     function drv(n, s) {
       const nm = s > 0 ? 'links' : 'rechts';
-      const g = part(L1, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden ${nm}en Motoren. Kabel direkt an die Lötpunkte gelötet.`, 52, TOP[1] + 2, s * 30);
-      const ins = ['VM', 'GND', 'IN1', 'IN2', 'IN3', 'IN4'], outs = ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'EEP', 'ULT'];
-      cylY(g, 1.6, 2, -7, -2, -6, 0xc9a24a, { metal: 0.8, seg: 6 }); cylY(g, 1.6, 2, 7, -2, 6, 0xc9a24a, { metal: 0.8, seg: 6 });
-      pcb(g, 18.5, 16, '#9a2f3a', 0, 0, 0, (c, w, h) => {
-        const rowIn = 8 - s * 6.6, rowOut = 8 + s * 6.6;
-        for (let i = 0; i < 6; i++) {
-          const x = 2.4 + i * 2.75;
-          pad(c, x, rowIn, 1.6, 1.6); pad(c, x, rowOut, 1.6, 1.6);
-          silk(c, ins[i], x, rowIn + (rowIn < 8 ? 2.6 : -2.6), 0.95, { align: 'center', rot: -Math.PI / 2 });
-          silk(c, outs[i], x, rowOut + (rowOut < 8 ? 2.6 : -2.6), 0.95, { align: 'center', rot: -Math.PI / 2 });
-        }
+      const ins = ['IN4', 'IN3', 'GND', 'VCC', 'IN2', 'IN1'], outs = ['EEP', 'OUT1', 'OUT2', 'OUT3', 'OUT4', 'ULT'];
+      const g = part(L1, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden ${nm}en Motoren. Schwarzes Modul 16 × 18,5 mm, mit doppelseitigem Schaumklebeband auf der Platte. Kabel direkt in die Lötaugen gelötet. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – Reihe zu den Motoren: EEP, OUT1–OUT4, ULT. ULT ist der Not-Stopp-Eingang.`, 52, TOP[1] + 1, s * 30, s > 0 ? 0 : Math.PI);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Juan Manuel Dominici, ohne Stiftleisten) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Reihen entlang z bei x = ±7,62, Reihe IN… bei −x, IN4/EEP-Ende bei +z → um −90° drehen
+      cadTeil('drv8833', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; return m; });
+      const W_ = 16, D_ = 18.5, ROW = 7.62, px = (i) => -6.35 + 2.54 * i;
+      box(g, 14, 1, 16, 0, -1, 0, 0x9aa0a6, { rough: 0.9 }).userData.nurImAuto = true;  // Schaumklebeband
+      pcb(ersatz, W_, D_, '#141414', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 6; i++) [h / 2 - ROW, h / 2 + ROW].forEach((y) => hole(c, w / 2 + px(i), y, 0.5));
+        c.strokeStyle = '#d0d0d0'; c.lineWidth = 0.2; c.strokeRect(0.4, 0.4, w - 0.8, h - 0.8);
       });
-      chip(g, 5, 4.4, 1, 3, 1.6, 0, 'DRV', { legs: true });
-      smd(g, 8, 6, 3, 1.6, -5, 0);
-      ins.forEach((p, i) => anchor(`D${n}_${p}`, g, -6.85 + 2.75 * i, 1.9, -s * 6.6, [0, 1, 0], `DRV8833 ${nm} ${p}`));
-      outs.forEach((p, i) => anchor(`D${n}_${p}`, g, -6.85 + 2.75 * i, 1.9, s * 6.6, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+      chip(ersatz, 5, 4.4, 1.0, 0, 1.6, 0, 'DRV8833', { legs: true });
+      box(ersatz, 2.8, 1.9, 3.5, -5.6, 1.6, -1.2, 0xc98a1e, { rough: 0.4 });  // Tantal-Elko 10 µF
+      box(ersatz, 0.6, 1.95, 3.5, -4.4, 1.6, -1.2, 0x8a5a1c);                  // Polungsstreifen
+      box(ersatz, 1.6, 0.6, 0.8, 5.9, 1.6, 0, 0xf2f2ee, { emissive: 0xff3030, ei: 0.25 }); // LED
+      [[-3.8, 4.6, 0], [5.4, -4.6, 0], [-1.4, 4.8, 1], [1.2, 4.8, 1], [3.4, 3.6, 1]].forEach(([x, z, cap]) =>
+        box(ersatz, 1.6, 0.5, 0.8, x, 1.6, z, cap ? 0xb08d57 : 0x1d1d1d, { rough: 0.45 }));
+      ins.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, -ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+      outs.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
     }
     drv('L', 1); drv('R', -1);
     (function mp1584() {
@@ -888,9 +984,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
     W('Akku & Schutz', 'INA_VBS', 'INA_VIN-', 'rot', 0.4, null, 'Spannungsmessung des INA226');
 
     // Stromversorgung der Ebenen
-    W('Stromverteilung', 'WP2', 'DL_VM', 'rot', 0.8, 'B', 'Motorstrom Treiber links');
+    W('Stromverteilung', 'WP2', 'DL_VCC', 'rot', 0.8, 'B', 'Motorstrom Treiber links');
     W('Stromverteilung', 'WM2', 'DL_GND', 'schwarz', 0.8, 'B', 'Masse Treiber links');
-    W('Stromverteilung', 'WP3', 'DR_VM', 'rot', 0.8, 'A', 'Motorstrom Treiber rechts');
+    W('Stromverteilung', 'WP3', 'DR_VCC', 'rot', 0.8, 'A', 'Motorstrom Treiber rechts');
     W('Stromverteilung', 'WM3', 'DR_GND', 'schwarz', 0.8, 'A', 'Masse Treiber rechts');
     W('Stromverteilung', 'WP4', 'MP_IN+', 'rot', 0.7, 'A', 'Eingang 5-V-Wandler für den Pico');
     W('Stromverteilung', 'WM4', 'MP_IN-', 'schwarz', 0.7, 'A', 'Masse 5-V-Wandler');
@@ -918,8 +1014,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
     [['L', [4, 5, 6, 7]], ['R', [21, 22, 24, 25]]].forEach(([d, pins4]) => {
       ['IN1', 'IN2', 'IN3', 'IN4'].forEach((n, i) => W('Steuerleitungen Motortreiber', `P${pins4[i]}`, `D${d}_${n}`, ['orange', 'gelb', 'gruen', 'blau'][i], 0.4, null, `PWM ${n} Treiber ${d === 'L' ? 'links' : 'rechts'}`));
     });
-    W('Steuerleitungen Motortreiber', 'P29', 'DL_EEP', 'violett', 0.4, null, 'Treiber an/aus (Not-Stopp)');
-    W('Steuerleitungen Motortreiber', 'DL_EEP', 'DR_EEP', 'violett', 0.4, null, 'Treiber an/aus, weiter zum rechten Treiber');
+    W('Steuerleitungen Motortreiber', 'P29', 'DL_ULT', 'violett', 0.4, null, 'Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang');
+    W('Steuerleitungen Motortreiber', 'DL_ULT', 'DR_ULT', 'violett', 0.4, null, 'Treiber an/aus, weiter zum rechten Treiber');
 
     // 3,3 V
     W('3,3 V für Sensoren', 'P36', 'W3A1', 'orange', 0.5, null, '3,3 V vom Pico in Verteiler A');
@@ -1057,6 +1153,81 @@ code { font-family: var(--font-mono); font-size: 13px; }
       t2.appendChild(tb2); ph.appendChild(t2);
     })();
 
+    // =====================================================================
+    // ANSICHT „VORHANDENE TEILE“ – nur was schon da ist, auf einer Schneidematte (Raster 1 cm)
+    // Neues Teil angekommen? Hier eine Zeile ergänzen (Name wie bei part(...)).
+    // =====================================================================
+    const VORHANDEN = [
+      { name: 'Raspberry Pi Pico 2 W', x: -22, z: 24, ry: 0, text: 'Pico 2 W' },
+      { name: 'Motortreiber DRV8833 links', x: 36, z: 24, ry: Math.PI / 2, text: 'DRV8833' },
+      { name: 'Motortreiber DRV8833 rechts', x: 36, z: -18, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
+      { name: 'Ladeboard DDTCCRUB 2S', x: -22, z: -22, ry: 0, text: 'Ladeboard 2S', tz: 13 },
+    ];
+    const MAT = { w: 150, d: 100, t: 2 };
+    const bench = new THREE.Group(); bench.visible = false; scene.add(bench);
+    (function cuttingMat() {
+      const tex = canvasTex(MAT.w, MAT.d, 8, (c, w, h) => {
+        c.fillStyle = '#2f6b52'; c.fillRect(0, 0, w, h);
+        c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 0.15;
+        for (let x = 5; x < w; x += 5) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+        for (let y = 5; y < h; y += 5) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+        c.strokeStyle = 'rgba(255,255,255,0.45)'; c.lineWidth = 0.3;
+        for (let x = 10; x < w; x += 10) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+        for (let y = 10; y < h; y += 10) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+        VORHANDEN.forEach((v) => silk(c, v.text, w / 2 + v.x, h / 2 + v.z + (v.tz ?? 15), 3.4, { align: 'center', color: '#ffffff' }));
+      });
+      const side = std(0x24543f, { rough: 0.8 });
+      const m = add(bench, new THREE.BoxGeometry(MAT.w, MAT.t, MAT.d), [side, side, std(0xffffff, { map: tex, rough: 0.85 }), side, side, side], 0, MAT.t / 2, 0);
+      m.userData.noPick = true;
+    })();
+    const home = new Map();   // ursprünglicher Platz jedes Teils im Auto
+    const bb = new THREE.Box3();
+    function placeBench() {
+      VORHANDEN.forEach((v) => {
+        const g = PARTS[v.name]; if (!g) return;
+        if (!home.has(g)) home.set(g, { parent: g.parent, pos: g.position.clone(), rot: g.rotation.clone() });
+        bench.add(g);
+        g.rotation.set(0, v.ry, 0); g.position.set(v.x, 0, v.z);
+        g.traverse((o) => { if (o.userData.nurImAuto) o.visible = false; });
+        g.updateMatrixWorld(true);
+        bb.makeEmpty();
+        g.traverse((o) => { if ((o.isMesh || o.isInstancedMesh) && o.visible) bb.expandByObject(o); });
+        g.position.y = MAT.t - bb.min.y;   // liegt auf der Matte
+      });
+    }
+    function placeCar() {
+      home.forEach((h, g) => {
+        h.parent.add(g); g.position.copy(h.pos); g.rotation.copy(h.rot);
+        g.traverse((o) => { if (o.userData.nurImAuto) o.visible = true; });
+      });
+    }
+    let benchMode = true;
+    const HOME_BENCH = { pos: V(70, 110, 135), target: V(6, 0, 8) };
+    const homeView = () => (benchMode ? HOME_BENCH : HOME);
+    const hint = () => '<b>Tippe auf ein Bauteil</b><span>' + (benchMode ? 'Zum Beispiel auf den Pico oder einen Motortreiber.' : 'Zum Beispiel auf den Akku, den Pico oder den LiDAR.') + '</span>';
+    const txt = {
+      bench: { h1: 'Was schon da ist', lead: 'Nur die Teile, die schon auf dem Tisch liegen – in echter Größe auf einer Schneidematte mit 1-cm-Raster. Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.', dims: `vorhanden: ${VORHANDEN.length} Teile · Raster 1 cm` },
+      car: { h1: document.querySelector('h1').textContent, lead: document.querySelector('header .lead').innerHTML, dims: document.querySelector('.dims').textContent },
+    };
+    function applyMode() {
+      const tx = benchMode ? txt.bench : txt.car;
+      document.querySelector('h1').textContent = tx.h1;
+      document.querySelector('header .lead').innerHTML = tx.lead;
+      document.querySelector('.dims').textContent = tx.dims;
+      document.querySelectorAll('.nur-auto').forEach((el) => (el.hidden = benchMode));
+      document.getElementById('m-teile').setAttribute('aria-pressed', String(benchMode));
+      document.getElementById('m-auto').setAttribute('aria-pressed', String(!benchMode));
+      if (benchMode) placeBench(); else placeCar();
+      layers.forEach(({ g }) => (g.visible = !benchMode));
+      dynGroup.visible = !benchMode; bench.visible = benchMode;
+      controls.minDistance = benchMode ? 25 : 90;
+      selected = null; sel = null; selBox.visible = false;
+      info.innerHTML = hint();
+      const h = homeView(); camera.position.copy(h.pos); controls.target.copy(h.target); controls.update();
+      if (!benchMode) applyLayout();
+      applyHighlight();
+    }
+
     // ---------- Interaktion ----------
     let selected = null;
     let platesClear = false;
@@ -1104,7 +1275,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const r = renderer.domElement.getBoundingClientRect();
       ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera);
-      const hits = ray.intersectObjects([...layers.map((l) => l.g), dynGroup], true);
+      const hits = ray.intersectObjects(benchMode ? [bench] : [...layers.map((l) => l.g), dynGroup], true);
       let found = null;
       for (const h of hits) {
         let o = h.object, skip = false;
@@ -1122,7 +1293,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
         info.append(b, s);
         selBox.setFromObject(found); selBox.visible = true;
       } else {
-        info.innerHTML = '<b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Akku, den Pico oder den LiDAR.</span>';
+        info.innerHTML = hint();
         selBox.visible = false;
       }
     });
@@ -1136,7 +1307,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
     clearBtn.addEventListener('click', () => { platesClear = !platesClear; clearBtn.setAttribute('aria-pressed', String(platesClear)); applyHighlight(); });
     const laserBtn = document.getElementById('laser');
     laserBtn.addEventListener('click', () => { sweep.visible = !sweep.visible; laserBtn.setAttribute('aria-pressed', String(sweep.visible)); });
-    document.getElementById('reset').addEventListener('click', () => { camera.position.copy(HOME.pos); controls.target.copy(HOME.target); controls.update(); });
+    document.getElementById('reset').addEventListener('click', () => { const h = homeView(); camera.position.copy(h.pos); controls.target.copy(h.target); controls.update(); });
+    document.getElementById('m-teile').addEventListener('click', () => { if (!benchMode) { benchMode = true; applyMode(); } });
+    document.getElementById('m-auto').addEventListener('click', () => { if (benchMode) { benchMode = false; applyMode(); } });
     document.querySelectorAll('.layer').forEach((el) => {
       const act = () => { const n = Number(el.dataset.layer); selected = selected === n ? null : n; applyHighlight(); };
       el.addEventListener('click', act);
@@ -1151,7 +1324,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
     new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    applyLayout(); applyTheme(); resize();
+    applyLayout(); applyTheme(); resize(); applyMode();
     let last = performance.now();
     (function loop(now) {
       const dt = Math.min(0.05, ((now || last) - last) / 1000); last = now || last;

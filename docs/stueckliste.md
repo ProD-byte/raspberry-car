@@ -1,16 +1,16 @@
 # Stückliste
 
 Preise sind grobe Richtwerte (Stand November 2026) und vor dem Kauf zu prüfen.
-Status: ✅ bestellt · 🔎 ausgesucht · ⬜ offen
+Status: 📦 da · ✅ bestellt · 🔎 ausgesucht · ⬜ offen
 
 ## Stufe 1 – Fahren
 
 | Status | Teil | Variante / worauf achten | Wo | ca. |
 |---|---|---|---|---|
-| ✅ | Raspberry Pi Pico 2 **W** mit Headern (Waveshare, vorgelötet) | **W** = mit WLAN | Amazon | 15 € |
+| 📦 | Raspberry Pi Pico 2 **W** mit Headern (Waveshare, vorgelötet) | **W** = mit WLAN | Amazon | 15 € |
 | ✅ | Freenove Breakout Board für Pico | Schraubklemmen für alle 40 Pins | Amazon | 15 € |
 | ⬜ | 4× Getriebemotor JGA25-370 mit Encoder, **mit Rädern und Halterungen** | **6 V**, **mit Encoder**, alle vier **gleiche Drehzahl** (z. B. 280 U/min) | AliExpress | 30 € |
-| ⬜ | 2× Motortreiber DRV8833 | 2-Kanal-Modul | AliExpress | 3 € |
+| 📦 | 2× Motortreiber DRV8833 | 2-Kanal-Modul, schwarz, 16 × 18,5 mm (MakerMind, RBS12954). Not-Stopp an **ULT**, nicht EEP | roboter-bausatz.de | 4 € |
 | ⬜ | 2× WAGO 221-415 (3,3-V-Verteiler) | | Baumarkt / Amazon | 3 € |
 | ⬜ | Aufbewahrungsbox | innen mind. 30 × 22 × 14 cm, Klickdeckel | Action | 5 € |
 | ✔ vorhanden | Litze 0,25–0,5 mm², Aderendhülsen + Crimpzange, Schrumpfschlauch, Lötkolben | | | |
@@ -21,7 +21,7 @@ Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico übe
 
 | Status | Teil | Variante / worauf achten | Wo | ca. |
 |---|---|---|---|---|
-| 🔎 | Ladeboard DDTCCRUB 2S (Walfront) | Lötbrücken **2S** und **1A** setzen, sonst nichts (siehe Stromversorgung) | Amazon | 7,60 € |
+| 📦 | Ladeboard DDTCCRUB 2S (Walfront, B08LVN7FLH) | 39 × 18 mm, 4 Löcher. Lötbrücken **2S** und **1A** setzen, sonst nichts (siehe Stromversorgung) | Amazon | 7,60 € |
 | ⬜ | BMS 2S 20 A | **Balance-Version**, nicht Standard (z. B. HW-391) | Amazon | 7 € |
 | ⬜ | 4× Samsung INR18650-35E | alle 4 zusammen kaufen, **nicht** von AliExpress/eBay (Fälschungen) | Akkuteile.de / NKON | 20 € |
 | ⬜ | 2× Halter 2× 18650 **mit einzelnen Kabeln** | | NKON | 4 € |
