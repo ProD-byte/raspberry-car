@@ -36,7 +36,7 @@ Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico übe
 
 | Status | Teil | Variante / worauf achten | ca. |
 |---|---|---|---|
-| ⬜ | Raspberry Pi 5, 8 GB | | 85 € |
+| 📦 | Raspberry Pi 5, 8 GB | | 85 € |
 | ⬜ | Active Cooler (offiziell) | | 6 € |
 | ⬜ | microSD 64 GB A2 | | 12 € |
 | ⬜ | Pololu D36V50F5 (5 V, 5,5 A) | | 25 € |

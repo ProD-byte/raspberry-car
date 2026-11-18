@@ -584,10 +584,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
         if (c.g > 0.9 && c.r < 0.05 && c.b < 0.05) { c.set(0x2aa848).convertSRGBToLinear(); mat.roughness = 0.5; }     // Lötstopplack
         if (c.r > 0.9 && c.g > 0.9 && c.b > 0.02 && c.b < 0.3) { c.set(0x1c8a38).convertSRGBToLinear(); mat.roughness = 0.6; }  // Platinenkern
       });
-      const L = 39, B = 18, LOCH = [[-17.9, 7.8], [-17.9, -7.8], [17.9, 7.8], [17.9, -7.8]];
+      const L = 39, B = 18, LOCH = [[-16.5, 7.0], [-16.5, -7.0], [16.5, 7.0], [16.5, -7.0]];  // Ø 2,4 mm, 33 × 14 mm (BAT-Ende aus CAD, USB-Ende gespiegelt)
       pcb(ersatz, L, B, '#1f9a3e', 0, 0, 0, (c, w, h) => {
         const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;   // Bauteil-Koordinaten → Leiterplatte
-        LOCH.forEach(([x, z]) => hole(c, X(x), Y(z), 1.05));
+        LOCH.forEach(([x, z]) => hole(c, X(x), Y(z), 1.2));
         c.fillStyle = '#e8e8e8';
         [[-15.4, 7.6], [-15.4, -7.6]].forEach(([x, z]) => c.fillRect(X(x) - 0.9, Y(z) - 0.9, 1.8, 1.8));
         [[17.4, 2.4], [17.4, -2.3]].forEach(([x, z]) => {        // Lötflächen BAT / GND
@@ -692,25 +692,46 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // EBENE 2 – Antrieb
     // =====================================================================
     const L1 = makeLayer(1);
+    // Freenove Breakout Board für Pico (FNK0081, Platine CB8101). Maße aus der offiziellen mechanischen Zeichnung
+    // CB8101_mechanical-drawing_v1.1 (github.com/Freenove/Freenove_Breakout_Board_for_Raspberry_Pi_Pico):
+    // Platine 63 × 57 mm, 4 Befestigungslöcher im Abstand 58 × 52 mm. Je Seite 20 Schraubklemmen (2 Blöcke à 10, Raster 2,54 mm),
+    // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
+    // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
     (function freenove() {
-      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen. Linke Reihe Pin 1–20, rechte Reihe Pin 40–21. Jedes Kabel mit Aderendhülse.', -24, TOP[1] + 5, 0);
-      [[-35, -24], [35, -24], [-35, 24], [35, 24]].forEach(([x, z]) => cylY(g, 2, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }));
-      pcb(g, 78, 56, '#22693a', 0, 0, 0, (c, w, h) => {
+      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse.', -24, TOP[1] + 5, 0);
+      const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
+      [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
+        (cylY(g, 2.75, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }).userData.nurImAuto = true));
+      pcb(g, BW, BD, '#2f9a45', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;
+        [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) => hole(c, X(x), Y(z), 1.6));
         for (let i = 0; i < 20; i++) {
-          const cx = 39 - 33.25 + 3.5 * i;
-          silk(c, PIN[i + 1], cx, h / 2 + 15.5, 1.25, { align: 'center', rot: -Math.PI / 2 });
-          silk(c, PIN[40 - i], cx, h / 2 - 15.5, 1.25, { align: 'center', rot: -Math.PI / 2 });
+          [[i + 1, 1], [40 - i, -1]].forEach(([pin, s]) => {
+            const name = PIN[pin];
+            c.fillStyle = name === 'GND' ? '#1d1d1d' : '#f4f6f4';
+            c.fillRect(X(pinX(i)) - 1.05, Y(s * 16.6) - 2.6, 2.1, 5.2);              // Beschriftungsfeld
+            silk(c, name, X(pinX(i)), Y(s * 16.6), 0.95, { align: 'center', rot: -Math.PI / 2, color: name === 'GND' ? '#f4f6f4' : '#1d1d1d' });
+          });
         }
-        [[3, 3], [w - 3, 3], [3, h - 3], [w - 3, h - 3]].forEach(([x, y]) => hole(c, x, y, 1.6));
+        silk(c, 'Freenove', X(26), Y(-21.6), 1.9, { align: 'center', rot: -Math.PI / 2 });
+        silk(c, 'Breakout Board for Raspberry Pi Pico', X(28.7), Y(0), 1.5, { align: 'center', rot: -Math.PI / 2 });
       });
-      terminals(g, 20, 3.5, 0, 1.6, -23, 0x2c8a40, -1);
-      terminals(g, 20, 3.5, 0, 1.6, 23, 0x2c8a40, 1);
+      // Schraubklemmen: 2 Blöcke à 10 je Seite, Drahteinführung nach außen
+      [-1, 1].forEach((s) => [-12.7, 12.7].forEach((x) => terminals(g, 10, 2.54, x, 1.6, s * 24.6, 0x2fae4e, s)));
+      // Buchsenleisten für den Pico (innen) und Stiftleisten (außen)
       pins(g, 20, 1, 0, 1.6, -8.89, { female: true, h: 8.5 });
       pins(g, 20, 1, 0, 1.6, 8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, -11.43, { pinH: 6 });
+      pins(g, 20, 1, 0, 1.6, 11.43, { pinH: 6 });
+      // GPIO-Status-LEDs (eine je Pin) und die 5 Inverter-Chips 74HC04 unter dem Pico
+      const led = new THREE.InstancedMesh(new THREE.BoxGeometry(0.8, 0.5, 1.6), std(0xf2f2ee, { emissive: 0x6aa8ff, ei: 0.15 }), 40);
+      const mm = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < 20; i++) [-1, 1].forEach((s) => { mm.makeTranslation(pinX(i) + 0.9, 1.85, s * 13.9); led.setMatrixAt(k++, mm); });
+      g.add(led);
+      for (let i = 0; i < 5; i++) chip(g, 8.7, 3.9, 1.5, -20 + i * 10, 1.6, 0, '74HC04', { legs: true });
       for (let i = 0; i < 20; i++) {
-        const x = -33.25 + 3.5 * i;
-        anchor(`P${i + 1}`, g, x, 5.1, 27.0, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
-        anchor(`P${40 - i}`, g, x, 5.1, -27.0, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
+        anchor(`P${i + 1}`, g, pinX(i), 5.1, 28.4, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
+        anchor(`P${40 - i}`, g, pinX(i), 5.1, -28.4, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
       }
       // Pico 2 W – steckt mit seinen (bei Waveshare vorgelöteten) Stiftleisten in den Buchsen des Freenove-Boards.
       const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi (51 × 21 × 1 mm).', 0, 1.6 + 8.5 + 2.5, 0);
@@ -814,30 +835,34 @@ code { font-family: var(--font-mono); font-size: 13px; }
     const L2 = makeLayer(2);
     const PI = { x: -8, y: TOP[2] + 5, z: 0 };
     let piFan = null;
+    // Raspberry Pi 5: echtes CAD-Modell von Raspberry Pi (rpi-5b_no_graphics.step, MIT), siehe teile/QUELLEN.md.
+    // Lage im Auto: USB/Ethernet nach hinten (−x), GPIO-Leiste zur linken Seite (+z), USB-C und Micro-HDMI rechts (−z).
+    // Positionen der Buchsen aus der CAD-Datei: USB 2.0 bei z = +19, USB 3.0 (blau) bei z = +1, Ethernet bei z = −17,8,
+    // USB-C bei x = +31,3, Micro-HDMI bei x = +16,7 und +3,3. Löcher: 58 × 49 mm (x = −19 / +39, z = ±24,5).
     (function pi5() {
-      const g = part(L2, 'Raspberry Pi 5 (8 GB)', 'Das Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App. Strom über USB-C vom Pololu, USB-Geräte hinten.', PI.x, PI.y, PI.z);
-      [[-39, -24.5], [19, -24.5], [-39, 24.5], [19, 24.5]].forEach(([x, z]) => cylY(g, 2.2, 5, x + 20, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }));
-      pcb(g, 85, 56, '#2b7a3d', 0, 0, 0, (c, w, h) => {
+      const g = part(L2, 'Raspberry Pi 5 (8 GB)', 'Das Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App. Strom über USB-C vom Pololu, USB-Geräte hinten. 85 × 56 mm, 4 Löcher für M2,5 im Abstand 58 × 49 mm. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi.', PI.x, PI.y, PI.z);
+      [[-19, -24.5], [39, -24.5], [-19, 24.5], [39, 24.5]].forEach(([x, z]) => (cylY(g, 2.2, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }).userData.nurImAuto = true));
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cadTeil('pi5', g, ersatz, (m) => {
+        // CAD: x 0…85 (USB-Ende bei +x), z −56…0 (GPIO bei −56), Unterseite y = 0 → 180° drehen und mittig setzen
+        m.rotation.y = Math.PI; m.position.set(42.5, 0, -28); return m;
+      });
+      // Einfaches Ersatzmodell (wenn teile.js fehlt)
+      pcb(ersatz, 85, 56, '#2b7a3d', 0, 0, 0, (c, w, h) => {
         [[23.5, 3.5], [81.5, 3.5], [23.5, 52.5], [81.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
-        silk(c, 'Raspberry Pi 5', 60, h - 10, 2.6, { align: 'center' });
-        silk(c, 'CAM/DISP 0', 30.5, h - 10, 1.3, { align: 'center' }); silk(c, 'CAM/DISP 1', 24.5, h - 4.5, 1.3, { align: 'center' });
-        silk(c, 'PCIe', 80, h / 2 + 10, 1.4, { align: 'center' });
+        silk(c, 'Raspberry Pi 5', 60, 12, 2.6, { align: 'center' });
       });
       const usb = (z, blue) => {
-        rbox(g, 17.5, 15.6, 13.2, -36.9, 1.6, z, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
-        [4.8, 11.6].forEach((yy) => { box(g, 0.6, 5.6, 12, -45.8, 1.6 + yy - 2.8, z, 0x0e0e0f); box(g, 0.7, 1.8, 10, -45.6, 1.6 + yy - 1.2, z, blue ? 0x2a5fd0 : 0x161616); });
+        rbox(ersatz, 17.2, 15.6, 14.5, -37, 1.3, z, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+        [4.8, 11.6].forEach((yy) => box(ersatz, 0.7, 1.8, 10, -45.6, 1.3 + yy - 1.2, z, blue ? 0x2a5fd0 : 0x161616));
       };
-      usb(-18.8, false); usb(0.5, true);
-      rbox(g, 21, 13.5, 16, -38.5, 1.6, 19.5, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
-      box(g, 0.6, 9, 12, -49.1, 4, 19.5, 0x0e0e0f);
-      [[31.3, 9, 3.3], [16.7, 7.5, 3.5], [3.3, 7.5, 3.5]].forEach(([x, w, h]) => box(g, w, h, 7.5, x, 1.6, 26.6, 0xc5c9cd, { metal: 0.9, rough: 0.25 }));
-      pins(g, 20, 2, 10, 1.6, -24.6, { pinH: 6 });
-      [-12, -18].forEach((x) => box(g, 2.6, 2.2, 13, x, 1.6, 15, 0xf2efe6));
-      box(g, 2.6, 2.2, 17, 40.5, 1.6, 0, 0xf2efe6);
-      chip(g, 7, 7, 0.9, -24, 1.6, -5, 'RP1');
-      smd(g, 30, 30, 40, 1.6, -22, 2); smd(g, 20, 20, 14, 1.6, 30, -8);
-      box(g, 2, 1, 3, 40, 1.6, 21, 0x111111);
-      const ac = new THREE.Group(); ac.position.set(2, 1.6, -2); g.add(ac);
+      usb(19, false); usb(1.05, true);
+      rbox(ersatz, 21.5, 13.3, 15.9, -34.6, 1.3, -17.75, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+      [[31.3, 9, 3.3], [16.7, 7.2, 3.5], [3.3, 7.2, 3.5]].forEach(([x, w, hh]) => box(ersatz, w, hh, 7.5, x, 1.3, -25.5, 0xc5c9cd, { metal: 0.9, rough: 0.25 }));
+      pins(ersatz, 20, 2, 10, 1.3, 24.5, { pinH: 6 });
+      chip(ersatz, 17, 17, 1.6, 9.4, 1.3, -5.3, 'BCM2712');
+      // Active Cooler (offizieller Kühler, sitzt über dem Prozessor) – gehört zum Auto, nicht zum Pi selbst
+      const ac = new THREE.Group(); ac.position.set(9.4, 2.9, -5.3); ac.userData.nurImAuto = true; g.add(ac);
       box(ac, 38, 1.6, 42, 0, 0, 0, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
       for (let i = 0; i < 9; i++) box(ac, 0.9, 7, 18, -16 + i * 2.5, 1.6, -10, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
       rbox(ac, 20, 8.6, 22, 7, 0, 8, 0x1d1f21, { rough: 0.6, r: 1.5 });
@@ -845,19 +870,21 @@ code { font-family: var(--font-mono); font-size: 13px; }
       piFan = new THREE.Group(); piFan.position.set(7, 9.0, 8); ac.add(piFan);
       for (let i = 0; i < 9; i++) { const bl = box(piFan, 7.5, 0.4, 2.2, 0, 0, 0, 0x2a2c2f); bl.position.set(Math.cos(i * 0.698) * 5.5, 0.2, Math.sin(i * 0.698) * 5.5); bl.rotation.y = -i * 0.698 + 0.5; }
       cylY(ac, 4.5, 0.9, 7, 8.6, 8, 0xd6d9dc, { seg: 32 });
-      [[-17, -19], [17, 19]].forEach(([x, z]) => cylY(ac, 1.6, 3, x, 1.6, z, 0x111111, { seg: 10 }));
-      pins(g, 20, 2, 10, 1.6 + 8.5, -24.6, { female: true, h: 14 });
-      // Stecker
-      const plug = (x, y, z) => { rbox(g, 13, 7, 14, x, y - 3.5, z, 0x2a2c2f, { r: 1.5 }); };
-      plug(-52.5, 1.6 + 4.8, -18.8); plug(-52.5, 1.6 + 11.6, -18.8); plug(-52.5, 1.6 + 4.8, 0.5);
-      rbox(g, 11, 6, 13, 31.3, 0.2, 36.8, 0x2a2c2f, { r: 1.5 });
-      anchor('PI_U2L', g, -59.2, 1.6 + 4.8, -18.8, [-1, 0, 0], 'Pi 5 USB 2.0 unten');
-      anchor('PI_U2H', g, -59.2, 1.6 + 11.6, -18.8, [-1, 0, 0], 'Pi 5 USB 2.0 oben');
-      anchor('PI_U3L', g, -59.2, 1.6 + 4.8, 0.5, [-1, 0, 0], 'Pi 5 USB 3.0 unten');
-      anchor('PI_USBC', g, 31.3, 3.2, 43.4, [0, 0, 1], 'Pi 5 USB-C (Strom)');
+      // Stapel-Buchsenleiste für den AI HAT+ (auf der GPIO-Leiste)
+      const stapel = new THREE.Group(); stapel.userData.nurImAuto = true; g.add(stapel);
+      pins(stapel, 20, 2, 10, 1.3 + 8.5, 24.5, { female: true, h: 14 });
+      // Stecker der Kabel
+      const kabel = new THREE.Group(); kabel.userData.nurImAuto = true; g.add(kabel);
+      const plug = (x, y, z) => { rbox(kabel, 13, 7, 14, x, y - 3.5, z, 0x2a2c2f, { r: 1.5 }); };
+      plug(-52, 5.6, 19); plug(-52, 13.0, 19); plug(-52, 5.6, 1.05);
+      rbox(kabel, 11, 6, 13, 31.3, -0.55, -36.2, 0x2a2c2f, { r: 1.5 });
+      anchor('PI_U2L', g, -58.7, 5.6, 19, [-1, 0, 0], 'Pi 5 USB 2.0 unten');
+      anchor('PI_U2H', g, -58.7, 13.0, 19, [-1, 0, 0], 'Pi 5 USB 2.0 oben');
+      anchor('PI_U3L', g, -58.7, 5.6, 1.05, [-1, 0, 0], 'Pi 5 USB 3.0 unten');
+      anchor('PI_USBC', g, 31.3, 2.5, -43.2, [0, 0, -1], 'Pi 5 USB-C (Strom)');
     })();
     (function aiHat() {
-      const g = part(L2, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden.', PI.x + 10, PI.y + 1.6 + 8.5 + 14, 0);
+      const g = part(L2, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden.', PI.x + 10, PI.y + 1.3 + 8.5 + 14, 0, Math.PI);
       pcb(g, 65, 56.5, '#2b7a3d', 0, 0, 0, (c, w, h) => {
         [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
         for (let i = 0; i < 20; i++) [1.27, 3.81].forEach((dy) => hole(c, 8.4 + i * 2.54, 2.6 + dy - 1.27, 0.5));
@@ -868,7 +895,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       box(g, 2.6, 2.2, 17, 30.5, 1.6, 0, 0xf2efe6);
       smd(g, 50, 40, 26, 1.6, -4, 6);
     })();
-    ribbon(L2, [V(PI.x + 41.8, PI.y + 1.6 + 8.5 + 14 + 2.6, 0), V(PI.x + 47, PI.y + 20, 0), V(PI.x + 47, PI.y + 8, 0), V(PI.x + 41.8, PI.y + 3.8, 0)], 16, 0xb8752b)
+    ribbon(L2, [V(PI.x + 41.8, PI.y + 1.3 + 8.5 + 14 + 2.6, -9.6), V(PI.x + 47, PI.y + 20, -9.6), V(PI.x + 47, PI.y + 8, -9.6), V(PI.x + 41.8, PI.y + 3.6, -9.6)], 16, 0xb8752b)
       .userData.part = { name: 'PCIe-Flachbandkabel: AI HAT+ → Pi 5 PCIe', desc: 'Liegt dem AI HAT+ bei. Verbindet den KI-Chip mit dem schnellen PCIe-Anschluss des Pi 5.' };
     (function camera3() {
       const g = part(L2, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera mit Autofokus für das Live-Video. Das Flachbandkabel (22 auf 15 Pin) geht zum Anschluss CAM/DISP 0 am Pi 5.', 80, TOP[2], 0);
@@ -881,7 +908,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       cylX(g, 5.2, 5.4, 8.4, 25.8, 0, 0x151617, { rough: 0.4 });
       cylX(g, 3.6, 8.4, 8.8, 25.8, 0, 0x1b2a3a, { metal: 0.6, rough: 0.05 });
     })();
-    ribbon(L2, [V(81, TOP[2] + 10.5, 0), V(76, TOP[2] + 2, 2), V(56, TOP[2] + 3, 10), V(40, PI.y + 6, 15), V(PI.x - 6, PI.y + 6, 15), V(PI.x - 12, PI.y + 4.2, 15)], 13, 0xc58a3a)
+    ribbon(L2, [V(81, TOP[2] + 10.5, 0), V(76, TOP[2] + 2, 2), V(56, TOP[2] + 3, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
       .userData.part = { name: 'Kamerakabel: Camera Module 3 → Pi 5 CAM/DISP 0', desc: 'Flachbandkabel 22 auf 15 Pin (beim Pi 5 nötig). Kontakte zeigen zur Platine.' };
     (function pololu() {
       const g = part(L2, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1, VOUT/GND über einen USB-C-Stecker in den Pi.', 58, TOP[2] + 2, 40);
@@ -1158,12 +1185,14 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // Neues Teil angekommen? Hier eine Zeile ergänzen (Name wie bei part(...)).
     // =====================================================================
     const VORHANDEN = [
-      { name: 'Raspberry Pi Pico 2 W', x: -22, z: 24, ry: 0, text: 'Pico 2 W' },
-      { name: 'Motortreiber DRV8833 links', x: 36, z: 24, ry: Math.PI / 2, text: 'DRV8833' },
-      { name: 'Motortreiber DRV8833 rechts', x: 36, z: -18, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
-      { name: 'Ladeboard DDTCCRUB 2S', x: -22, z: -22, ry: 0, text: 'Ladeboard 2S', tz: 13 },
+      { name: 'Raspberry Pi 5 (8 GB)', x: 60, z: -28, ry: 0, text: 'Raspberry Pi 5 (8 GB)', tz: 37 },
+      { name: 'Freenove Breakout Board für Pico', x: -65, z: 30, ry: 0, text: 'Freenove Breakout Board', tz: 33 },
+      { name: 'Raspberry Pi Pico 2 W', x: -65, z: -45, ry: 0, text: 'Pico 2 W', tz: 14 },
+      { name: 'Ladeboard DDTCCRUB 2S', x: -8, z: -45, ry: 0, text: 'Ladeboard 2S', tz: 14 },
+      { name: 'Motortreiber DRV8833 links', x: 5, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
+      { name: 'Motortreiber DRV8833 rechts', x: 35, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
     ];
-    const MAT = { w: 150, d: 100, t: 2 };
+    const MAT = { w: 230, d: 150, t: 2 };
     const bench = new THREE.Group(); bench.visible = false; scene.add(bench);
     (function cuttingMat() {
       const tex = canvasTex(MAT.w, MAT.d, 8, (c, w, h) => {
@@ -1202,7 +1231,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       });
     }
     let benchMode = true;
-    const HOME_BENCH = { pos: V(70, 110, 135), target: V(6, 0, 8) };
+    const HOME_BENCH = { pos: V(105, 200, 245), target: V(0, 0, 4) };
     const homeView = () => (benchMode ? HOME_BENCH : HOME);
     const hint = () => '<b>Tippe auf ein Bauteil</b><span>' + (benchMode ? 'Zum Beispiel auf den Pico oder einen Motortreiber.' : 'Zum Beispiel auf den Akku, den Pico oder den LiDAR.') + '</span>';
     const txt = {

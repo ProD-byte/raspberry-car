@@ -1,5 +1,5 @@
 """STEP -> GLB mit Farben (OpenCascade XCAF + RWGltf_CafWriter).
-Aufruf: python step2glb.py eingabe.step ausgabe.glb [ablenkung_mm]
+Aufruf: python step2glb.py eingabe.step ausgabe.glb [ablenkung_mm] [winkel_rad]
 """
 import sys
 from OCP.STEPCAFControl import STEPCAFControl_Reader
@@ -16,6 +16,7 @@ from OCP.RWMesh import RWMesh_CoordinateSystem
 
 src, dst = sys.argv[1], sys.argv[2]
 defl = float(sys.argv[3]) if len(sys.argv) > 3 else 0.05
+winkel = float(sys.argv[4]) if len(sys.argv) > 4 else 0.3   # Winkelgenauigkeit in rad (größer = gröber)
 
 doc = TDocStd_Document(TCollection_ExtendedString("doc"))
 r = STEPCAFControl_Reader()
@@ -27,7 +28,7 @@ st = XCAFDoc_DocumentTool.ShapeTool_s(doc.Main())
 labels = TDF_LabelSequence(); st.GetFreeShapes(labels)
 for i in range(1, labels.Length() + 1):
     shp = st.GetShape_s(labels.Value(i))
-    BRepMesh_IncrementalMesh(shp, defl, False, 0.3, True)
+    BRepMesh_IncrementalMesh(shp, defl, False, winkel, True)
 
 w = RWGltf_CafWriter(TCollection_AsciiString(dst), True)  # True = binär (.glb)
 # STEP ist in mm, Z oben -> glTF Y oben, Einheit bleibt mm (Skalierung 1)

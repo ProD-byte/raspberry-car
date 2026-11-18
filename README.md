@@ -25,7 +25,7 @@ Jede Stufe funktioniert für sich. Wer nur Stufe 1 baut, hat schon ein fahrendes
 |---|---|---|---|
 | 1 | Pico 2 W, Freenove-Board, 4 Motoren mit Rädern, 2× DRV8833 | fährt per Handy-Joystick (WLAN vom Pico) | Pico und 2× DRV8833 da, Board bestellt |
 | 2 | 4× 18650, BMS, Ladeboard, INA226, Sicherung, Schalter, WAGO-Verteiler, MP1584 | Akku mit USB-C-Ladung, Akkuanzeige | Ladeboard da |
-| 3 | Pi 5, Pololu 5 V, Kamera Modul 3 Wide | Live-Video | offen |
+| 3 | Pi 5, Pololu 5 V, Kamera Modul 3 Wide | Live-Video | Pi 5 (8 GB) da |
 | 4 | LiDAR LD19, BNO085, 4× VL53L1X | Karte, Grundriss, Hindernisse, selbst navigieren | offen |
 | 5 | AI HAT+ 13 TOPS | Personen erkennen, Folge mir | offen |
 | 6 | 4G/GPS-Modul + Antennen | Steuerung von überall, draußen navigieren | offen |

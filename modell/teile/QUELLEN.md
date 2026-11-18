@@ -6,7 +6,12 @@ Fehlt `teile.js` oder ist man offline, zeigt das Modell automatisch die einfache
 
 | Datei | Bauteil | Quelle | Lizenz / Hinweis |
 |---|---|---|---|
+| `pi5.glb` | Raspberry Pi 5 | STEP-Datei „rpi-5 3D STEP – No Graphics small file“ von Raspberry Pi: https://pip.raspberrypi.com/categories/892-raspberry-pi-5 (RP-010083-CA) | MIT (Lizenzdatei liegt bei). Umgewandelt mit `step2glb.py … 0.4 0.9` und `merge_glb.py … --min 0.8 --max 15000` (Lötkugeln unter Chips weggelassen, große Teile vereinfacht), damit es im Browser flüssig läuft: 1,3 MB statt 77 MB. |
 | `pico2w.glb` | Raspberry Pi Pico 2 W | STEP-Datei „Pico W“ von Raspberry Pi: https://pip.raspberrypi.com/documents/RP-008318-DS (Stand 11.08.2023) | Raspberry Pi bietet für den Pico 2 W keine eigene STEP-Datei an. Pico 2 W und Pico W haben dieselbe Platine und dieselben Maße, nur der Hauptchip ist anders (RP2350 statt RP2040). Die Datei hat keine eigene Lizenzdatei. Die STEP-Datei des Pico 2 (RP-009061-CA) steht unter MIT. |
+
+**Freenove Breakout Board (FNK0081):** Freenove stellt keine 3D-Datei bereit, aber eine **offizielle mechanische Zeichnung** (Platine CB8101, v1.1, als PDF und DWG):
+https://github.com/Freenove/Freenove_Breakout_Board_for_Raspberry_Pi_Pico (Dateien `CB8101_mechanical-drawing_v1.1_20240326.pdf/.dwg`, Lizenz CC BY-NC-SA 3.0).
+Das Board ist danach im Skript nachgebaut: 63 × 57 mm, Löcher 58 × 52 mm, 2 × 20 Schraubklemmen (Raster 2,54 mm), Buchsenleisten für den Pico (17,78 mm Abstand), Stiftleisten außen, GPIO-LEDs, 5 × 74HC04. Die Zeichnung selbst liegt nicht im Projekt, nur die Maße.
 
 ## Nur lokal: GrabCAD-Modelle (`lokal/`, nicht im Git)
 

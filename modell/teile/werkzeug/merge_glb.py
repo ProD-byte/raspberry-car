@@ -1,5 +1,7 @@
 """GLB verkleinern: alle Teile gleicher Farbe zu einem Mesh zusammenfassen.
-Aufruf: python merge_glb.py ein.glb aus.glb [--ohne R,G,B ...]
+Aufruf: python merge_glb.py ein.glb aus.glb [--max N] [--ohne R,G,B ...]
+  --min MM      Einzelteile kleiner als MM (größte Kante) weglassen, z. B. Lötkugeln unter Chips
+  --max N       Farbgruppen mit mehr als N Dreiecken vereinfachen (braucht: pip install fast_simplification)
   --ohne R,G,B  Teile dieser Farbe weglassen (z. B. Stiftleisten, die man nicht einlötet)
 Gibt außerdem Maße und Farben aus.
 """
@@ -8,13 +10,22 @@ import numpy as np
 import trimesh
 
 src, dst = sys.argv[1], sys.argv[2]
-ohne = {tuple(int(v) for v in a.split(',')) for a in sys.argv[3:] if a != '--ohne'}
+args = sys.argv[3:]
+maxtri = None
+minmm = 0.0
+if '--min' in args:
+    i = args.index('--min'); minmm = float(args[i + 1]); del args[i:i + 2]
+if '--max' in args:
+    i = args.index('--max'); maxtri = int(args[i + 1]); del args[i:i + 2]
+ohne = {tuple(int(v) for v in a.split(',')) for a in args if a != '--ohne'}
 scene = trimesh.load(src)
 groups = collections.defaultdict(list)
 for node in scene.graph.nodes_geometry:
     T, gname = scene.graph[node]
     g = scene.geometry[gname].copy()
     g.apply_transform(T)
+    if minmm and max(g.extents) < minmm:
+        continue
     mat = getattr(g.visual, 'material', None)
     if mat is not None and getattr(mat, 'baseColorFactor', None) is not None:
         col = tuple(int(v) for v in mat.baseColorFactor[:4])
@@ -30,6 +41,8 @@ out = trimesh.Scene()
 for i, (col, meshes) in enumerate(sorted(groups.items(), key=lambda kv: -sum(len(m.faces) for m in kv[1]))):
     m = trimesh.util.concatenate([trimesh.Trimesh(mm.vertices, mm.faces, process=False) for mm in meshes])
     m.merge_vertices()
+    if maxtri and len(m.faces) > maxtri:
+        m = m.simplify_quadric_decimation(face_count=maxtri)
     m.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(
         name=f"farbe_{i}", baseColorFactor=np.array(col, dtype=np.uint8),
         metallicFactor=0.0, roughnessFactor=0.6))
