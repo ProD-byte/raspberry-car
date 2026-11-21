@@ -1,0 +1,1834 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fahrsimulation Gelände</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Werkstatt-Skizze – 3D-Bühne oben, darunter Bedienung, Bauteil-Info und die vier Ebenen als Karten (oben → unten) */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --fg: #172026;
+  --muted: #56656f;
+  --line: #d3dbe0;
+  --scene: #dfe6ea;
+  --ground: #c9d3d9;
+  --focus: #1f6feb;
+  --l0: #c97a1e;
+  --l1: #23897d;
+  --l2: #3f6db5;
+  --l3: #c4472f;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+    --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+  --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 5vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 65ch; }
+.stage {
+  position: relative; background: var(--scene); border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; height: min(68vh, 620px); min-height: 360px;
+  touch-action: none;
+}
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.dims {
+  position: absolute; left: 10px; top: 10px; font-family: var(--font-mono); font-size: 12px;
+  color: var(--muted); background: color-mix(in srgb, var(--surface) 82%, transparent);
+  padding: 4px 8px; border-radius: 6px; pointer-events: none;
+}
+.info {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; display: grid; gap: 2px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; font-size: 14px; pointer-events: none; max-width: 520px;
+}
+.info b { font-family: var(--font-display); font-size: 16px; }
+.info span { color: var(--muted); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.loading[hidden] { display: none; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.controls label.range { display: flex; align-items: center; gap: 10px; font-size: 14px; min-width: 0; flex: 1 1 240px; }
+.controls input[type=range] { flex: 1; accent-color: var(--l2); min-width: 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; background: var(--surface); }
+.modes button { border: 0; padding: 7px 12px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.check input { width: 18px; height: 18px; accent-color: var(--l2); }
+button {
+  font: 500 14px var(--font-body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, .layer:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.layer {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; display: grid; gap: 8px; cursor: pointer; min-width: 0;
+  border-top: 4px solid var(--c); align-content: start;
+}
+.layer[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--c); }
+.layer h2 { font-family: var(--font-display); font-size: 18px; margin: 0; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.layer h2 small { font-family: var(--font-mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+.why { margin: 0; font-size: 14px; color: var(--muted); }
+.layer ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 2px; }
+.stage-tag { font-family: var(--font-mono); font-size: 12px; color: var(--c); }
+.wiring-sec { display: grid; gap: 10px; }
+.wiring-sec h2 { font-family: var(--font-display); font-size: 24px; margin: 8px 0 0; }
+.wiring-sec h3 { font-family: var(--font-display); font-size: 16px; margin: 10px 0 0; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.tbl table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+.tbl th, .tbl td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.tbl tr:last-child td { border-bottom: 0; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); }
+code { font-family: var(--font-mono); font-size: 13px; }
+.notes { font-size: 14px; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+.seiten { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.seiten a { font: 500 13px var(--font-body); color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; }
+.seiten a:hover { border-color: var(--muted); }
+.seiten a[aria-current="page"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+</style>
+<style>
+/* Fahrsimulation */
+.stage { height: min(72vh, 680px); }
+.hud {
+  position: absolute; right: 10px; top: 10px; display: grid; gap: 2px; min-width: 190px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.45; color: var(--fg);
+  background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px; pointer-events: none;
+}
+.hud .z { display: flex; justify-content: space-between; gap: 12px; }
+.hud .z span:first-child { color: var(--muted); }
+.raeder { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; margin-top: 4px; }
+.raeder i { font-style: normal; text-align: center; border-radius: 4px; padding: 1px 0; background: #2f9e5a; color: #fff; font-size: 11px; }
+.raeder i.luft { background: #c4472f; }
+.warn { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: grid; gap: 4px; pointer-events: none; }
+.warn div { background: #c4472f; color: #fff; font: 600 13px var(--font-body); padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+.warn div.gelb { background: #c58a1e; }
+.kartebox {
+  position: absolute; right: 10px; bottom: 10px; display: grid; gap: 4px; pointer-events: none;
+  background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px; width: min(230px, 42%);
+}
+.kartebox b { font: 600 12px var(--font-body); }
+.kartebox small { font: 400 10.5px var(--font-mono); color: var(--muted); line-height: 1.35; }
+.stage canvas.karte { width: 100%; height: auto; aspect-ratio: 1; border-radius: 4px; cursor: default; display: block; }
+.pad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 44px); gap: 6px; }
+.pad button { font-size: 18px; padding: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pad button[aria-pressed="true"] { background: var(--l1); color: #fff; border-color: var(--l1); }
+.fahren { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
+.reihe { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.reihe .label { font-size: 13px; color: var(--muted); margin-right: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html">Werkstatt Ebene 3</a><a href="fahrsimulation.html" aria-current="page">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
+    <div class="eyebrow">Raspberry Car · Fahrsimulation</div>
+    <h1>So fährt das Auto im Gelände</h1>
+    <p class="lead">Das Fahrwerk (Ebene 1) mit dem Elektronik-Deck (Ebene 2) auf verschiedenem Untergrund – Ebene 2 lässt sich ausblenden. Fahren mit den Pfeiltasten, W A S D oder den Knöpfen. Links/rechts ohne Gas = <strong>auf der Stelle drehen</strong> wie ein Panzer. Rechts oben stehen Geschwindigkeit, Neigung, Schlupf und der geschätzte Motorstrom.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="loading" id="loading">Simulation wird gebaut …</div>
+    <div class="dims" id="gelaende-name">Garten</div>
+    <div class="hud" id="hud"></div>
+    <div class="warn" id="warn"></div>
+    <div class="kartebox" id="kartebox"><b>Karte – so sieht das Auto den Raum</b><canvas class="karte" id="karte" width="300" height="300"></canvas><small><span style="color:#1d2329">■</span> Hindernis · <span style="color:#9fb1bd">■</span> frei · <span style="color:#2f9e5a">—</span> Weg (geschätzt) · <span style="color:#e07a1f">—</span> echter Weg</small></div>
+  </div>
+
+  <div class="fahren">
+    <div class="pad" aria-label="Fahren">
+      <span></span><button id="k-vor" type="button" aria-label="Vorwärts" aria-pressed="false">▲</button><span></span>
+      <button id="k-links" type="button" aria-label="Links drehen" aria-pressed="false">◀</button>
+      <button id="k-zurueck" type="button" aria-label="Rückwärts" aria-pressed="false">▼</button>
+      <button id="k-rechts" type="button" aria-label="Rechts drehen" aria-pressed="false">▶</button>
+    </div>
+    <div style="display:grid; gap:10px; flex:1 1 320px; min-width:0">
+      <div class="reihe">
+        <span class="label">Gelände:</span>
+        <div class="modes" role="group" aria-label="Gelände">
+          <button type="button" data-gelaende="zimmer" aria-pressed="false">Wohnzimmer</button>
+          <button type="button" data-gelaende="garten" aria-pressed="true">Garten</button>
+          <button type="button" data-gelaende="parcours" aria-pressed="false">Testparcours</button>
+          <button type="button" data-gelaende="labyrinth" aria-pressed="false">Labyrinth</button>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="check"><input id="ebene2" type="checkbox" checked> Ebene 2 zeigen</label>
+        <label class="range" for="tempo">Höchstgeschwindigkeit <input id="tempo" type="range" min="0.1" max="0.7" step="0.05" value="0.4"> <span id="tempo-wert" style="font-family:var(--font-mono);font-size:13px">0,40 m/s</span></label>
+      </div>
+      <div class="reihe">
+        <button id="loeser" type="button" aria-pressed="false">Labyrinth lösen</button>
+        <label class="check" for="verfahren">Verfahren
+          <select id="verfahren" style="font:500 14px var(--font-body); padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--fg)">
+            <option value="flut">Flood-Fill (Größe bekannt)</option>
+            <option value="wachsend">Wachsende Karte (Größe unbekannt)</option>
+            <option value="rechts">Rechte-Hand-Regel (ohne Karte)</option>
+          </select>
+        </label>
+        <button id="scan" type="button" aria-pressed="false">Raum scannen</button>
+        <button id="kartelos" type="button">Karte löschen</button>
+        <button id="pilot" type="button" aria-pressed="false">Autopilot</button>
+        <button id="bremsen" type="button" aria-pressed="true">Sensoren bremsen</button>
+        <button id="laser" type="button" aria-pressed="true">Laser zeigen</button>
+        <button id="demo" type="button" aria-pressed="false">Demo-Fahrt</button>
+        <button id="folgen" type="button" aria-pressed="true">Kamera folgt</button>
+        <button id="spuren" type="button" aria-pressed="true">Reifenspuren</button>
+        <button id="neustart" type="button">Zurück zum Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <p><strong>So rechnet die Simulation:</strong> Gewicht des fertigen Autos ca. 1,2 kg, Schwerpunkt ca. 55 mm über dem Boden, Radstand 145 mm, Spurweite 166 mm, Räder Ø 67,6 mm, 6-V-Motoren mit Software-Begrenzung. Beim Drehen rutschen die Räder seitlich – je griffiger der Boden (Teppich), desto mehr Schlupf und desto mehr Strom. Das Auto steht immer auf drei oder vier Rädern: Ist der Boden verwunden, hebt ein Rad ab (rot im Feld rechts oben).</p>
+    <p><strong>Nahsensoren:</strong> Vorne und hinten je ein VL53L1X, innen hinter einem Fenster, 5° nach oben gekippt, 4 cm über dem Boden. Jeder Sensor misst abwechselnd in zwei Richtungen (per Software verkleinertes Sichtfeld): <span style="color:#3f8cff">oben (+9°)</span> und <span style="color:#e07a1f">unten (−4°)</span>. Treffen beide etwa gleich weit → <strong>Wand</strong>, anhalten. Trifft der untere Strahl etwas, das schräg ansteigt → <strong>Rampe</strong> mit Steigung in Grad, drüberfahren (bis ca. 28°). Steigt es plötzlich an → <strong>Kante</strong>, anhalten, wenn sie höher als ca. 12 mm ist. Mit „Autopilot“ fährt das Auto allein und dreht vor Hindernissen ab.</p>
+    <p><strong>Karte (Kästchen rechts unten):</strong> Das Auto zeichnet aus den Treffern der beiden Nahsensoren eine Karte, so wie es der Pico später auch kann. Wo es ist, weiß es nur geschätzt – aus den Encodern (gefahrene Strecke) und dem Kreisel im BNO085 (Drehung). Dieser Kreisel driftet ein wenig (ca. 0,25–0,5° pro Minute), darum weicht der geschätzte Weg (grün) mit der Zeit vom echten (orange) ab. „Raum scannen“ dreht das Auto einmal um sich selbst – wie ein sehr langsamer LiDAR. Mit nur zwei Sensoren entsteht so eine grobe Karte; eine genaue Karte rundum macht später der LiDAR.</p>
+    <p><strong>Labyrinth lösen (Micromouse-Prinzip):</strong> Das Auto kennt nur die Größe des Labyrinths (6 × 6 Felder à 40 cm), sein Startfeld und das Zielfeld hinten rechts. In jedem Feld schaut es sich um: Sensor vorne und hinten messen, 90° drehen, nochmal messen – so kennt es alle vier Seiten. Die Wände trägt es in eine Raster-Karte ein (rot im Kästchen). Dann rechnet es mit „Flood-Fill“ für jedes Feld aus, wie viele Schritte es noch bis zum Ziel sind (Zahlen im Kästchen) – unbekannte Seiten zählen dabei erst mal als offen – und fährt ins Nachbarfeld mit der kleineren Zahl. Vor einer Wand stellt es sich auf genau 8 cm Abstand und korrigiert damit seine geschätzte Position. So findet es den Weg, ohne das Labyrinth vorher zu kennen. Genau dieser Ablauf passt später auch auf den Pico.</p>
+    <p><strong>Drei Verfahren zum Vergleich:</strong> <em>Flood-Fill</em> kennt Größe und Zielfeld und rechnet den kürzesten Weg aus. <em>Wachsende Karte</em> kennt weder Größe noch Ziel: die Karte wächst mit jedem Feld, das Auto fährt immer zum nächsten noch unerforschten Feld und erkennt den Ausgang daran, dass rundum keine Wand mehr ist (in mindestens drei Richtungen über 80 cm frei). <em>Rechte-Hand-Regel</em> braucht gar keine Karte: rechts frei → rechts abbiegen, sonst geradeaus, sonst links, sonst umdrehen. Das klappt nur, wenn der Ausgang an der Außenwand liegt und es keine „Inseln“ gibt – fährt das Auto im Kreis, bricht es ab.</p>
+    <p><strong>Labyrinth:</strong> 6 × 6 Felder à 40 cm, Gänge 36 cm breit, Ausgang hinten rechts. Selbst durchfahren geht gut (das Auto dreht auf ca. 25 cm). Der Autopilot irrt dort nur umher: Mit je einem Sensor vorne und hinten sieht das Auto keine Seitenwände und hat keine Karte. Den Weg hinaus findet es erst mit dem 360°-LiDAR (Stufe 4), der die Wände rundum erfasst.</p>
+    <p><strong>Grenzen:</strong> Stufen bis ca. 17 mm (halber Radradius, Allrad), Steigungen bis zur Haftgrenze des Bodens, Bodenfreiheit 16 mm (vorne und hinten durch die Kufen mehr), Kippen seitlich ab ca. 56°. Alles Schätzwerte – die echten Werte messen wir später mit INA226 und BNO085.</p>
+    <p>Bauteile wie in der Werkstatt-Ansicht <code>ebene1-unten.html</code>. Das ganze Auto zeigt <code>raspberry-car-3d.html</code>.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
+<script src="teile/teile.js?v=20261121122439"></script>
+<!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
+<script src="teile/lokal/teile-lokal.js?v=20261121122439"></script>
+<script>
+// Fahrsimulation: Fahrwerk (Ebene 1) auf Gelände. Einfache, gut nachvollziehbare Physik (keine Physik-Bibliothek):
+// Panzerlenkung mit Schlupf, Auflage auf 3 oder 4 Rädern, Bodenfreiheit, Stufen, Steigung, Kippen, Stromschätzung.
+(function () {
+  const stage = document.getElementById('stage');
+  const loading = document.getElementById('loading');
+  if (!window.THREE || !THREE.OrbitControls) { loading.textContent = 'Die 3D-Ansicht konnte nicht geladen werden. Bitte Seite neu laden.'; return; }
+
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function start() {
+    loading.hidden = true;
+
+    // ---------- Renderer & Szene ----------
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.78;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage.insertBefore(renderer.domElement, stage.firstChild);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, 1, 2, 9000);
+    const HOME = { pos: V(-420, 300, 380), target: V(0, 20, 0) };
+    camera.position.copy(HOME.pos);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.copy(HOME.target);
+    controls.enableDamping = true;
+    controls.minDistance = 50;
+    controls.maxDistance = 2600;
+    controls.autoRotate = !reduceMotion;
+    controls.autoRotateSpeed = 0.9;
+
+    if (THREE.RoomEnvironment) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x7d8a96, scene.environment ? 0.25 : 0.65));
+    const sun = new THREE.DirectionalLight(0xffffff, scene.environment ? 0.75 : 1.0);
+    sun.position.set(180, 420, 220);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1000 });
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+    const rim = new THREE.DirectionalLight(0xdfe8ff, 0.45);
+    rim.position.set(-300, 200, -260);
+    scene.add(rim);
+
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 1 });
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(320, 72), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.userData.noPick = true;
+    scene.add(ground);
+
+    // ---------- Hilfsfunktionen ----------
+    function std(color, o = {}) {
+      const m = new THREE.MeshStandardMaterial({
+        color, metalness: o.metal ?? 0.05, roughness: o.rough ?? 0.6, map: o.map || null,
+        emissive: o.emissive ?? 0x000000, emissiveIntensity: o.ei ?? 1, envMapIntensity: o.env ?? 0.55
+      });
+      m.userData.base = o.opacity ?? 1;
+      return m;
+    }
+    function add(parent, geo, mat, x = 0, y = 0, z = 0, r) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if (r) m.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
+      m.castShadow = true; m.receiveShadow = true;
+      parent.add(m); return m;
+    }
+    // Quader: y = Unterkante
+    const box = (p, w, h, d, x, y, z, color, o) => add(p, new THREE.BoxGeometry(w, h, d), std(color, o), x, y + h / 2, z);
+    // Abgerundeter Quader: y = Unterkante
+    const rbox = (p, w, h, d, x, y, z, color, o = {}) => {
+      const r = Math.min(o.r ?? 0.8, w / 2 - 0.01, h / 2 - 0.01, d / 2 - 0.01);
+      const geo = THREE.RoundedBoxGeometry ? new THREE.RoundedBoxGeometry(w, h, d, 3, r) : new THREE.BoxGeometry(w, h, d);
+      return add(p, geo, std(color, o), x, y + h / 2, z);
+    };
+    let seed = 1234;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    function smd(p, w, d, n, y = 1.6, cx = 0, cz = 0) {
+      const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1.6, 0.55, 0.8), std(0xffffff, { rough: 0.45 }), n);
+      const cols = [0x1d1d1d, 0x8b6b46, 0x1d1d1d, 0x70757a, 0xb08d57, 0x1d1d1d];
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = V(1, 1, 1);
+      for (let i = 0; i < n; i++) {
+        q.setFromAxisAngle(V(0, 1, 0), rnd() < 0.5 ? 0 : Math.PI / 2);
+        m.compose(V(cx + (rnd() - 0.5) * (w - 5), y + 0.27, cz + (rnd() - 0.5) * (d - 5)), q, one);
+        im.setMatrixAt(i, m); im.setColorAt(i, new THREE.Color(cols[i % cols.length]));
+      }
+      p.add(im);
+    }
+    // Zylinder entlang y: y = Unterkante
+    const cylY = (p, r, h, x, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, h, o.seg || 28), std(color, o), x, y + h / 2, z);
+    // Zylinder entlang z von z0 bis z1, Mitte (x,y)
+    const cylZ = (p, r, z0, z1, x, y, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), o.seg || 32), std(color, o), x, y, (z0 + z1) / 2, [Math.PI / 2, 0, 0]);
+    // Zylinder entlang x von x0 bis x1, Mitte (y,z)
+    const cylX = (p, r, x0, x1, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), o.seg || 28), std(color, o), (x0 + x1) / 2, y, z, [0, 0, Math.PI / 2]);
+
+    function canvasTex(wmm, hmm, ppm, draw) {
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(16, Math.round(wmm * ppm)); cv.height = Math.max(16, Math.round(hmm * ppm));
+      const c = cv.getContext('2d');
+      c.scale(cv.width / wmm, cv.height / hmm);
+      draw(c, wmm, hmm);
+      const t = new THREE.CanvasTexture(cv);
+      t.encoding = THREE.sRGBEncoding;
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return t;
+    }
+    const silk = (c, s, x, y, size, o = {}) => {
+      c.save(); c.fillStyle = o.color || '#f1f3f1';
+      c.font = `${o.weight || 600} ${size}px "JetBrains Mono", ui-monospace, monospace`;
+      c.textAlign = o.align || 'left'; c.textBaseline = 'middle';
+      c.translate(x, y); if (o.rot) c.rotate(o.rot); c.fillText(s, 0, 0); c.restore();
+    };
+    const pad = (c, x, y, w, h) => { c.fillStyle = '#d8b46a'; c.fillRect(x - w / 2, y - h / 2, w, h); };
+    const hole = (c, x, y, r) => {
+      c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(x, y, r + 0.9, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#222'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    };
+    function shade(hex, f) { const col = new THREE.Color(hex); col.multiplyScalar(f); return col; }
+
+    // Leiterplatte: Oberseite mit Aufdruck. Origin = Mitte, Unterkante y.
+    function pcb(p, w, d, color, x, y, z, draw, t = 1.6) {
+      const tex = canvasTex(w, d, 10, (c) => { c.fillStyle = color; c.fillRect(0, 0, w, d); if (draw) draw(c, w, d); });
+      const side = std(shade(color, 0.8), { rough: 0.7 });
+      const mats = [side, side, std(0xffffff, { map: tex, rough: 0.45, metal: 0.05 }), std(shade(color, 0.7)), side, side];
+      return add(p, new THREE.BoxGeometry(w, t, d), mats, x, y + t / 2, z);
+    }
+    function chip(p, w, d, h, x, y, z, label, o = {}) {
+      let mats = std(o.color ?? 0x1c1d1f, { rough: 0.5 });
+      if (label) {
+        const tex = canvasTex(w, d, 24, (c) => { c.fillStyle = '#1c1d1f'; c.fillRect(0, 0, w, d); silk(c, label, w / 2, d / 2, Math.min(d * 0.32, w / label.length * 1.5), { align: 'center', color: '#b9bcbf', weight: 400 }); });
+        const s = std(0x1c1d1f, { rough: 0.5 });
+        mats = [s, s, std(0xffffff, { map: tex, rough: 0.5 }), s, s, s];
+      }
+      add(p, new THREE.BoxGeometry(w, h, d), mats, x, y + h / 2, z);
+      if (o.legs) {
+        const legMat = std(0xc9ccd0, { metal: 0.8, rough: 0.3 });
+        add(p, new THREE.BoxGeometry(w * 0.85, 0.3, d + 2), legMat, x, y + 0.2, z);
+      }
+    }
+    // Stiftleiste entlang x
+    function pins(p, n, rows, x, y, z, o = {}) {
+      const pitch = 2.54, len = n * pitch, wid = rows * pitch;
+      const baseH = o.female ? (o.h || 8.5) : 2.5;
+      box(p, len, baseH, wid, x, y, z, 0x151617, { rough: 0.7 });
+      const pinH = o.female ? 0.6 : (o.pinH || 6);
+      const geo = new THREE.BoxGeometry(0.64, pinH, 0.64);
+      const im = new THREE.InstancedMesh(geo, std(o.female ? 0x050505 : 0xd8b04a, { metal: o.female ? 0 : 0.85, rough: 0.3 }), n * rows);
+      const m = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < n; i++) for (let r = 0; r < rows; r++) {
+        m.makeTranslation(x - len / 2 + pitch / 2 + i * pitch, y + baseH + pinH / 2 - (o.female ? 0.5 : 0), z - wid / 2 + pitch / 2 + r * pitch);
+        im.setMatrixAt(k++, m);
+      }
+      im.castShadow = true; p.add(im);
+    }
+    // Schraubklemmenleiste entlang x
+    function terminals(p, n, pitch, x, y, z, color, facing = 1) {
+      const len = n * pitch;
+      box(p, len, 9, 7.5, x, y, z, color, { rough: 0.55 });
+      const screw = new THREE.InstancedMesh(new THREE.CylinderGeometry(1.35, 1.35, 0.8, 14), std(0xc7cbcf, { metal: 0.9, rough: 0.3 }), n);
+      const holeM = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch * 0.55, 3, 0.6), std(0x0d0d0d), n);
+      const m = new THREE.Matrix4();
+      for (let i = 0; i < n; i++) {
+        const px = x - len / 2 + pitch / 2 + i * pitch;
+        m.makeTranslation(px, y + 9.2, z - facing * 1.2); screw.setMatrixAt(i, m);
+        m.makeTranslation(px, y + 3.5, z + facing * 3.8); holeM.setMatrixAt(i, m);
+      }
+      p.add(screw); p.add(holeM);
+    }
+    const PARTS = {};   // alle Bauteile nach Namen (für die Ansicht „Vorhandene Teile“)
+    function part(parent, name, desc, x, y, z, ry = 0) {
+      const g = new THREE.Group();
+      g.position.set(x, y, z); g.rotation.y = ry;
+      g.userData.part = { name, desc };
+      PARTS[name] = g;
+      parent.add(g); return g;
+    }
+    // CAD-Modell automatisch an die Stelle des einfachen Ersatzmodells setzen.
+    // Die Modelle sind vorher flach ausgerichtet (werkzeug/ausrichten.py: Bauteilseite oben, Mitte 0, Unterkante 0).
+    // Hier: lange Seite an die lange Seite des Ersatzmodells drehen, mittig auf dieselbe Unterkante setzen.
+    // opt.behalten(mesh): diese Teile des Ersatzmodells bleiben (z. B. gedruckte Halter)
+    // opt.kippenZ: CAD vorher um die z-Achse drehen (z. B. −90°: Oberseite zeigt nach vorne +x)
+    // opt.drehen: Drehung um y fest vorgeben;  opt.danach(): wird nach dem Laden aufgerufen
+    function einpassen(name, g, opt = {}) {
+      const ersatz = new THREE.Group();
+      [...g.children].forEach((c) => { if (!(opt.behalten && opt.behalten(c))) ersatz.add(c); });
+      g.add(ersatz);
+      g.updateWorldMatrix(true, true);
+      const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+      const box = new THREE.Box3(), tmp = new THREE.Box3();
+      ersatz.traverse((o) => {
+        // InstancedMesh (Stifte, SMD-Bauteile) überspringen: ihr Hüllkörper kennt nur ein Exemplar, nicht dessen Lage
+        if (!o.isMesh || !o.geometry || o.isInstancedMesh) return;
+        o.geometry.computeBoundingBox();
+        tmp.copy(o.geometry.boundingBox).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+        box.union(tmp);
+      });
+      if (box.isEmpty()) return;
+      cadTeil(name, g, ersatz, (m) => {
+        const k = new THREE.Group(); k.add(m); if (opt.kippenZ) k.rotation.z = opt.kippenZ;
+        const w = new THREE.Group(); w.add(k);
+        w.updateMatrixWorld(true);
+        let mb = new THREE.Box3().setFromObject(w);
+        const es = box.getSize(V()), ms = mb.getSize(V());
+        if (opt.drehen !== undefined) w.rotation.y = opt.drehen;
+        else if ((es.x >= es.z) !== (ms.x >= ms.z)) w.rotation.y = Math.PI / 2;
+        w.updateMatrixWorld(true);
+        mb = new THREE.Box3().setFromObject(w);
+        const ec = box.getCenter(V()), mc = mb.getCenter(V());
+        w.position.set(ec.x - mc.x, box.min.y - mb.min.y, ec.z - mc.z);
+        if (opt.danach) opt.danach();
+        return w;
+      });
+    }
+    // Echtes CAD-Modell (aus teile/teile.js) laden. Klappt das nicht (offline, Datei fehlt),
+    // bleibt das einfache Ersatzmodell sichtbar. place(mesh) richtet das Modell aus.
+    function cadTeil(name, parent, ersatz, place, umfaerben) {
+      const b64 = window.RC_TEILE && window.RC_TEILE[name];
+      if (!b64 || !THREE.GLTFLoader) return;
+      const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)).buffer;
+      new THREE.GLTFLoader().parse(bin, '', (gltf) => {
+        gltf.scene.traverse((o) => {
+          if (!o.isMesh) return;
+          o.castShadow = true; o.receiveShadow = true;
+          eachMat(o, (m) => {
+            m.userData.base = 1; m.envMapIntensity = 0.55;
+            m.side = THREE.DoubleSide;   // manche STEP-Flächen zeigen nach innen
+            const c = m.color, grau = Math.abs(c.r - c.g) < 0.03 && Math.abs(c.g - c.b) < 0.03;
+            if (grau && c.r > 0.1 && c.r < 0.8) { m.metalness = 0.85; m.roughness = 0.3; }  // Blech, Pins
+            if (umfaerben) umfaerben(m);
+          });
+        });
+        parent.add(place(gltf.scene));
+        parent.remove(ersatz);
+        anwenden();
+      }, (err) => console.warn('CAD-Modell ' + name + ' nicht geladen:', err));
+    }
+
+
+
+    ground.visible = false;
+    // ---------- Das Fahrwerk (dieselben Teile wie in der Werkstatt) ----------
+    const auto = new THREE.Group(); scene.add(auto);
+    // Schilder „VORNE“ / „HINTEN“: hinten ist die Seite mit Ladebuchse und Hauptschalter, vorne die mit Nahsensor und Kamera
+    function richtungsSchilder(parent, y = 14) {
+      [['VORNE', 128, '#2f7d3b'], ['HINTEN', -163, '#a8432a']].forEach(([text, x, farbe]) => {
+        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72;
+        const c = cv.getContext('2d');
+        c.fillStyle = farbe; c.beginPath(); if (c.roundRect) c.roundRect(2, 2, 252, 68, 18); else c.rect(2, 2, 252, 68); c.fill();
+        c.fillStyle = '#fff'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, 128, 38);
+        const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false }));
+        sp.scale.set(44, 12.4, 1); sp.position.set(x, y, 0); sp.userData.noPick = true; parent.add(sp);
+      });
+    }
+    const L0 = new THREE.Group(); auto.add(L0);
+    richtungsSchilder(auto, 95);
+    function anchor() {}                       // keine Kabel in der Simulation
+    function anwenden() {}                     // wird nach dem Laden jedes CAD-Modells aufgerufen
+    function eachMat(o, fn) { if (!o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); }
+
+    function m3Schraube(p, x, yKopfUnten, z, laenge, nachOben) {
+      // ISO 4762 M3: Kopf Ø 5,5 × 3 mm, Innensechskant SW 2,5 – schwarz brüniert
+      const s = new THREE.Group(); s.position.set(x, yKopfUnten, z); if (!nachOben) s.rotation.x = Math.PI; p.add(s);
+      cylY(s, 2.75, 3, 0, 0, 0, 0x1b1c1e, { metal: 0.6, rough: 0.4, seg: 24 });
+      cylY(s, 1.45, 0.3, 0, 2.75, 0, 0x050505, { seg: 6 });                     // Innensechskant (Andeutung)
+      cylY(s, 1.5, laenge, 0, 3, 0, 0x2a2b2d, { metal: 0.7, rough: 0.35, seg: 16 });
+      return s;
+    }
+    function m3Mutter(p, x, y, z) { cylY(p, 3.17, 2.4, x, y, z, 0xb9bec3, { metal: 0.85, rough: 0.3, seg: 6 }); }
+    const AXLE = 33.8;   // Radius des echten Rads (Ø 67,6 mm) = Höhe der Radachse über dem Boden
+    const MOTORS = { VL: [55, 1, 'vorne links'], HL: [-90, 1, 'hinten links'], VR: [55, -1, 'vorne rechts'], HR: [-90, -1, 'hinten rechts'] };   // Radstand 145 mm, Mitte = Wannenmitte (x −17,5)
+
+    // Motor JGA25-370 mit Encoder, L-Halterung und Rad: echte CAD-Modelle von GrabCAD (nur lokal, siehe teile/QUELLEN.md).
+    // Motor: Getriebe-Stirnseite liegt bei z = s·62 (direkt an der Halterung), Welle ragt 12,5 mm nach außen, Encoder innen bei z ≈ s·1.
+    // Halterung: Motorplatte mit Ø-8-Loch für die Welle, obere Platte unter der Bodenplatte (16,45 mm über der Achse).
+    // Rad (Solarbotics-Form, Ø 67,6 × 24,3 mm): Mitte bei z = s·83, Nabe zeigt zum Motor.
+    function motor(key, x, s, nm) {
+      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Ø 25 mm, mit Getriebe (hier 21 mm lang, je nach Übersetzung 17–27 mm) und Hall-Encoder (11 Polpaare) hinten. Am Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, 0);
+      const ersatz = new THREE.Group(); ersatz.position.z = s * 5; g.add(ersatz);
+      cadTeil('motor', g, ersatz, (m) => {
+        // CAD: Achse entlang z, Getriebe-Stirnseite bei z = 0, Welle bei z < 0, Encoder bei z ≈ 52…61
+        const w = new THREE.Group(); w.add(m);
+        m.rotation.z = -Math.PI / 2;   // um die Motorachse drehen: Encoder-Stecker nach oben, M3-Gewinde waagerecht (passend zu den Langlöchern)
+        if (s > 0) { w.rotation.y = Math.PI; w.position.z = 62; } else { w.position.z = -62; }
+        return w;
+      });
+      cylZ(ersatz, 12, s * 4, s * 35, 0, 0, 0xb8bec4, { metal: 0.85, rough: 0.28 });
+      cylZ(ersatz, 12.2, s * 33, s * 35, 0, 0, 0x8f969c, { metal: 0.8, rough: 0.3 });
+      cylZ(ersatz, 12.6, s * 35, s * 57, 0, 0, 0xd5d8db, { metal: 0.75, rough: 0.33 });
+      [-1, 1].forEach((k) => cylZ(ersatz, 1.3, s * 57, s * 57.6, k * 8, 6, 0x5d6266, { metal: 0.8, seg: 10 }));
+      cylZ(ersatz, 3.6, s * 57, s * 59, 0, 0, 0xcfd2d5, { metal: 0.8 });
+      cylZ(ersatz, 2, s * 59, s * 69.5, 0, 0, 0xa3a9ae, { metal: 0.95, rough: 0.2 });
+      cylZ(ersatz, 11.5, s * 2.4, s * 4, 0, 0, 0x2e6b3a, { rough: 0.5 });
+      cylZ(ersatz, 6, s * 0.6, s * 2.4, 0, 0, 0x202224);
+      box(ersatz, 10, 4, 3.5, 0, 11, s * 3.2, 0xf1efe8);   // Encoder-Stecker oben
+      // Befestigung: 2 × M3 × 6 (ISO 4762) von außen durch die Wannenwand (Langloch) in die Getriebe-Stirnseite
+      [-8.5, 8.5].forEach((k) => {
+        const sch = m3Schraube(g, k, 0, s * 68, 6, true);
+        sch.rotation.set(-s * Math.PI / 2, 0, 0);
+      });
+      ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
+    }
+    function wheel(x, s) {
+      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen auf gelber Kunststofffelge, Ø 67,6 × 24,3 mm (die übliche „65-mm“-Form). Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * 83);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cadTeil('rad', g, ersatz, (m) => {
+        // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen
+        m.rotation.x = -Math.PI / 2; m.position.z = 12.15;
+        const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
+        return w;
+      });
+      const prof = [[19, -13], [28.5, -13], [31.2, -12.2], [32.5, -10.5], [32.5, 10.5], [31.2, 12.2], [28.5, 13], [19, 13]].map(([r, y]) => new THREE.Vector2(r, y));
+      add(ersatz, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
+      const n = 30, tread = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 1.2, 20), std(0x18191b, { rough: 0.95 }), n);
+      const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = V(1, 1, 1);
+      for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; q.setFromAxisAngle(V(0, 0, 1), a); mx.compose(V(Math.cos(a) * 32.6, Math.sin(a) * 32.6, 0), q, sc); tread.setMatrixAt(i, mx); }
+      tread.castShadow = true; ersatz.add(tread);
+      cylZ(ersatz, 19.5, -12, 12, 0, 0, 0xe2b23b, { rough: 0.45, seg: 40 });
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; cylZ(ersatz, 3.6, s * 12, s * 12.4, Math.cos(a) * 12, Math.sin(a) * 12, 0x6d5a1f, { seg: 16 }); }
+      cylZ(ersatz, 6.5, -s * 12, -s * 17, 0, 0, 0x2a2b2d, { seg: 6 });
+    }
+    Object.entries(MOTORS).forEach(([k, [x, s, nm]]) => { motor(k, x, s, nm); wheel(x, s); });
+    (function wanne() {
+      const g = part(L0, 'Fahrwerk-Wanne (Druckteil)', 'Trägt Motoren, Akku und die Stromversorgung (BMS, INA226, Sicherung und die Verteiler zwischen Akku und Hinterachse). Das Ladeboard sitzt oben auf dem Elektronik-Deck. Die Motoren werden mit 2 × M3 direkt an die Seitenwand geschraubt (waagerechte Langlöcher für 15,4–17 mm Lochabstand), Encoder-Stecker oben, und liegen in Sätteln. Wird von unten mit 4 × M3 × 45 an das Elektronik-Deck geschraubt: Auto umdrehen, 4 Schrauben lösen, Wanne abnehmen – alles darüber bleibt zusammen. Boden vorne und hinten gleich als Kufen schräg hochgezogen (45°, scharfer Knick – druckt ohne Stützen), damit sie über Steine gleitet, 2 Paar Kabelbinder-Schlitze im Boden für die Kabel der Sicherung (von unten einfädeln, Rille unten), Sechseck-Lüftung, Unterkante angefast. 205 × 130 × 42 mm, Radstand 145 mm. Datei: gehaeuse/ebene1/wanne.stl', 0, 0, 0);
+      g.userData.druckteil = 'wanne';
+      cadTeil('e1_wanne', g, new THREE.Group(), (m) => m);
+      const b = part(L0, 'Motorbügel (4 × Druckteil)', 'Drückt den Motor in den Sattel der Wanne. Je 2 × M3-Zylinderkopfschraube, die sich das Gewinde selbst in die Wanne schneiden (Kernloch 2,6 mm). Datei: gehaeuse/ebene1/motorbuegel.stl (4 × drucken)', 0, 0, 0);
+      b.userData.druckteil = 'buegel';
+      cadTeil('e1_motorbuegel', b, new THREE.Group(), (m) => m);
+      Object.values(MOTORS).forEach(([x, s]) => [-20, 20].forEach((k) => m3Schraube(b, x + k, AXLE + 6, s * 50, 8, false)));
+      // Köpfe sitzen versenkt in der Schräge der Kufen (vorne und hinten gleich): 4 × M3 × 45
+      [[77.5, 35, 20.4, 45], [77.5, -35, 20.4, 45], [-112.5, 35, 20.4, 45], [-112.5, -35, 20.4, 45]].forEach(([x, z, y, l]) => m3Schraube(g, x, y, z, l, true));
+    })();
+
+    const cellTex = canvasTex(58, 65, 8, (c, w, h) => {
+      c.fillStyle = '#d97a9c'; c.fillRect(0, 0, w, h);   // Samsung 35E: rosa Hülle
+      c.fillStyle = '#b85a7d'; c.fillRect(0, 0, w, 4); c.fillRect(0, h - 4, w, 4);
+      silk(c, 'SAMSUNG SDI', w * 0.25, h / 2, 4.2, { align: 'center', rot: -Math.PI / 2 });
+      silk(c, 'INR18650-35E', w * 0.42, h / 2, 3.6, { align: 'center', rot: -Math.PI / 2, weight: 400 });
+      silk(c, '3500mAh  3.6V', w * 0.56, h / 2, 2.8, { align: 'center', rot: -Math.PI / 2, weight: 400 });
+    });
+    // Akku 2S2P: 2 × Keystone 1047 (Doppelhalter 18650, Lötfahnen) mit je 2 × Samsung INR18650-35E.
+    // Halter nach Keystone-Datenblatt K75p29: 77,1 × 39,8 × 18 mm, Zellabstand 19,1 mm, 2 Löcher Ø 3,2 mm im Abstand 55,2 mm (Mittelsteg).
+    // Zellen nach Samsung-Datenblatt: Ø 18,4 mm (max. 18,55), Länge 65,0 mm (max. 65,25), Pluspol flach (Flat-Top).
+    // Die Halter hängen kopfüber unter der Bodenplatte, je 2 × M3-Zylinderkopfschraube (ISO 4762) mit Mutter oben.
+    (function battery() {
+      const gp = part(L0, 'Akku 2S2P: 2 × Keystone 1047 mit 4 × Samsung INR18650-35E', 'Zwei Doppelhalter Keystone 1047 (77,1 × 39,8 × 18 mm, Lötfahnen), je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Stehen auf dem Boden der Fahrwerk-Wanne, je 2 × M3-Zylinderkopfschraube von innen mit Mutter unter dem Boden. Zellen: Samsung INR18650-35E, Flat-Top, Ø 18,4 × 65 mm.', 0, 22, 0);   // steht auf den 3 mm hohen Sockeln der Wanne
+      // Aufbau unten ist „kopfüber“ beschrieben (Boden bei y = 0, Zellen darunter) → umdrehen
+      const g = new THREE.Group(); g.rotation.x = Math.PI; gp.add(g);
+      const HL = 77.1, HB = 39.8, HH = 18.0, PITCH = 19.1, LOCH = 27.6, ZR = 9.2, ZL = 65.0;
+      const grau = 0x2b2d30;
+      [[-21, 1, '1'], [21, -1, '2']].forEach(([hx, dir, grp]) => {
+        // Halter (kopfüber: Boden oben an der Platte, Zellen hängen darunter)
+        box(g, HB, 1.5, HL, hx, -1.5, 0, grau, { rough: 0.7 });                           // Boden
+        [-1, 1].forEach((k) => box(g, HB, HH, 3, hx, -HH, k * (HL / 2 - 1.5), grau, { rough: 0.7 }));   // Stirnwände
+        box(g, 3.2, 7, HL - 6, hx, -8.5, 0, grau, { rough: 0.7 });                       // Mittelsteg
+        [-1, 1].forEach((k) => box(g, 1.2, 6, HL - 6, hx + k * (HB / 2 - 0.6), -7.5, 0, grau, { rough: 0.7 }));  // Seitenwände
+        // Befestigung: 2 × M3 im Mittelsteg, Kopf unten im Halter, Mutter oben auf der Platte
+        // Befestigung: M3 × 8 von unten durch Boden und Sockel (Kopf bündig in der Senkung), Mutter innen auf dem Halterboden
+        [-LOCH, LOCH].forEach((z) => { m3Schraube(gp, hx, -6, z, 8, true); m3Mutter(gp, hx, 1.5, z); });
+        // Federkontakte und Lötfahnen (je Zelle eigene Kontakte)
+        [-PITCH / 2, PITCH / 2].forEach((cx) => [-1, 1].forEach((k) => {
+          box(g, 8, 10, 0.4, hx + cx, -16, k * (HL / 2 - 3.2), 0xc9cdd1, { metal: 0.9, rough: 0.3 });
+          box(g, 3, 6, 0.4, hx + cx, -15, k * (HL / 2 + 0.4), 0xc9cdd1, { metal: 0.9, rough: 0.3 });   // Lötfahne außen
+        }));
+        // Zellen
+        [-PITCH / 2, PITCH / 2].forEach((cx) => {
+          const side = std(0xffffff, { map: cellTex, rough: 0.35, metal: 0.1 });
+          const capM = std(0xc9cdd1, { metal: 0.9, rough: 0.25 });
+          add(g, new THREE.CylinderGeometry(ZR, ZR, ZL, 40), [side, capM, capM], hx + cx, -1.5 - 0.3 - ZR, 0, [dir * Math.PI / 2, 0, 0]);
+          cylZ(g, 7.5, dir * (ZL / 2), dir * (ZL / 2 + 0.15), hx + cx, -1.8 - ZR, 0xd5d8dc, { metal: 0.9, rough: 0.25, seg: 24 });  // flacher Pluspol
+        });
+        anchor(`G${grp}+`, g, hx, -12, dir * (HL / 2 + 1.5), [0, 0, dir], `Akku Gruppe ${grp} Plus`);
+        anchor(`G${grp}-`, g, hx, -12, -dir * (HL / 2 + 1.5), [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
+      });
+    })();
+
+    (function bms() {
+      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+. Liegt links neben dem Akku in einer Tasche der Wanne.', -5, 19, 50);
+      const pads = [['B-', 4], ['BM', 9], ['B+', 14], ['P-', 36], ['P+', 41]];
+      pcb(g, 45, 20, '#244f9e', 0, 0, 0, (c, w, h) => {
+        pads.forEach(([t, x]) => { pad(c, x, 2.6, 3.6, 3); silk(c, t, x, 6.6, 1.9, { align: 'center' }); });
+        silk(c, '2S 20A BALANCE', w / 2, h - 2.8, 2.2, { align: 'center' });
+      });
+      [-11, -4, 4, 11].forEach((x) => chip(g, 5, 4, 1.5, x, 1.6, 2, '', { legs: true }));
+      smd(g, 45, 20, 10, 1.6, 0, 3);
+      pads.forEach(([t, x]) => anchor(`BMS_${t}`, g, x - 22.5, 1.9, -7.4, [0, 1, 0], `BMS ${t.replace('-', '−')}`));
+      einpassen('bms', g);   // HW-391 (GrabCAD)
+    })();
+    (function ina226() {
+      // INA226-Modul 21 × 19 mm OHNE Stiftleiste: alle Leitungen direkt an die Lötpunkte gelötet (flach, nichts wackelt).
+      // Gedreht: Lötpunkte VIN+/VIN− zeigen nach hinten (−x, Platz bis zum Motor), die Reihe VBS…ALE nach vorne zum BMS.
+      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Ohne Stiftleiste eingebaut: alle Leitungen direkt angelötet – VIN+ (vom Schalter) und VIN− (zum Verteiler) mit dicker Litze (1,0 mm²), die Datenleitungen VBS, GND, VCC, SCL, SDA zum Pico über I²C. Liegt flach links neben dem Akku, hinter dem BMS, in einer Einklick-Tasche der Wanne. Platine 21 × 19 mm.', -46, 19, 50.5, Math.PI / 2);
+      const names = ['VBS', 'GND', 'VCC', 'SCL', 'SDA', 'ALE'];
+      pcb(g, 21, 19, '#4a2f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'INA226', w / 2, h / 2, 2.2, { align: 'center' });
+        silk(c, 'VIN+', 7.5, 3.2, 1.5, { align: 'center' }); silk(c, 'VIN-', 13.5, 3.2, 1.5, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 4.15 + 2.54 * i, h - 3.4, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+      });
+      const sh = canvasTex(6.3, 3.2, 30, (c) => { c.fillStyle = '#1b1b1b'; c.fillRect(0, 0, 6.3, 3.2); silk(c, 'R002', 3.15, 1.6, 1.4, { align: 'center', color: '#ddd', weight: 400 }); });
+      const shm = std(0x1b1b1b);
+      add(g, new THREE.BoxGeometry(6.3, 1.2, 3.2), [shm, shm, std(0xffffff, { map: sh }), shm, shm, shm], 0, 1.6 + 0.6, -2);
+      chip(g, 3, 3, 1, -5, 1.6, 2, '', { legs: true });
+      smd(g, 21, 12, 6, 1.6, 0, 0);
+      // Lötpunkte (verzinnt) statt Stiftleiste und Schraubklemme
+      [-3, 3].forEach((x) => cylY(g, 1.1, 0.06, x, 1.6, -8, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 16 }));
+      names.forEach((n, i) => cylY(g, 0.8, 0.06, -6.35 + 2.54 * i, 1.6, 8.2, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 12 }));
+      anchor('INA_VIN+', g, -3, 1.9, -8, [0, 1, 0], 'INA226 VIN+');
+      anchor('INA_VIN-', g, 3, 1.9, -8, [0, 1, 0], 'INA226 VIN−');
+      names.forEach((n, i) => anchor(`INA_${n}`, g, -6.35 + 2.54 * i, 1.9, 8.2, [0, 1, 0], `INA226 ${n}`));
+      einpassen('ina226', g);   // GrabCAD, Stiftleiste entfernt
+    })();
+    (function fuse() {
+      // Inline-Sicherungshalter für Standard-Flachsicherung (ATO/ATC), wasserdicht, 16-AWG-Kabel (Amazon B078X977PK).
+      // Echtes CAD-Modell (GrabCAD, Dawson Dueck) – liegt nur lokal, siehe teile/QUELLEN.md. Steht aufrecht, Deckel oben.
+      const g = part(L0, 'Sicherungshalter mit 10-A-Flachsicherung', 'Inline-Halter für eine Standard-Kfz-Flachsicherung (ATO/ATC) mit 16-AWG-Kabel, wasserdicht mit Klappdeckel. Sitzt direkt hinter dem BMS im Plus und brennt bei einem Kurzschluss durch, bevor Kabel heiß werden. Steht rechts neben dem Akku, Deckel oben (zum Wechseln der Sicherung), die beiden Kabel sind links und rechts mit Kabelbindern durch Schlitze im Boden festgebunden. Halter ca. 25 × 25,5 × 12,5 mm, mit Kabelansätzen 54 mm lang.', -10, 19, -51);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      rbox(ersatz, 25, 22, 12.4, 0, 0, 0, 0x1a1b1d, { rough: 0.55, r: 2 });          // Körper
+      rbox(ersatz, 26, 3.5, 12.6, 0, 22, 0, 0x1a1b1d, { rough: 0.55, r: 1.2 });       // Deckel
+      [-1, 1].forEach((s) => cylX(ersatz, 1.6, s * 12.5, s * 27, 5.8, 0, 0xc23a2a, { rough: 0.5, seg: 12 }));   // Kabelansätze rot
+      cadTeil('sicherung', g, ersatz, (m) => { m.position.y = 11.5; return m; });
+      anchor('FUSE_IN', g, -27, 5.8, 0, [-1, 0, 0], 'Sicherung Eingang');
+      anchor('FUSE_OUT', g, 27, 5.8, 0, [1, 0, 0], 'Sicherung Ausgang');
+    })();
+    function wago(parent, key, name, desc, x, y, z, ry = 0) {
+      const g = part(parent, name, desc, x, y, z, ry);
+      rbox(g, 15, 8.5, 20.5, 0, 0, 0, 0xc5cdd3, { rough: 0.25, metal: 0.05, opacity: 0.85, r: 1.2 });
+      for (let i = 0; i < 5; i++) {
+        box(g, 9, 2.2, 3, 2.5, 8.5, -8.2 + 4.1 * i, 0xf08a24, { rough: 0.45 });
+        box(g, 0.6, 2.4, 2.4, 7.55, 2.3, -8.2 + 4.1 * i, 0x2a2d30);   // Kabelöffnung (unter dem Hebelgriff, Seite +x)
+        anchor(`${key}${i + 1}`, g, 7.8, 3.5, -8.2 + 4.1 * i, [1, 0, 0], `${name.split(' (')[0]} Platz ${i + 1}`);
+      }
+      einpassen('wago', g);   // WAGO 221-415 (GrabCAD), echte Größe 29,7 × 18,4 × 8,1 mm
+      return g;
+    }
+    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse, Kabelseite nach hinten (15 mm frei bis zum Motor), Hebel klappen nach oben.', -52.5, 19, 17, Math.PI);
+    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse neben der Plus-Klemme, Kabelseite nach hinten.', -52.5, 19, -17, Math.PI);
+    // Nahsensor VL53L1X als einfaches Modul 25 × 10,7 mm (z. B. Happysnow, Amazon B0CNGP7LCR) – kein Hersteller-CAD.
+    // Sitzt INNEN an der Stirnwand der Wanne in zwei Nuten, der Sensor schaut durch ein Fenster in der Wand.
+    // Ursprung = Unterkante Mitte der Platinen-Vorderseite, Sensor zeigt nach +x. Lötpunkte oben: VIN GND SCL SDA GPIO1 XSHUT.
+    function tof(key, x, ry, name) {
+      const g = part(L0, `Nahsensor VL53L1X (${name})`, 'Misst per Laser bis ca. 4 m und erkennt niedrige Hindernisse, die der LiDAR nicht sieht. Modul 25 × 10,5 mm, innen an der Stirnwand der Wanne: von oben in zwei Nuten geschoben, 5° nach oben gekippt (sieht den Boden nicht, erkennt Rampen besser), der Sensor schaut durch ein Fenster in der Wand. Kabel direkt angelötet (VIN, GND, SDA, SCL, XSHUT). Achtung beim Kauf: VL53L1X, nicht VL53L0X.', x, 38, 0, ry);
+      const pins = ['VIN', 'GND', 'SCL', 'SDA', 'GPIO1', 'XSHUT'];
+      const tex = canvasTex(25, 10.7, 12, (c, w, h) => {
+        c.fillStyle = '#17181a'; c.fillRect(0, 0, w, h);
+        [2.4, w - 2.4].forEach((x) => hole(c, x, h / 2, 1.5));
+        pins.forEach((p, i) => { hole(c, 6.15 + 2.54 * i, 1.6, 0.5); silk(c, p, 6.15 + 2.54 * i, 4.2, 0.9, { align: 'center', rot: -Math.PI / 2 }); });
+        silk(c, 'VL53L1XV2', w / 2, h - 1.6, 1.2, { align: 'center' });
+      });
+      const side = std(0x111214, { rough: 0.6 });
+      // Platine steht senkrecht: Breite 25 entlang z, Höhe 10,7 nach oben, 1,6 dick nach hinten (−x)
+      add(g, new THREE.BoxGeometry(1.6, 10.7, 25), [std(0xffffff, { map: tex, rough: 0.45 }), side, side, side, side, side], -0.8, 5.35, 0);
+      box(g, 1.56, 2.5, 4.9, 0.78, 5.35 - 3.25, 0, 0x1a1a1a, { rough: 0.4 });      // Sensor
+      box(g, 0.3, 0.9, 1.4, 1.56, 5.35 - 0.45, -1.2, 0x3b2a12, { rough: 0.2 });         // Linse Sender
+      box(g, 0.3, 0.9, 1.4, 1.56, 5.35 - 0.45, 1.2, 0x3b2a12, { rough: 0.2 });          // Linse Empfänger
+      box(g, 1, 1.4, 2.9, 0.5, 7.6, -6, 0x1d1d1d);                                          // Spannungsregler
+      ['VIN', 'GND', 'SCL', 'SDA'].forEach((p, i) => anchor(`T${key}_${p}`, g, -1.8, 10.2, -6.35 + 2.54 * [0, 1, 2, 3][i], [-1, 0, 0], `VL53L1X ${name} ${p}`));
+      anchor(`T${key}_X`, g, -1.8, 10.2, 6.35, [-1, 0, 0], `VL53L1X ${name} XSHUT`);
+      // Echtes CAD-Modell (GrabCAD, Mustafa Ali Özgönül, nur lokal): Platine 25 × 10,5 × 1,5 mm, Sensor auf −z, 2 mm unter der Mitte
+      const ersatz = new THREE.Group(); [...g.children].forEach((c) => ersatz.add(c)); g.add(ersatz);
+      cadTeil('vl53v2', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; m.position.set(-1.5, 5.25, 0); const w = new THREE.Group(); w.add(m); return w; });
+    }
+    // Vorderseite der Platine 1,8 mm hinter der Wand-Innenseite (vorne x = 82, hinten x = −117), um 5° nach oben gekippt
+    // (Drehpunkt in der Wanne = Sensor, 3,25 mm über der Platinen-Unterkante → Ursprung um 0,28 mm verschoben)
+    [['V', 80.2 + 0.28, 0, 'vorne'], ['H', -115.2 - 0.28, Math.PI, 'hinten']].forEach(([k, x, ry, n]) => {
+      tof(k, x, ry, n);
+      PARTS[`Nahsensor VL53L1X (${n})`].rotation.set(0, ry, 5 * Math.PI / 180);
+    });
+
+    // >>> EBENE 2 (automatisch eingefügt, sim_ebene2.py)
+    // Ebene 2 (Elektronik-Deck mit Ring und Bauteilen) – dieselben Bauteile wie in raspberry-car-3d.html.
+    // Ändert sich dort etwas an Ebene 2, dieses Skript neu laufen lassen (siehe CLAUDE.md).
+    const E2 = new THREE.Group(); auto.add(E2);
+    const TOP = [0, 61];
+    const PIN = { 1: 'GP0', 2: 'GP1', 3: 'GND', 4: 'GP2', 5: 'GP3', 6: 'GP4', 7: 'GP5', 8: 'GND', 9: 'GP6', 10: 'GP7', 11: 'GP8', 12: 'GP9', 13: 'GND', 14: 'GP10', 15: 'GP11', 16: 'GP12', 17: 'GP13', 18: 'GND', 19: 'GP14', 20: 'GP15', 21: 'GP16', 22: 'GP17', 23: 'GND', 24: 'GP18', 25: 'GP19', 26: 'GP20', 27: 'GP21', 28: 'GND', 29: 'GP22', 30: 'RUN', 31: 'GP26', 32: 'GP27', 33: 'GND', 34: 'GP28', 35: 'VREF', 36: '3V3', 37: '3V3_EN', 38: 'GND', 39: 'VSYS', 40: 'VBUS' };
+    const deckFarbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
+    (function () {
+      const d = part(E2, 'Elektronik-Deck Ebene 2 (Druckteil)', 'Deckel der Wanne und Träger der Antriebs-Elektronik (Ebene 2). Einzelheiten: Werkstatt Ebene 2.', 0, 0, 0);
+      d.userData.druckteil = 'deck'; cadTeil('e2_platte', d, new THREE.Group(), (m) => m, deckFarbe);
+      const r = part(E2, 'Gehäuse-Ring oben (Druckteil)', 'Seitenwand zwischen Elektronik-Deck und Ebene 3, mit Hauptschalter und USB-C-Ausschnitt.', 0, 0, 0);
+      r.userData.druckteil = 'ring'; cadTeil('e2_ring_oben', r, new THREE.Group(), (m) => m, deckFarbe);
+    })();
+    (function sw() {
+      // Hauptschalter: runder 12-mm-Taster (GrabCAD „Push button 12mm“, MATOX_3D – nur lokal, siehe teile/QUELLEN.md).
+      // Einbauloch Ø 12 mm in der Rückwand des Gehäuse-Rings (Außenseite x = −120). Frontring Ø 13,9 liegt außen auf,
+      // Taste steht 3,3 mm vor, Gewindekörper Ø 11,8 und Lötfahnen ragen 19 mm nach innen, innen eine Mutter.
+      const g = part(E2, 'Hauptschalter (Taster rund, Ø 12 mm)', 'Schaltet das ganze Auto an und aus. Runder 12-mm-Taster (rastend) hinten in der Rückwand des Gehäuse-Rings, gegenüber der USB-C-Buchse des Ladeboards. Einbauloch Ø 12,2 mm, innen mit Mutter festgezogen. Ragt 19 mm nach innen; die zwei Leitungen gehen durch das Deck hinunter in die Wanne. Achtung: Durch ihn fließt der ganze Strom (bis ca. 9 A) – vor dem Kauf die Stromangabe des Tasters prüfen. Kleine Taster schaffen oft nur 1–3 A, dann schaltet er ein Relais- oder MOSFET-Modul.', -120, 74, -49);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cylX(ersatz, 6.93, -0.5, -3.3, 0, 0, 0xc0c5ca, { metal: 0.9, rough: 0.25, seg: 32 });   // Frontring außen
+      cylX(ersatz, 4.45, -3.3, -4.6, 0, 0, 0xdedede, { rough: 0.4, seg: 28 });             // Taste
+      cylX(ersatz, 5.9, 0, 15.2, 0, 0, 0x8d9297, { metal: 0.6, rough: 0.4, seg: 28 });       // Gewindekörper
+      [-2, 2].forEach((yy) => box(ersatz, 4, 1, 1.4, 17.5, yy - 0.5, 0, 0xc9cdd1, { metal: 0.9, rough: 0.3 }));
+      cylX(g, 8.0, 2.4, 5.0, 0, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3, seg: 6 });   // Mutter innen an der Wand (nicht im CAD)
+      cadTeil('taster', g, ersatz, (m) => {
+        // CAD: Achse entlang y, Taste vorne bei y = 0, Körper nach −y → Taste nach außen (−x), Körper nach innen (+x)
+        const w = new THREE.Group(); w.add(m); w.rotation.z = Math.PI / 2; w.position.x = -3.3;
+        return w;
+      });
+      anchor('SW_1', g, 19.5, -2, 0, [1, 0, 0], 'Hauptschalter Anschluss 1');
+      anchor('SW_2', g, 19.5, 2, 0, [1, 0, 0], 'Hauptschalter Anschluss 2');
+    })();
+    // Ladeboard DDTCCRUB 2S (Walfront, Amazon B08LVN7FLH): 39 × 18 mm, ca. 6,3 mm hoch, 4 Befestigungslöcher.
+    // Nachgebaut nach Händlerangaben und Produktfotos. Oben USB-C mit VIN/GND, unten Lötflächen BAT und GND.
+    (function charger() {
+      const g = part(E2, 'Ladeboard DDTCCRUB 2S', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku (Ladestrom ca. 0,55 A). Auf der Unterseite die Lötbrücken 2S und 1A setzen, sonst nichts. 39 × 18 mm, 4 Löcher für M2-Schrauben. Sitzt hinten links auf dem Elektronik-Deck in einer Einklick-Tasche, die Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt im Ausschnitt der Wand (nur 1 mm hinter der Außenseite) – der Stecker ist gut zu erreichen und rastet voll ein. Hier wird das Auto geladen. BAT und GND gehen durch das Deck hinunter zum BMS.', -99.0, 61, 49.5);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Aleksey Zablotskiy) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Breite x 0…18, Länge y −38,4…0 (USB bei −y), Bauteile zeigen nach −z, Unterseite z = 0
+      cadTeil('ddtccrub', g, ersatz, (m) => {
+        m.applyMatrix4(new THREE.Matrix4().set(0, 1, 0, 18.5, 0, 0, -1, 0, -1, 0, 0, 9, 0, 0, 0, 1));
+        return m;
+      }, (mat) => {   // reines CAD-Grün → Platinengrün wie auf den Fotos
+        const c = mat.color;
+        if (c.g > 0.9 && c.r < 0.05 && c.b < 0.05) { c.set(0x2aa848).convertSRGBToLinear(); mat.roughness = 0.5; }     // Lötstopplack
+        if (c.r > 0.9 && c.g > 0.9 && c.b > 0.02 && c.b < 0.3) { c.set(0x1c8a38).convertSRGBToLinear(); mat.roughness = 0.6; }  // Platinenkern
+      });
+      const L = 39, B = 18, LOCH = [[-16.5, 7.0], [-16.5, -7.0], [16.5, 7.0], [16.5, -7.0]];  // Ø 2,4 mm, 33 × 14 mm (BAT-Ende aus CAD, USB-Ende gespiegelt)
+      pcb(ersatz, L, B, '#1f9a3e', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;   // Bauteil-Koordinaten → Leiterplatte
+        LOCH.forEach(([x, z]) => hole(c, X(x), Y(z), 1.2));
+        c.fillStyle = '#e8e8e8';
+        [[-15.4, 7.6], [-15.4, -7.6]].forEach(([x, z]) => c.fillRect(X(x) - 0.9, Y(z) - 0.9, 1.8, 1.8));
+        [[17.4, 2.4], [17.4, -2.3]].forEach(([x, z]) => {        // Lötflächen BAT / GND
+          c.fillStyle = '#d9dcdf'; c.fillRect(X(x) - 1.9, Y(z) - 1.8, 3.8, 3.6);
+          c.fillStyle = '#b9bdc1'; c.beginPath(); c.arc(X(x), Y(z), 0.7, 0, Math.PI * 2); c.fill();
+        });
+        c.strokeStyle = '#f1f3f1'; c.lineWidth = 0.18;
+        c.strokeRect(X(-12.9), Y(2.0), 6.6, 5.8); c.strokeRect(X(-1.8), Y(2.2), 5.9, 5.0);
+        const r = -Math.PI / 2;
+        silk(c, 'GND', X(-14.6), Y(6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'VIN', X(-14.6), Y(-6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'RCS', X(-13.2), Y(-1.2), 1.2, { align: 'center' });
+        silk(c, 'BAT', X(14.6), Y(7.4), 1.3, { align: 'center' });
+        silk(c, 'GND', X(14.6), Y(-7.4), 1.3, { align: 'center' });
+        silk(c, 'DDTCCRUB', X(14.7), Y(0), 1.25, { align: 'center' });
+        silk(c, 'OK', X(7.9), Y(-8.0), 1.2, { align: 'center' });
+        silk(c, 'CR', X(10.4), Y(-8.0), 1.2, { align: 'center' });
+      });
+      // USB-C-Buchse (8,9 × 3,2 mm), steht ca. 1 mm über den Rand
+      rbox(ersatz, 7.4, 3.2, 8.9, -16.6, 1.6, 0, 0xc4c8cc, { metal: 0.9, rough: 0.25, r: 1.4 });
+      box(ersatz, 0.3, 2.2, 7.0, -20.35, 2.1, 0, 0x111111);
+      // Speicherdrossel „100“ (10 µH)
+      const ind = canvasTex(6, 6, 24, (c) => { c.fillStyle = '#6f7378'; c.fillRect(0, 0, 6, 6); silk(c, '100', 3, 3, 2.2, { align: 'center', color: '#1b1b1b', weight: 400 }); });
+      const ig = std(0x6f7378, { rough: 0.6 });
+      add(ersatz, new THREE.BoxGeometry(6, 3.2, 6), [ig, ig, std(0xffffff, { map: ind }), ig, ig, ig], -9.6, 1.6 + 1.6, 4.9);
+      chip(ersatz, 5.3, 3.6, 2.2, 1.1, 1.6, 4.8, 'SS34');                       // Schottky-Diode
+      chip(ersatz, 4.9, 3.9, 1.5, -2.0, 1.6, -5.2, '4468', { legs: true });      // MOSFET
+      chip(ersatz, 4.9, 3.9, 1.5, 4.3, 1.6, -5.2, 'CN3302', { legs: true });     // Lade-IC
+      box(ersatz, 2.0, 0.5, 1.25, -11.7, 1.6, -2.6, 0x1d1d1d);                  // R100 (Strommessung)
+      [-10.6, -9.0, -7.4].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, -7.3, 0x9a7650, { rough: 0.5 }));
+      [8.7, 10.5, 12.3].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, 5.0, 0x9a7650, { rough: 0.5 }));
+      box(ersatz, 1.6, 0.6, 0.8, 7.9, 1.6, -5.8, 0x3fe07a, { emissive: 0x20c060, ei: 0.35 });  // LED OK
+      box(ersatz, 1.6, 0.6, 0.8, 10.4, 1.6, -5.8, 0xff4a3a, { emissive: 0xff2a1a, ei: 0.35 }); // LED CR
+      [7.9, 10.4].forEach((x) => box(ersatz, 1.6, 0.45, 0.8, x, 1.6, -3.2, 0x1d1d1d));
+      anchor('CH_BAT', g, 17.4, 1.9, 2.4, [0, 1, 0], 'Ladeboard BAT');
+      anchor('CH_GND', g, 17.4, 1.9, -2.3, [0, 1, 0], 'Ladeboard GND');
+    })();
+    // Freenove Breakout Board für Pico (FNK0081, Platine CB8101). Maße aus der offiziellen mechanischen Zeichnung
+    // CB8101_mechanical-drawing_v1.1 (github.com/Freenove/Freenove_Breakout_Board_for_Raspberry_Pi_Pico):
+    // Platine 63 × 57 mm, 4 Befestigungslöcher im Abstand 58 × 52 mm. Je Seite 20 Schraubklemmen (2 Blöcke à 10, Raster 2,54 mm),
+    // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
+    // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
+    (function freenove() {
+      const g = part(E2, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M3 × 8 verschraubt.', -38, TOP[1] + 4, 0);
+      const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
+      [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
+        (m3Schraube(g, x, 1.6 + 3, z, 8, false)));
+      pcb(g, BW, BD, '#2f9a45', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;
+        [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) => hole(c, X(x), Y(z), 1.6));
+        for (let i = 0; i < 20; i++) {
+          [[i + 1, 1], [40 - i, -1]].forEach(([pin, s]) => {
+            const name = PIN[pin];
+            c.fillStyle = name === 'GND' ? '#1d1d1d' : '#f4f6f4';
+            c.fillRect(X(pinX(i)) - 1.05, Y(s * 16.6) - 2.6, 2.1, 5.2);              // Beschriftungsfeld
+            silk(c, name, X(pinX(i)), Y(s * 16.6), 0.95, { align: 'center', rot: -Math.PI / 2, color: name === 'GND' ? '#f4f6f4' : '#1d1d1d' });
+          });
+        }
+        silk(c, 'Freenove', X(26), Y(-21.6), 1.9, { align: 'center', rot: -Math.PI / 2 });
+        silk(c, 'Breakout Board for Raspberry Pi Pico', X(28.7), Y(0), 1.5, { align: 'center', rot: -Math.PI / 2 });
+      });
+      // Schraubklemmen: 2 Blöcke à 10 je Seite, Drahteinführung nach außen
+      [-1, 1].forEach((s) => [-12.7, 12.7].forEach((x) => terminals(g, 10, 2.54, x, 1.6, s * 24.6, 0x2fae4e, s)));
+      // Buchsenleisten für den Pico (innen) und Stiftleisten (außen)
+      pins(g, 20, 1, 0, 1.6, -8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, 8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, -11.43, { pinH: 6 });
+      pins(g, 20, 1, 0, 1.6, 11.43, { pinH: 6 });
+      // GPIO-Status-LEDs (eine je Pin) und die 5 Inverter-Chips 74HC04 unter dem Pico
+      const led = new THREE.InstancedMesh(new THREE.BoxGeometry(0.8, 0.5, 1.6), std(0xf2f2ee, { emissive: 0x6aa8ff, ei: 0.15 }), 40);
+      const mm = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < 20; i++) [-1, 1].forEach((s) => { mm.makeTranslation(pinX(i) + 0.9, 1.85, s * 13.9); led.setMatrixAt(k++, mm); });
+      g.add(led);
+      for (let i = 0; i < 5; i++) chip(g, 8.7, 3.9, 1.5, -20 + i * 10, 1.6, 0, '74HC04', { legs: true });
+      for (let i = 0; i < 20; i++) {
+        anchor(`P${i + 1}`, g, pinX(i), 5.1, 28.4, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
+        anchor(`P${40 - i}`, g, pinX(i), 5.1, -28.4, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
+      }
+      // Pico 2 W – steckt mit seinen (bei Waveshare vorgelöteten) Stiftleisten in den Buchsen des Freenove-Boards.
+      const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi (51 × 21 × 1 mm).', 0, 1.6 + 8.5 + 2.5, 0);
+      // Einfaches Ersatzmodell – wird ausgeblendet, sobald das echte CAD-Modell geladen ist
+      const ersatz = new THREE.Group(); p.add(ersatz);
+      // Vorgelötete Stiftleisten: 2,5 mm Kunststoff unter der Platine, Stifte 6 mm nach unten
+      [-8.89, 8.89].forEach((z) => {
+        box(p, 50.8, 2.5, 2.5, 0, -2.5, z, 0x151617, { rough: 0.7 });
+        const im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.64, 10.3, 0.64), std(0xd8b04a, { metal: 0.85, rough: 0.3 }), 20);
+        const mm = new THREE.Matrix4();
+        for (let i = 0; i < 20; i++) { mm.makeTranslation(-24.13 + 2.54 * i, -8.5 + 10.3 / 2, z); im.setMatrixAt(i, mm); }
+        im.castShadow = true; p.add(im);
+      });
+      cadTeil('pico2w', p, ersatz, (m) => {
+        // CAD: Breite entlang x (0…21), Länge entlang z (−51…0, USB bei −51), Oberseite y = 0
+        // → Länge entlang x, USB nach hinten (−x), Pin 1 auf +z wie auf dem Freenove-Board
+        m.position.set(-10.5, 1.0, 25.5);
+        const dreh = new THREE.Group(); dreh.rotation.y = Math.PI / 2; dreh.add(m); return dreh;
+      });
+      pcb(ersatz, 51, 21, '#2f7d3b', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 20; i++) { const px = 1.61 + i * 2.54; [0.6, h - 0.6].forEach((py) => { c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(px, py, 0.8, 0, Math.PI * 2); c.fill(); }); }
+        silk(c, 'Raspberry Pi Pico 2 W', w * 0.55, h - 3.6, 1.9, { align: 'center' });
+        silk(c, 'BOOTSEL', 12.5, 4, 1.4, { align: 'center' });
+      });
+      box(ersatz, 7.6, 2.7, 5.8, -22.6, 1.6, 0, 0xc6cacd, { metal: 0.9, rough: 0.25 });
+      chip(ersatz, 7, 7, 0.9, -2, 1.6, 0, 'RP2350');
+      chip(ersatz, 4, 3, 0.8, -10, 1.6, 4, '');
+      box(ersatz, 11, 1.4, 10.5, 14.5, 1.6, 0, 0xcfd3d6, { metal: 0.9, rough: 0.28 });
+      box(ersatz, 3.4, 1.2, 4.2, -12.5, 1.6, -5, 0xf5f5f0);
+      box(ersatz, 1.2, 0.6, 0.8, -18.5, 1.6, -6, 0x3fe07a, { emissive: 0x20c060, ei: 0.6 });
+      smd(ersatz, 30, 18, 16, 1.6, -4, 0);
+      // Micro-USB-Stecker des Kabels zum Pi (Buchsenmitte ca. 2,3 mm über der Pico-Unterseite)
+      anchor('PICO_USB', p, -35.6, 2.3, 0, [-1, 0, 0], 'Pico Micro-USB');
+    })();
+    // DRV8833-Modul (MakerMind / roboter-bausatz.de RBS12954): schwarze Platine 16 × 18,5 mm, keine Befestigungslöcher.
+    // Zwei Reihen mit je 6 Lötaugen im Raster 2,54 mm, Reihenabstand 15,24 mm. Beschriftung steht auf der Unterseite.
+    // Reihe Eingänge: IN4 IN3 GND VCC IN2 IN1 – gegenüber Reihe Ausgänge: EEP OUT1 OUT2 OUT3 OUT4 ULT.
+    // ULT = Schlaf-Eingang (LOW = Motoren aus), EEP = Fehler-Ausgang. Lötbrücke J1 („en/sleep“) offen lassen!
+    function drv(n, x, nm) {
+      const ins = ['IN4', 'IN3', 'GND', 'VCC', 'IN2', 'IN1'], outs = ['EEP', 'OUT1', 'OUT2', 'OUT3', 'OUT4', 'ULT'];
+      const g = part(E2, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden Motoren der Achse ${nm} (OUT1/OUT2 links, OUT3/OUT4 rechts). Schwarzes Modul 16 × 18,5 mm, sitzt in der Motorzone ${nm} neben dem Griffloch in einer Einklick-Tasche des Elektronik-Decks – die Motorkabel sind kurz. Kabel direkt in die Lötaugen gelötet. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – Reihe zu den Motoren: EEP, OUT1–OUT4, ULT. ULT ist der Not-Stopp-Eingang. Die Motor-Reihe zeigt zum Griffloch.`, x, TOP[1], 26, Math.PI);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Juan Manuel Dominici, ohne Stiftleisten) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Reihen entlang z bei x = ±7,62, Reihe IN… bei −x, IN4/EEP-Ende bei +z → um −90° drehen
+      cadTeil('drv8833', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; return m; });
+      const W_ = 16, D_ = 18.5, ROW = 7.62, px = (i) => -6.35 + 2.54 * i;
+      pcb(ersatz, W_, D_, '#141414', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 6; i++) [h / 2 - ROW, h / 2 + ROW].forEach((y) => hole(c, w / 2 + px(i), y, 0.5));
+        c.strokeStyle = '#d0d0d0'; c.lineWidth = 0.2; c.strokeRect(0.4, 0.4, w - 0.8, h - 0.8);
+      });
+      chip(ersatz, 5, 4.4, 1.0, 0, 1.6, 0, 'DRV8833', { legs: true });
+      box(ersatz, 2.8, 1.9, 3.5, -5.6, 1.6, -1.2, 0xc98a1e, { rough: 0.4 });  // Tantal-Elko 10 µF
+      box(ersatz, 0.6, 1.95, 3.5, -4.4, 1.6, -1.2, 0x8a5a1c);                  // Polungsstreifen
+      box(ersatz, 1.6, 0.6, 0.8, 5.9, 1.6, 0, 0xf2f2ee, { emissive: 0xff3030, ei: 0.25 }); // LED
+      [[-3.8, 4.6, 0], [5.4, -4.6, 0], [-1.4, 4.8, 1], [1.2, 4.8, 1], [3.4, 3.6, 1]].forEach(([x, z, cap]) =>
+        box(ersatz, 1.6, 0.5, 0.8, x, 1.6, z, cap ? 0xb08d57 : 0x1d1d1d, { rough: 0.45 }));
+      ins.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, -ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+      outs.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+    }
+    drv('V', 55, 'vorne'); drv('H', -90, 'hinten');
+    (function mp1584() {
+      const g = part(E2, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -40, TOP[1], -50);
+      pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
+        pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
+        silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
+        silk(c, 'OUT+', w - 6, 3, 1.4, { align: 'center' }); silk(c, 'OUT-', w - 6, h - 3, 1.4, { align: 'center' });
+      });
+      rbox(g, 6.5, 3.5, 6.5, 2, 1.6, 2, 0x6f7377, { rough: 0.55, r: 0.8 });
+      chip(g, 3, 2, 1, -4, 1.6, -3, '', { legs: true });
+      [[-5, 4], [7, -4]].forEach(([x, z]) => box(g, 3.2, 1.6, 1.6, x, 1.6, z, 0x9c7a4a));
+      anchor('MP_IN+', g, -9, 1.9, -5.5, [0, 1, 0], 'MP1584 IN+');
+      anchor('MP_IN-', g, -9, 1.9, 5.5, [0, 1, 0], 'MP1584 IN−');
+      anchor('MP_OUT+', g, 9, 1.9, -5.5, [0, 1, 0], 'MP1584 OUT+');
+      anchor('MP_OUT-', g, 9, 1.9, 5.5, [0, 1, 0], 'MP1584 OUT−');
+      einpassen('mp1584', g);   // D-SUN MP1584EN (GrabCAD)
+    })();
+    (function bno() {
+      const g = part(E2, 'Lagesensor BNO085 (Gyroskop + Kompass)', 'Misst Drehung, Neigung und Himmelsrichtung (Kompass). Sitzt vor dem Freenove-Board, um 90° gedreht (die STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist Platz für die Stecker), ca. 5 cm vom vorderen und 10 cm vom hinteren Motor – Motormagnete, Spulen und Leitungen mit viel Strom stören den Kompass, deshalb ist rund um ihn alles frei. Einklick-Tasche, Befestigung ohne Stahlschrauben. Über seinen STEMMA-QT-Ausgang geht der I²C-Bus weiter zu den Nahsensoren.', 8, TOP[1], 0, Math.PI / 2);
+      const names = ['VIN', '3Vo', 'GND', 'SCL', 'SDA', 'INT', 'RST', 'DI'];
+      pcb(g, 25.4, 20.3, '#3a3f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'BNO085', w / 2, 3.5, 2, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 3.81 + 2.54 * i, h - 5, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+        hole(c, 2.5, 2.5, 1.2); hole(c, w - 2.5, 2.5, 1.2);
+      });
+      chip(g, 5.2, 3.8, 1, 0, 1.6, -1, 'BNO');
+      pins(g, 8, 1, 0, 1.6, 8.2, { pinH: 4 });
+      box(g, 3, 3, 6, 11.2, 1.6, -4, 0xf2efe6);
+      smd(g, 16, 10, 6, 1.6, -2, -3);
+      names.forEach((n, i) => anchor(`BNO_${n}`, g, -8.89 + 2.54 * i, 7.9, 8.2, [0, 1, 0], `BNO085 ${n}`));
+      anchor('BNO_QT', g, 12.9, 3.1, -4, [1, 0, 0], 'BNO085 STEMMA-QT');
+      einpassen('bno085', g);   // Adafruit 4754 (offizielles CAD, MIT)
+    })();
+    wago(E2, 'W3V', '3,3-V-Verteiler vorne (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der beiden Vordermotoren und weiter zum Verteiler hinten. Sitzt in der Motorzone vorne neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', 55, TOP[1], -29, Math.PI / 2);
+    wago(E2, 'W3H', '3,3-V-Verteiler hinten (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der beiden Hintermotoren, den BNO085 und den INA226. Sitzt in der Motorzone hinten neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', -88.5, TOP[1], -29, Math.PI / 2);
+    // <<< EBENE 2
+
+
+
+    document.getElementById('ebene2').addEventListener('change', (e) => { E2.visible = e.target.checked; });
+
+    // ===================================================================
+    // FAHRZEUG-DATEN (mm, kg, s)
+    // ===================================================================
+    const RAD_R = 33.8, SPUR = 166, RADSTAND = 145, DREHPUNKT_X = -17.5;   // Drehpunkt = Mitte zwischen den Achsen
+    const MASSE = 1.2, SP_HOEHE = 55, BODENFREI = 16, G = 9.81;
+    const RAEDER = [[55, 83, 'VL'], [55, -83, 'VR'], [-90, 83, 'HL'], [-90, -83, 'HR']];   // x, z (links = +z)
+    // Unterkante der Wanne über der Radebene: vorne ab x 76,5 und hinten ab x −111,5 mit 45° hochgezogen (Kufen)
+    const unterkante = (lx) => BODENFREI + Math.max(0, lx - 76.5) + Math.max(0, -111.5 - lx);
+    // Umriss für den Anstoß-Test: Wannenrand (x −120 … +85, z ±65) und Außenseiten der Räder (z ±95)
+    const UMRISS = [];
+    for (let x = -120; x <= 85; x += 12) UMRISS.push([x, 65], [x, -65]);
+    for (let z = -60; z <= 60; z += 12) UMRISS.push([85, z], [-120, z]);
+    for (const [wx] of RAEDER) for (const s of [1, -1]) for (let k = -30; k <= 30; k += 10) UMRISS.push([wx + k, s * 95]);
+    const KIPP_SEITE = Math.atan((SPUR / 2) / SP_HOEHE), KIPP_LAENGS = Math.atan((RADSTAND / 2) / SP_HOEHE);
+    // Räder zum Drehen finden (Gruppen mit Namen „Rad …“)
+    const radGruppen = L0.children.filter((g) => g.userData.part && /^Rad /.test(g.userData.part.name));
+
+    // ===================================================================
+    // GELÄNDE: Höhe h(x,z) in mm, Haftung μ und Farbe
+    // ===================================================================
+    const ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const feld = (v, a, b, w) => ss(a - w, a, v) * (1 - ss(b, b + w, v));          // 1 innerhalb a…b, weiche Kanten
+    const steine = [[420, -260, 30, 22], [-380, 340, 26, 18], [180, 520, 34, 26], [-620, -420, 22, 15], [760, -120, 28, 20], [-150, -650, 40, 30], [560, 760, 24, 16]];
+    const GELAENDE = {
+      zimmer: {
+        name: 'Wohnzimmer: Parkett, Teppich (8 mm), Kabel (8 mm), Türschwelle (12 mm)',
+        h: (x, z) => 8 * feld(x, 150, 1100, 6) * feld(z, -550, 550, 6)
+          + 12 * feld(x, -660, -620, 3)
+          + (Math.abs(z) < 900 ? Math.sqrt(Math.max(0, 16 - (x + 260) * (x + 260))) : 0),
+        mu: (x, z) => (feld(x, 150, 1100, 0) * feld(z, -550, 550, 0) > 0.5 ? 1.0 : 0.55),
+        farbe: (x, z, h) => {
+          if (feld(x, 150, 1100, 0) * feld(z, -550, 550, 0) > 0.5) return [0.74, 0.62, 0.5];
+          if (feld(x, -660, -620, 0) > 0.5) return [0.55, 0.55, 0.57];
+          if (Math.abs(x + 260) < 4.5 && Math.abs(z) < 900) return [0.12, 0.12, 0.13];
+          const k = (Math.floor((z + 3000) / 95) % 2) * 0.06 + (Math.floor((x + 3000) / 600 + (Math.floor((z + 3000) / 95) % 3) * 0.33) % 2) * 0.03;
+          return [0.58 + k, 0.41 + k * 0.8, 0.25 + k * 0.5];
+        },
+      },
+      garten: {
+        name: 'Garten: Wiese mit Bodenwellen, Hügel und Steinen',
+        h: (x, z) => {
+          let h = 22 * Math.sin(x / 260) * Math.cos(z / 330) + 12 * Math.sin((x - z) / 150) + 3 * Math.sin(x / 27) * Math.sin(z / 31);
+          h += 150 * Math.exp(-((x - 800) ** 2 + (z - 420) ** 2) / (2 * 260 * 260));
+          for (const [sx, sz, r, sh] of steine) { const d2 = ((x - sx) ** 2 + (z - sz) ** 2) / (r * r); if (d2 < 1) h += sh * Math.pow(1 - d2, 1.5); }
+          return h * ss(0, 260, Math.hypot(x, z)) + 0.0;      // in der Mitte (Start) eben
+        },
+        mu: (x, z) => { for (const [sx, sz, r] of steine) if ((x - sx) ** 2 + (z - sz) ** 2 < r * r) return 0.6; return 0.75; },
+        farbe: (x, z, h) => {
+          for (const [sx, sz, r] of steine) if ((x - sx) ** 2 + (z - sz) ** 2 < r * r) return [0.55, 0.54, 0.52];
+          const n = 0.04 * Math.sin(x / 37) * Math.sin(z / 41) + 0.03 * Math.sin(x / 11 + z / 13);
+          return [0.24 + n + h * 0.0008, 0.45 + n + h * 0.0006, 0.18 + n * 0.5];
+        },
+      },
+      parcours: {
+        name: 'Testparcours: Rampe 15°, Rampe 30°, Stufen 10/15/25 mm, Mulde, Wellen',
+        h: (x, z) => {
+          let h = 0;
+          if (z > -250 && z < 250 && x > 300) {                    // Rampe 15° hoch, Plateau, runter
+            const t = Math.tan(15 * Math.PI / 180);
+            h = Math.max(h, Math.min((x - 300) * t, 80, (1100 - x) * t));
+          }
+          if (z > 450 && z < 750 && x > 300) {                     // Rampe 30°
+            const t = Math.tan(30 * Math.PI / 180);
+            h = Math.max(h, Math.min((x - 300) * t, 80, (780 - x) * t));
+          }
+          if (z > -750 && z < -450) {                              // Stufen
+            if (x > 300 && x < 450) h = 10;
+            if (x > 600 && x < 750) h = 15;
+            if (x > 900 && x < 1050) h = 25;
+          }
+          if (x < -450 && x > -1250) h += 0.27 * Math.abs(z) * ss(-450, -620, x) * ss(-1250, -1080, x);   // Mulde (Querneigung 15°)
+          if (x > -380 && x < -150 && Math.abs(z) < 300) h += 3 * (1 - Math.cos(2 * Math.PI * x / 45));     // Wellen 6 mm
+          return h;
+        },
+        mu: () => 0.8,
+        farbe: (x, z, h) => {
+          if ((z > -250 && z < 250 && x > 300 && x < 1100) || (z > 450 && z < 750 && x > 300 && x < 780)) return [0.72, 0.53, 0.32];
+          if (z > -750 && z < -450 && h > 1) return [0.42, 0.47, 0.53];
+          if (x < -450 && x > -1250) return [0.36, 0.5, 0.32];
+          if (x > -380 && x < -150 && Math.abs(z) < 300) return [0.62, 0.6, 0.55];
+          return [0.66, 0.67, 0.68];
+        },
+      },
+    };
+    // Wände, Kisten, Baum: werden zum Gelände dazugerechnet (der Laser soll Wände von Rampen unterscheiden)
+    const HINDERNISSE = {
+      zimmer: { h: (x, z) => (Math.abs(x) > 1300 || Math.abs(z) > 1300 ? 260 : 0) || (x > -450 && x < -200 && z > 550 && z < 800 ? 140 : 0), farbe: [0.88, 0.87, 0.84] },
+      garten: { h: (x, z) => (x > 1300 ? 300 : 0) || ((x + 650) ** 2 + (z + 250) ** 2 < 70 * 70 ? 400 : 0) || (z > 900 && z < 960 && x > -400 && x < 300 ? 180 : 0), farbe: [0.62, 0.6, 0.56] },
+      parcours: { h: (x, z) => (x > 1300 ? 300 : 0) || (x > -900 && x < -700 && z > 450 && z < 650 ? 150 : 0), farbe: [0.86, 0.86, 0.84] },
+    };
+    for (const k of Object.keys(GELAENDE)) {
+      const g0 = GELAENDE[k], hh = g0.h, ff = g0.farbe, hi = HINDERNISSE[k];
+      g0.h = (x, z) => Math.max(hh(x, z), hi.h(x, z));
+      g0.farbe = (x, z, h) => (hi.h(x, z) > 0 ? hi.farbe : ff(x, z, h));
+      g0.name += ' · mit Wänden und Kisten';
+    }
+    // Labyrinth: 6 × 6 Felder à 40 cm, Wände 12 cm hoch und 4 cm dick. Gänge 36 cm breit – das Auto
+    // braucht zum Drehen auf der Stelle ca. 25 cm. Erzeugt mit fester Zufallsfolge (immer dasselbe Labyrinth).
+    (function () {
+      const N = 6, C = 400, X0 = -1200, Z0 = -1200, T = 20, WH = 120;
+      const ost = [...Array(N + 1)].map(() => Array(N).fill(true));     // senkrechte Wände x = X0 + i·C, Feld j
+      const nord = [...Array(N)].map(() => Array(N + 1).fill(true));    // waagerechte Wände z = Z0 + j·C, Feld i
+      let s = 7;
+      const zufall = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+      const besucht = [...Array(N)].map(() => Array(N).fill(false));
+      const stapel = [[0, 0]]; besucht[0][0] = true;
+      while (stapel.length) {
+        const [i, j] = stapel[stapel.length - 1];
+        const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([di, dj]) => [i + di, j + dj, di, dj]).filter(([a, b]) => a >= 0 && b >= 0 && a < N && b < N && !besucht[a][b]);
+        if (!nb.length) { stapel.pop(); continue; }
+        const [a, b, di, dj] = nb[Math.floor(zufall() * nb.length)];
+        if (di) ost[Math.max(i, a)][j] = false; else nord[i][Math.max(j, b)] = false;
+        besucht[a][b] = true; stapel.push([a, b]);
+      }
+      ost[N][N - 1] = false;                                             // Ausgang hinten rechts
+      const hoehe = (x, z) => {
+        const u = (x - X0) / C, v = (z - Z0) / C;
+        if (u < -0.1 || v < -0.1 || u > N + 0.1 || v > N + 0.1) return 0;
+        const i = Math.round(u), j = Math.round(v);
+        if (Math.abs(x - (X0 + i * C)) < T) { const jj = Math.floor(v); if (jj >= 0 && jj < N && i >= 0 && i <= N && ost[i][jj]) return WH; }
+        if (Math.abs(z - (Z0 + j * C)) < T) { const ii = Math.floor(u); if (ii >= 0 && ii < N && j >= 0 && j <= N && nord[ii][j]) return WH; }
+        if (Math.abs(x - (X0 + i * C)) < T && Math.abs(z - (Z0 + j * C)) < T && i >= 0 && i <= N && j >= 0 && j <= N) return WH;   // Ecken
+        return 0;
+      };
+      GELAENDE.labyrinth = {
+        name: 'Labyrinth: 6 × 6 Felder à 40 cm, Wände 12 cm hoch, Ausgang hinten rechts',
+        start: [X0 + C / 2, Z0 + C / 2, 0],
+        zellen: N, zelle: C, ziel: [N - 1, N - 1],
+        karteVersatz: [(N / 2 - 0.5) * C, (N / 2 - 0.5) * C],        // Karte auf die Mitte des Labyrinths legen
+        h: hoehe,
+        mu: () => 0.6,
+        farbe: (x, z, h) => {
+          if (h > 1) return [0.86, 0.84, 0.8];
+          const k = ((Math.floor((x + 3000) / 200) + Math.floor((z + 3000) / 200)) % 2) * 0.05;
+          return [0.56 + k, 0.6 + k, 0.64 + k];
+        },
+      };
+    })();
+    let gel = GELAENDE.garten;
+
+    const GROESSE = 3200, SEG = 320;
+    const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });
+    let terrain = null;
+    function baueGelaende() {
+      if (terrain) { scene.remove(terrain); terrain.geometry.dispose(); }
+      const geo = new THREE.PlaneGeometry(GROESSE, GROESSE, SEG, SEG);
+      geo.rotateX(-Math.PI / 2);
+      const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), z = pos.getZ(i), h = gel.h(x, z);
+        pos.setY(i, h);
+        const c = new THREE.Color().setRGB(...gel.farbe(x, z, h)).convertSRGBToLinear();
+        col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      geo.computeVertexNormals();
+      terrain = new THREE.Mesh(geo, terrainMat);
+      terrain.receiveShadow = true;
+      scene.add(terrain);
+      document.getElementById('gelaende-name').textContent = gel.name;
+    }
+
+    // ===================================================================
+    // ZUSTAND
+    // ===================================================================
+    const zu = { x: 0, z: 0, psi: 0, vL: 0, vR: 0, v: 0, w: 0, pitch: 0, roll: 0, luft: [false, false, false, false], meldungen: [], strom: 0, schlupf: 0, mu: 0.75 };
+    function weltXZ(lx, lz) {           // Punkt im Auto (lx, lz) → Welt (x, z)
+      const c = Math.cos(zu.psi), s = Math.sin(zu.psi), dx = lx - DREHPUNKT_X;
+      return [zu.x + c * dx + s * lz, zu.z - s * dx + c * lz];
+    }
+    // Ebene y = a + b·lx + c·lz durch drei Radpunkte
+    function ebene(p) {
+      const [[x1, z1, y1], [x2, z2, y2], [x3, z3, y3]] = p;
+      const det = (x2 - x1) * (z3 - z1) - (x3 - x1) * (z2 - z1);
+      const b = ((y2 - y1) * (z3 - z1) - (y3 - y1) * (z2 - z1)) / det;
+      const c = ((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)) / det;
+      return { a: y1 - b * x1 - c * z1, b, c };
+    }
+    const hoehe = (lx, lz) => { const [x, z] = weltXZ(lx, lz); return gel.h(x, z); };
+    // Auflage: das Auto ist starr – es liegt auf 3 Rädern auf, das vierte berührt oder hängt in der Luft
+    function auflage() {
+      const pts = RAEDER.map(([lx, lz]) => [lx, lz, hoehe(lx, lz)]);
+      let best = null;
+      for (let k = 0; k < 4; k++) {
+        const e = ebene(pts.filter((_, i) => i !== k));
+        const [lx, lz, h] = pts[k];
+        if (e.a + e.b * lx + e.c * lz < h - 0.01) continue;      // 4. Rad würde im Boden stecken → so liegt es nicht
+        const sp = e.a + e.b * (DREHPUNKT_X + 7) + e.c * 0;      // Schwerpunkt-Höhe: so tief wie möglich
+        if (!best || sp < best.sp) best = { ...e, sp };
+      }
+      if (!best) best = { ...ebene(pts.slice(0, 3)), sp: 0 };
+      const luft = pts.map(([lx, lz, h]) => best.a + best.b * lx + best.c * lz - h > 1.5);
+      return { e: best, luft };
+    }
+
+    // ===================================================================
+    // EINGABE
+    // ===================================================================
+    const taste = { vor: false, zurueck: false, links: false, rechts: false };
+    const KEYS = { ArrowUp: 'vor', KeyW: 'vor', ArrowDown: 'zurueck', KeyS: 'zurueck', ArrowLeft: 'links', KeyA: 'links', ArrowRight: 'rechts', KeyD: 'rechts' };
+    const knopf = { vor: 'k-vor', zurueck: 'k-zurueck', links: 'k-links', rechts: 'k-rechts' };
+    const setTaste = (k, an) => { taste[k] = an; document.getElementById(knopf[k]).setAttribute('aria-pressed', String(an)); if (an) { stopDemo(); if (typeof stopPilot === 'function') stopPilot(); if (typeof stopScan === 'function') stopScan(); if (typeof stopLoeser === 'function') stopLoeser(); } };
+    window.addEventListener('keydown', (e) => { const k = KEYS[e.code]; if (k && !e.altKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setTaste(k, true); } });
+    window.addEventListener('keyup', (e) => { const k = KEYS[e.code]; if (k) setTaste(k, false); });
+    window.addEventListener('blur', () => Object.keys(taste).forEach((k) => setTaste(k, false)));
+    Object.entries(knopf).forEach(([k, id]) => {
+      const b = document.getElementById(id);
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); setTaste(k, true); });
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => setTaste(k, false)));
+    });
+    let vmax = 400;   // mm/s
+    const tempo = document.getElementById('tempo'), tempoWert = document.getElementById('tempo-wert');
+    const setzeTempo = () => { vmax = Number(tempo.value) * 1000; tempoWert.textContent = Number(tempo.value).toFixed(2).replace('.', ',') + ' m/s'; };
+    tempo.addEventListener('input', setzeTempo); setzeTempo();
+
+    // Demo-Fahrt: [Gas, Lenkung, Sekunden]
+    const DEMO = [[1, 0, 3], [0, 1, 1.6], [1, 0, 2.2], [0.7, -0.5, 4], [0, -1, 2.5], [-0.6, 0, 1.5], [1, 0.35, 4], [0, 1, 3.2]];
+    let demo = null;
+    const demoBtn = document.getElementById('demo');
+    function stopDemo() { if (demo) { demo = null; demoBtn.setAttribute('aria-pressed', 'false'); } }
+    demoBtn.addEventListener('click', () => { if (typeof stopPilot === 'function') stopPilot(); });
+    demoBtn.addEventListener('click', () => { if (demo) stopDemo(); else { demo = { i: 0, t: 0 }; demoBtn.setAttribute('aria-pressed', 'true'); } });
+
+    // ===================================================================
+    // REIFENSPUREN
+    // ===================================================================
+    const SPUR_MAX = 4000;
+    const spuren = RAEDER.map(() => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SPUR_MAX * 3), 3));
+      geo.setDrawRange(0, 0);
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x2b2116, transparent: true, opacity: 0.55 }));
+      line.frustumCulled = false; scene.add(line);
+      return { line, n: 0, last: null };
+    });
+    function spurPunkt(i, x, z) {
+      const s = spuren[i];
+      if (s.last && Math.hypot(x - s.last[0], z - s.last[1]) < 12) return;
+      if (s.n >= SPUR_MAX) {   // vorne wegschieben
+        const a = s.line.geometry.attributes.position.array; a.copyWithin(0, 3 * 500); s.n -= 500;
+      }
+      s.line.geometry.attributes.position.setXYZ(s.n++, x, gel.h(x, z) + 0.6, z);
+      s.line.geometry.attributes.position.needsUpdate = true;
+      s.line.geometry.setDrawRange(0, s.n); s.last = [x, z];
+    }
+    function spurenLeeren() { spuren.forEach((s) => { s.n = 0; s.last = null; s.line.geometry.setDrawRange(0, 0); }); }
+    const spurBtn = document.getElementById('spuren');
+    spurBtn.addEventListener('click', () => { const an = spurBtn.getAttribute('aria-pressed') !== 'true'; spurBtn.setAttribute('aria-pressed', String(an)); spuren.forEach((s) => (s.line.visible = an)); });
+
+    // ===================================================================
+    // EIN SIMULATIONSSCHRITT
+    // ===================================================================
+    // ===================================================================
+    // NAHSENSOREN VL53L1X: je zwei Blickrichtungen (verkleinertes Sichtfeld oben/unten), 5° nach oben eingebaut
+    // ===================================================================
+    const S_HOEHE = 41.25, NEIGUNG = 5, REICH = 2000, KANTE_MAX = 12;
+    const ZONEN = [['oben', NEIGUNG + 4, 0x3f8cff], ['unten', NEIGUNG - 9, 0xe07a1f]];
+    const SENSOREN = { vorne: { lx: 80.2, dx: 1 }, hinten: { lx: -115.2, dx: -1 } };
+    // Laser-Linien zum Anzeigen
+    const laserGruppe = new THREE.Group(); scene.add(laserGruppe);
+    Object.values(SENSOREN).forEach((s) => {
+      s.linien = {};
+      ZONEN.forEach(([zone, , farbe]) => {
+        const geo = new THREE.BufferGeometry().setFromPoints([V(0, 0, 0), V(0, 0, 0)]);
+        const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: farbe, transparent: true, opacity: 0.9 }));
+        line.frustumCulled = false;
+        const punkt = new THREE.Mesh(new THREE.SphereGeometry(3.5, 12, 8), new THREE.MeshBasicMaterial({ color: farbe }));
+        laserGruppe.add(line, punkt);
+        s.linien[zone] = { line, punkt };
+      });
+      s.hist = []; s.art = 'frei'; s.abstand = Infinity; s.winkel = null; s.halten = false;
+    });
+    // Strahl durch das Gelände verfolgen: Abstand bis zum ersten Treffer (oder Infinity)
+    function strahl(o, d) {
+      const step = 6;
+      for (let t = step; t <= REICH; t += step) {
+        if (o.y + d.y * t <= gel.h(o.x + d.x * t, o.z + d.z * t)) {
+          let a = t - step, b = t;
+          for (let i = 0; i < 8; i++) { const m = (a + b) / 2; if (o.y + d.y * m <= gel.h(o.x + d.x * m, o.z + d.z * m)) b = m; else a = m; }
+          return b;
+        }
+      }
+      return Infinity;
+    }
+    function messen() {
+      auto.updateMatrixWorld(true);
+      const vorwaerts = V(1, 0, 0).applyQuaternion(auto.quaternion); vorwaerts.y = 0; vorwaerts.normalize();
+      for (const s of Object.values(SENSOREN)) {
+        const o = auto.localToWorld(V(s.lx, S_HOEHE, 0));
+        // Bezug = Aufstandspunkt der Räder auf dieser Seite, waagerecht gedacht (Lage vom BNO085 bekannt):
+        // so zählt nur, was wirklich höher liegt als der Boden unter den Rädern
+        const ax = s.dx > 0 ? 55 : -90;
+        const boden = (auto.localToWorld(V(ax, 0, 83)).y + auto.localToWorld(V(ax, 0, -83)).y) / 2;
+        const blick = vorwaerts.clone().multiplyScalar(s.dx);
+        const m = {};
+        for (const [zone, wink] of ZONEN) {
+          const a = wink * Math.PI / 180;
+          const d = V(s.dx * Math.cos(a), Math.sin(a), 0).applyQuaternion(auto.quaternion).normalize();
+          const t = strahl(o, d) + (Math.random() - 0.5) * 4;          // ±2 mm Rauschen wie beim echten Sensor
+          const ok = isFinite(t);
+          const p = ok ? o.clone().add(d.clone().multiplyScalar(t)) : null;
+          // waagerecht gemessen: wie weit vor dem Sensor und wie hoch über dem Boden unter den Rädern liegt der Treffpunkt
+          m[zone] = { t, o, d, p, weit: ok ? (p.x - o.x) * blick.x + (p.z - o.z) * blick.z : Infinity, hoch: ok ? p.y - boden : null };
+        }
+        s.mess = m;
+        const U = m.oben, L = m.unten;
+        const hochU = U.hoch !== null && U.hoch > KANTE_MAX, hochL = L.hoch !== null && L.hoch > KANTE_MAX;
+        // Verlauf der unteren Treffpunkte (in der Welt) → Steigung der Fläche, über die der Strahl wandert
+        if (L.p) {
+          const letzt = s.hist[s.hist.length - 1];
+          if (letzt && letzt.distanceTo(L.p) > 60) s.hist = [];          // Sprung auf eine andere Fläche → neu anfangen
+          if (!s.hist.length || s.hist[s.hist.length - 1].distanceTo(L.p) > 8) { s.hist.push(L.p.clone()); if (s.hist.length > 12) s.hist.shift(); }
+        } else s.hist = [];
+        let steig = null;
+        if (s.hist.length >= 3) {
+          const p0 = s.hist[0], p1 = s.hist[s.hist.length - 1];
+          const quer = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+          if (quer > 15 || Math.abs(p1.y - p0.y) > 15) steig = Math.atan2(Math.abs(p1.y - p0.y), quer) * 180 / Math.PI;
+        }
+        // Einschätzung: nur was höher als KANTE_MAX über der Radebene liegt, ist ein Hindernis
+        let art = 'frei', abstand = Infinity, winkel = null;
+        const stufe = (w) => (w > 50 ? 'Wand' : w > 28 ? 'zu steil' : 'Rampe');
+        if (hochU && hochL) {
+          const dw = U.weit - L.weit;
+          winkel = dw <= 2 ? 90 : Math.atan2(U.hoch - L.hoch, dw) * 180 / Math.PI;
+          art = stufe(winkel); abstand = Math.min(U.weit, L.weit);
+        } else if (hochL) {
+          winkel = steig; abstand = L.weit;
+          art = steig === null ? 'Rampe' : steig > 50 ? 'Kante' : stufe(steig);
+        } else if (hochU && U.weit < 350) {
+          art = 'Wand'; abstand = U.weit; winkel = 90;                     // z. B. Tischkante: unten frei, oben etwas
+        }
+        s.art = art; s.abstand = abstand; s.winkel = winkel;
+        // Anhalten, wenn ein Hindernis nah ist (Bremsweg wächst mit dem Tempo)
+        const grenze = 110 + Math.abs(zu.v) * 0.55;
+        const schlimm = art === 'Wand' || art === 'Kante' || art === 'zu steil';
+        s.halten = schlimm && abstand < (s.halten ? grenze + 40 : grenze);
+        // Linien aktualisieren
+        for (const [zone] of ZONEN) {
+          const z = m[zone], ende = z.p || z.o.clone().add(z.d.clone().multiplyScalar(REICH));
+          const pos = s.linien[zone].line.geometry.attributes.position;
+          pos.setXYZ(0, z.o.x, z.o.y, z.o.z); pos.setXYZ(1, ende.x, ende.y, ende.z); pos.needsUpdate = true;
+          s.linien[zone].punkt.position.copy(ende); s.linien[zone].punkt.visible = !!z.p;
+        }
+      }
+    }
+    // ===================================================================
+    // KARTE aus den Nahsensoren (Belegungsraster 2 cm), Position geschätzt aus Encodern + Kreisel (BNO085)
+    // ===================================================================
+    const KZ = 20, KN = 170;                                   // Zellgröße mm, Zellen je Seite (3,4 m)
+    const karte = new Float32Array(KN * KN);                   // >0 belegt, <0 frei
+    const schaetz = { x: 0, z: 0, psi: 0, drift: 0 };          // geschätzte Lage (Drehpunkt)
+    let kMitte = { x: 0, z: 0 }, wegS = [], wegE = [];
+    function karteNeu() {
+      karte.fill(0);
+      schaetz.x = zu.x; schaetz.z = zu.z; schaetz.psi = zu.psi;
+      schaetz.drift = (Math.random() < 0.5 ? -1 : 1) * (0.004 + Math.random() * 0.005) * Math.PI / 180;   // Kreisel-Drift ca. 0,25–0,5°/min (BNO085 kalibriert sich selbst nach)
+      const kv = gel.karteVersatz || [0, 0];
+      kMitte = { x: zu.x + kv[0], z: zu.z + kv[1] }; wegS = []; wegE = [];
+    }
+    const kZelle = (x, z) => {
+      const i = Math.floor((x - kMitte.x) / KZ + KN / 2), j = Math.floor((z - kMitte.z) / KZ + KN / 2);
+      return i >= 0 && j >= 0 && i < KN && j < KN ? j * KN + i : -1;
+    };
+    // Strahl in die Karte eintragen: Zellen bis zum Treffer frei, Treffer belegt (nur wenn Hindernis)
+    function karteStrahl(x0, z0, ux, uz, laenge, belegt, freiBis = laenge) {
+      for (let d = 0; d < Math.min(laenge - KZ * 0.6, freiBis); d += KZ * 0.7) {
+        const k = kZelle(x0 + ux * d, z0 + uz * d);
+        if (k >= 0) karte[k] = Math.max(-4, karte[k] - 0.12);
+      }
+      if (belegt) for (const dd of [0, KZ * 0.5]) {
+        const k = kZelle(x0 + ux * (laenge + dd), z0 + uz * (laenge + dd));
+        if (k >= 0) karte[k] = Math.min(4, karte[k] + 0.9);
+      }
+    }
+    // nach jeder Messung: Treffer mit der GESCHÄTZTEN Lage eintragen (das echte Auto kennt nur diese)
+    function karteEintragen() {
+      const c = Math.cos(schaetz.psi), s = Math.sin(schaetz.psi);
+      for (const sen of Object.values(SENSOREN)) {
+        if (!sen.mess) continue;
+        const ab = (sen.lx - DREHPUNKT_X);                       // Sensor vor/hinter dem Drehpunkt
+        const sx = schaetz.x + c * ab, sz = schaetz.z - s * ab;
+        const ux = c * sen.dx, uz = -s * sen.dx;
+        const U = sen.mess.oben, L = sen.mess.unten;
+        const hindL = L.hoch !== null && L.hoch > KANTE_MAX, hindU = U.hoch !== null && U.hoch > KANTE_MAX;
+        // unterer Strahl: bis zum Bodentreffer frei, Hindernis belegt
+        karteStrahl(sx, sz, ux, uz, isFinite(L.weit) ? Math.min(L.weit, 900) : 600, hindL && L.weit < 900);
+        // oberer Strahl: trifft er etwas Hohes (Wand), dort belegt; als „frei“ zählt nur das erste Stück,
+        // weiter weg fliegt er schon über niedrige Dinge hinweg
+        if (hindU) karteStrahl(sx, sz, ux, uz, U.weit, true, 600);
+      }
+    }
+    // Lage schätzen: Strecke aus den Encodern (Radgeschwindigkeit), Drehung aus dem Kreisel (mit kleiner Drift)
+    function schaetzen(dt) {
+      schaetz.psi += (zu.w + schaetz.drift + (Math.random() - 0.5) * 0.002) * dt;
+      schaetz.x += Math.cos(schaetz.psi) * zu.v * dt; schaetz.z += -Math.sin(schaetz.psi) * zu.v * dt;
+    }
+    const kCanvas = document.getElementById('karte'), kc = kCanvas.getContext('2d');
+    const kBild = kc.createImageData(KN, KN), kTmp = document.createElement('canvas');
+    kTmp.width = kTmp.height = KN;
+    function karteZeichnen() {
+      const d = kBild.data;
+      const belegt = (k) => k >= 0 && k < KN * KN && karte[k] > 0.8;
+      for (let k = 0; k < KN * KN; k++) {
+        const v = karte[k], o = k * 4;
+        let r = 138, g = 146, b = 152;                             // unbekannt
+        if (v < -0.3) { r = 159; g = 177; b = 189; }               // frei
+        if (belegt(k) || belegt(k - 1) || belegt(k + 1) || belegt(k - KN) || belegt(k + KN)) { r = 29; g = 35; b = 41; }   // Hindernis (etwas dicker gezeichnet)
+        d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+      }
+      kTmp.getContext('2d').putImageData(kBild, 0, 0);
+      const W = kCanvas.width, f = W / KN;
+      kc.imageSmoothingEnabled = false;
+      kc.save();
+      kc.setTransform(1, 0, 0, 1, 0, 0); kc.clearRect(0, 0, W, W);
+      // Bild-Zelle (i = x, j = z) → Kästchen: vorne beim Start (+x) nach oben, links (+z) nach links
+      kc.setTransform(0, -f, -f, 0, W, W);
+      kc.drawImage(kTmp, 0, 0);
+      const p = (x, z) => [(x - kMitte.x) / KZ + KN / 2, (z - kMitte.z) / KZ + KN / 2];
+      const linie = (pts, farbe) => { if (pts.length < 2) return; kc.strokeStyle = farbe; kc.lineWidth = 1.6 / f; kc.beginPath(); pts.forEach(([x, z], i) => { const [a, b] = p(x, z); if (i) kc.lineTo(a, b); else kc.moveTo(a, b); }); kc.stroke(); };
+      linie(wegE, '#e07a1f'); linie(wegS, '#2f9e5a');
+      // Auto als Dreieck an der geschätzten Lage (Richtung in Zellen: x = cos ψ, z = −sin ψ)
+      const [ai, aj] = p(schaetz.x, schaetz.z), c = Math.cos(schaetz.psi), s = -Math.sin(schaetz.psi), L = 10 / f;
+      kc.fillStyle = '#2f9e5a'; kc.beginPath();
+      kc.moveTo(ai + c * L, aj + s * L);
+      kc.lineTo(ai - c * L * 0.6 - s * L * 0.6, aj - s * L * 0.6 + c * L * 0.6);
+      kc.lineTo(ai - c * L * 0.6 + s * L * 0.6, aj - s * L * 0.6 - c * L * 0.6);
+      kc.closePath(); kc.fill();
+      kc.restore();
+      if (loeser) {
+        const zuBild = (x, z) => [W - ((z - kMitte.z) / KZ + KN / 2) * f, W - ((x - kMitte.x) / KZ + KN / 2) * f];
+        const C = loeser.C;
+        kc.font = '600 10px "JetBrains Mono", monospace'; kc.textAlign = 'center'; kc.textBaseline = 'middle';
+        const felder = new Set([...loeser.wand.keys(), ...loeser.besucht]);
+        for (const key of felder) {
+          const [i, j] = key.split(',').map(Number);
+          const [mx, mz] = feldMitte(i, j), [cx, cy] = zuBild(mx, mz);
+          if (loeser.besucht.has(key)) { kc.fillStyle = 'rgba(47,158,90,0.18)'; const [ax, ay] = zuBild(mx + C / 2, mz + C / 2), [bx, by] = zuBild(mx - C / 2, mz - C / 2); kc.fillRect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax), Math.abs(by - ay)); }
+          const d = loeser.verfahren === 'flut' && loeser.dist ? loeser.dist.get(key) : undefined;
+          if (d !== undefined && isFinite(d)) { kc.fillStyle = '#17202a'; kc.fillText(String(d), cx, cy); }
+          const wf = loeser.wand.get(key) || [];
+          for (let k = 0; k < 4; k++) {
+            if (wf[k] !== true) continue;
+            const [dx, dz] = RICHT[k], qx = -dz, qz = dx;                    // quer zur Seite
+            const p1 = zuBild(mx + dx * C / 2 + qx * C / 2, mz + dz * C / 2 + qz * C / 2);
+            const p2 = zuBild(mx + dx * C / 2 - qx * C / 2, mz + dz * C / 2 - qz * C / 2);
+            kc.strokeStyle = '#c4472f'; kc.lineWidth = 2.5; kc.beginPath(); kc.moveTo(...p1); kc.lineTo(...p2); kc.stroke();
+          }
+        }
+      }
+    }
+    document.getElementById('kartelos').addEventListener('click', karteNeu);
+    // Raum scannen: einmal langsam um sich selbst drehen
+    let scan = null;
+    const scanBtn = document.getElementById('scan');
+    function stopScan() { if (scan) { scan = null; scanBtn.setAttribute('aria-pressed', 'false'); } }
+    scanBtn.addEventListener('click', () => { if (scan) stopScan(); else { stopDemo(); if (typeof stopPilot === 'function') stopPilot(); scan = { gedreht: 0 }; scanBtn.setAttribute('aria-pressed', 'true'); } });
+
+    // ===================================================================
+    // LABYRINTH-LÖSER (Micromouse-Prinzip): Raster-Karte + Flood-Fill, nur mit den zwei Nahsensoren,
+    // den Encodern und dem Kreisel. Arbeitet mit der GESCHÄTZTEN Lage (wie der echte Pico).
+    // ===================================================================
+    const RICHT = [[1, 0], [0, -1], [-1, 0], [0, 1]];    // Blickrichtung k → Nachbarfeld (Feld i entlang +x, j entlang +z); k+1 = 90° links
+    const WAND_ABSTAND = 82;                              // Sensor → Wand, wenn das Auto mitten im Feld steht (180 − 98 mm)
+    const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+    let loeser = null;
+    const loeserBtn = document.getElementById('loeser');
+    function stopLoeser() { if (loeser && loeser.modus !== 'fertig') { loeser.modus = 'fertig'; loeser.text = 'angehalten'; } loeserBtn.setAttribute('aria-pressed', 'false'); }
+    // Wände je Feld in einer Tabelle "i,j" → [Seite 0..3] (true = Wand, false = offen, null = unbekannt).
+    // Die Tabelle wächst mit – so geht es auch, wenn die Größe des Labyrinths unbekannt ist.
+    function wGet(i, j) {
+      const key = i + ',' + j;
+      let w = loeser.wand.get(key);
+      if (!w) { w = [null, null, null, null]; loeser.wand.set(key, w); }
+      return w;
+    }
+    const imFeld = (i, j) => !loeser.N || (i >= 0 && j >= 0 && i < loeser.N && j < loeser.N);
+    function setzeWand(i, j, k, wert) {
+      if (!imFeld(i, j)) return;
+      wGet(i, j)[k] = wert;
+      const a = i + RICHT[k][0], b = j + RICHT[k][1];
+      if (imFeld(a, b)) wGet(a, b)[(k + 2) % 4] = wert;
+    }
+    function flut() {                                     // Flood-Fill: Schritte bis zum Ziel für jedes Feld (unbekannte Seiten = offen)
+      const N = loeser.N, d = new Map();
+      const [gi, gj] = loeser.ziel; d.set(gi + ',' + gj, 0);
+      const q = [[gi, gj]];
+      while (q.length) {
+        const [i, j] = q.shift(), di = d.get(i + ',' + j);
+        for (let k = 0; k < 4; k++) {
+          if (wGet(i, j)[k] === true) continue;
+          const a = i + RICHT[k][0], b = j + RICHT[k][1], key = a + ',' + b;
+          if (a < 0 || b < 0 || a >= N || b >= N || (d.has(key) && d.get(key) <= di + 1)) continue;
+          d.set(key, di + 1); q.push([a, b]);
+        }
+      }
+      loeser.dist = d;
+    }
+    // Wachsende Karte: kürzester Weg (über bekannte offene Seiten) zum nächsten noch nicht besuchten Feld
+    function naechstesUnbekannt() {
+      const start = loeser.i + ',' + loeser.j, vor = new Map([[start, null]]), q = [[loeser.i, loeser.j]];
+      const d = new Map([[start, 0]]);
+      while (q.length) {
+        const [i, j] = q.shift(), key = i + ',' + j;
+        if (key !== start && !loeser.besucht.has(key)) {
+          let p = key; while (vor.get(p) && vor.get(p).von !== start) p = vor.get(p).von;   // erster Schritt
+          loeser.dist = d; return vor.get(p).k;
+        }
+        if (!loeser.besucht.has(key)) continue;           // durch unbesuchte Felder nicht weiterplanen
+        for (let k = 0; k < 4; k++) {
+          if (wGet(i, j)[k] !== false) continue;
+          const a = i + RICHT[k][0], b = j + RICHT[k][1], nk = a + ',' + b;
+          if (vor.has(nk)) continue;
+          vor.set(nk, { von: key, k }); d.set(nk, d.get(key) + 1); q.push([a, b]);
+        }
+      }
+      loeser.dist = d; return null;
+    }
+    function loeserStart() {
+      document.querySelector('[data-gelaende=labyrinth]').click();         // frisch an den Start
+      stopDemo(); if (typeof stopPilot === 'function') stopPilot(); stopScan();
+      const L = GELAENDE.labyrinth, verfahren = document.getElementById('verfahren').value;
+      const N = verfahren === 'flut' ? L.zellen : 0;       // 0 = Größe unbekannt
+      loeser = {
+        verfahren, N, C: L.zelle, ziel: L.ziel, i: 0, j: 0, k: 0, kZiel: 0, modus: 'messen', t: 0, zeit: 0, schritte: 0,
+        wand: new Map(), weite: new Map(), runden: new Map(),
+        besucht: new Set(['0,0']), start: { x: schaetz.x, z: schaetz.z, psi: schaetz.psi }, dist: null, text: 'schaut sich um',
+      };
+      if (verfahren === 'flut') {
+        for (let a = 0; a < N; a++) { setzeWand(0, a, 2, true); setzeWand(N - 1, a, 0, true); setzeWand(a, 0, 1, true); setzeWand(a, N - 1, 3, true); }
+        setzeWand(N - 1, N - 1, 0, false);                // der Ausgang (Ziel ist das Feld davor)
+        flut();
+      }
+      loeserBtn.setAttribute('aria-pressed', 'true');
+    }
+    loeserBtn.addEventListener('click', () => { if (loeser && loeser.modus !== 'fertig') stopLoeser(); else loeserStart(); });
+    // Was sieht der Sensor in Blickrichtung? true = Wand in diesem Feld, false = frei, null = unklar
+    function wandDa(s) {
+      if (s.art === 'Wand' && s.abstand < 230) return true;
+      if (s.art === 'frei' || !isFinite(s.abstand) || s.abstand > 300) return false;
+      return null;
+    }
+    const feldMitte = (i, j) => [loeser.start.x + i * loeser.C, loeser.start.z + j * loeser.C];
+    function drehenZu(k) {
+      let e = wrap(loeser.start.psi + k * Math.PI / 2 - schaetz.psi);
+      if (Math.abs(e) < 0.015 && Math.abs(zu.w) < 0.08) { loeser.drehUmkehr = false; return null; }
+      if (loeser.drehUmkehr && Math.abs(e) > 0.3) e -= Math.sign(e) * 2 * Math.PI;   // nach einem Anstoß andersherum drehen
+      let l = Math.max(-0.5, Math.min(0.5, e * 2.2));
+      if (Math.abs(l) < 0.1) l = 0.1 * Math.sign(e);
+      return [0, l];
+    }
+    function loeserSteuern(dt) {
+      const L = loeser, f = SENSOREN.vorne, h = SENSOREN.hinten;
+      L.zeit += dt; L.t += dt;
+      const wechsel = (m, text) => { L.modus = m; L.t = 0; if (text) L.text = text; };
+      const psiK = (k) => L.start.psi + k * Math.PI / 2;
+      if (L.modus === 'messen') {                         // kurz stillhalten, dann vorne und hinten eintragen
+        if (L.t < 0.35) return [0, 0];
+        const wv = wandDa(f), wh = wandDa(h);
+        if (wv !== null) setzeWand(L.i, L.j, L.k, wv);
+        if (wh !== null) setzeWand(L.i, L.j, (L.k + 2) % 4, wh);
+        const fk = L.i + ',' + L.j, we = L.weite.get(fk) || []; we[L.k] = f.abstand; we[(L.k + 2) % 4] = h.abstand; L.weite.set(fk, we);
+        // Wand hinten: damit lässt sich die Position in Blickrichtung ebenfalls korrigieren (gleicher Sollabstand)
+        if (h.art === 'Wand' && h.abstand < 230) {
+          const [tx, tz] = feldMitte(L.i, L.j), hx = Math.cos(psiK(L.k)), hz = -Math.sin(psiK(L.k));
+          const along = (tx - schaetz.x) * hx + (tz - schaetz.z) * hz + (h.abstand - WAND_ABSTAND);
+          schaetz.x += hx * along; schaetz.z += hz * along;
+        }
+        const w = wGet(L.i, L.j), kl = (L.k + 1) % 4, kr = (L.k + 3) % 4;
+        // Seiten noch unbekannt → hinschauen. Sonst: einmal pro Feld an einer Seitenwand ausrichten (seitliche Drift weg)
+        if (w[kl] === null || w[kr] === null) { L.kSeite = w[kl] === null ? kl : kr; wechsel('seite', 'dreht sich zur Seite'); return [0, 0]; }
+        if (!L.seitOk && (w[kl] === true || w[kr] === true)) { L.kSeite = w[kl] === true ? kl : kr; L.seitOk = true; wechsel('seite', 'richtet sich an der Seitenwand aus'); return [0, 0]; }
+        wechsel('planen'); return [0, 0];
+      }
+      // Stößt das Auto beim Drehen an, ein Stück rangieren (abwechselnd zurück/vor) und andersherum drehen
+      if ((L.modus === 'seite' || L.modus === 'drehen' || L.modus === 'raus_drehen')) {
+        L.blockT = zu.blockiert ? (L.blockT || 0) + dt : 0;
+        if (L.blockT > 0.3) { L.blockT = 0; L.befreiN = (L.befreiN || 0) + 1; L.zurueck = L.modus; L.drehUmkehr = !L.drehUmkehr; wechsel('befreien', 'stößt beim Drehen an – rangiert'); return [0, 0]; }
+      }
+      if (L.modus === 'seite') {                          // zur Seite drehen (zur unbekannten Seite oder zu einer Seitenwand)
+        const r = drehenZu(L.kSeite);
+        if (r) return r;
+        L.k = L.kSeite; L.seitOk = true; wechsel('ausrichten_messen'); return [0, 0];
+      }
+      if (L.modus === 'befreien') {                       // angestoßen: ein Stück rangieren, dann weitermachen
+        const zurueck = L.zurueck || 'messen';
+        if (L.t > (zurueck === 'messen' ? 0.5 : 0.3)) { L.seitOk = false; L.zurueck = null; wechsel(zurueck, 'hat sich freigefahren'); return [0, 0]; }
+        return [zurueck === 'messen' || (L.befreiN || 0) % 2 ? -0.3 : 0.3, 0];
+      }
+      if (L.modus === 'ausrichten' || L.modus === 'ausrichten_messen') {
+        // steht vorne eine Wand: auf genau WAND_ABSTAND fahren und damit die geschätzte Lage korrigieren
+        const zurMessung = L.modus === 'ausrichten_messen';
+        if (L.t < 0.25) return [0, 0];
+        if (!(f.art === 'Wand' && f.abstand < 230) || L.t > 2.5) { wechsel(zurMessung ? 'messen' : 'messen'); return [0, 0]; }
+        const e = f.abstand - WAND_ABSTAND;
+        if (Math.abs(e) < 3) {
+          const [tx, tz] = feldMitte(L.i, L.j), hx = Math.cos(psiK(L.k)), hz = -Math.sin(psiK(L.k));
+          const along = (tx - schaetz.x) * hx + (tz - schaetz.z) * hz;
+          schaetz.x += hx * along; schaetz.z += hz * along;            // Position in Blickrichtung stimmt jetzt genau
+          wechsel('messen'); return [0, 0];
+        }
+        let g = Math.max(-0.25, Math.min(0.25, e / 60)); if (Math.abs(g) < 0.08) g = 0.08 * Math.sign(e);
+        return [g, 0];
+      }
+      if (L.modus === 'planen') {
+        const w = wGet(L.i, L.j), zeit = `${Math.floor(L.zeit / 60)}:${String(Math.floor(L.zeit % 60)).padStart(2, '0')} min`;
+        const fertig = (text) => { wechsel('fertig', text); loeserBtn.setAttribute('aria-pressed', 'false'); return [0, 0]; };
+        if (L.verfahren !== 'flut') {
+          // Ausgang erkennen: alle vier Seiten offen UND in mindestens drei Richtungen mehr als 80 cm frei → draußen
+          const we = L.weite.get(L.i + ',' + L.j) || [];
+          const weitFrei = [0, 1, 2, 3].filter((k) => we[k] !== undefined && (!isFinite(we[k]) || we[k] > 800)).length;
+          if (weitFrei >= 3 && w.every((x) => x === false)) return fertig(`Ausgang gefunden nach ${zeit}, ${L.besucht.size} Felder erkundet`);
+          let kNeu = null;
+          if (L.verfahren === 'rechts') {
+            const kr = L.kRein ?? 0;                      // „rechts“ gilt von der Richtung aus, in der es ins Feld gefahren ist
+            for (const k of [(kr + 3) % 4, kr, (kr + 1) % 4, (kr + 2) % 4]) if (w[k] === false) { kNeu = k; break; }
+            const rk = L.i + ',' + L.j + ',' + kNeu, n = (L.runden.get(rk) || 0) + 1; L.runden.set(rk, n);
+            if (n > 3) return fertig('fährt im Kreis – die Rechte-Hand-Regel kommt hier nicht weiter');
+          } else {
+            kNeu = naechstesUnbekannt();
+            if (kNeu === null) return fertig('alles erkundet – kein Ausgang gefunden');
+          }
+          if (kNeu === null) return fertig('kein Weg gefunden');
+          L.kZiel = kNeu; wechsel('drehen', `fährt nach Feld ${L.i + RICHT[kNeu][0] + 1}/${L.j + RICHT[kNeu][1] + 1}`); return [0, 0];
+        }
+        flut();
+        if (L.i === L.ziel[0] && L.j === L.ziel[1]) { L.kZiel = 0; wechsel('raus_drehen', 'Ziel erreicht – fährt zum Ausgang'); return [0, 0]; }
+        let best = null;
+        for (let k = 0; k < 4; k++) {
+          if (w[k] === true) continue;
+          const a = L.i + RICHT[k][0], b = L.j + RICHT[k][1];
+          if (a < 0 || b < 0 || a >= L.N || b >= L.N) continue;
+          const d = (L.dist.get(a + ',' + b) ?? Infinity) + (k === L.k ? -0.1 : 0) + (w[k] === null ? 0.05 : 0);
+          if (!best || d < best.d) best = { k, d };
+        }
+        if (!best) { wechsel('fertig', 'kein Weg gefunden'); loeserBtn.setAttribute('aria-pressed', 'false'); return [0, 0]; }
+        L.kZiel = best.k; wechsel('drehen', `fährt nach Feld ${L.i + RICHT[best.k][0] + 1}/${L.j + RICHT[best.k][1] + 1}`); return [0, 0];
+      }
+      if (L.modus === 'drehen' || L.modus === 'raus_drehen') {
+        const r = drehenZu(L.kZiel);
+        if (r) return r;
+        L.k = L.kZiel; wechsel(L.modus === 'drehen' ? 'fahren' : 'raus'); return [0, 0];
+      }
+      if (L.modus === 'fahren' || L.modus === 'raus') {
+        const raus = L.modus === 'raus';
+        const ni = L.i + RICHT[L.k][0] * (raus ? 1.4 : 1), nj = L.j + RICHT[L.k][1] * (raus ? 1.4 : 1);
+        const [tx, tz] = feldMitte(ni, nj), ps = psiK(L.k);
+        const hx = Math.cos(ps), hz = -Math.sin(ps), lx = Math.sin(ps), lz = Math.cos(ps);
+        const along = (tx - schaetz.x) * hx + (tz - schaetz.z) * hz, quer = (tx - schaetz.x) * lx + (tz - schaetz.z) * lz;
+        const naheWand = f.art === 'Wand' && f.abstand < WAND_ABSTAND + 4;
+        L.blockT = zu.blockiert ? (L.blockT || 0) + dt : 0;
+        if (L.blockT > 0.4 && !raus) { L.blockT = 0; L.zurueck = 'messen'; wechsel('befreien', 'stößt an – fährt zurück'); return [0, 0]; }
+        if (along < 6 || (naheWand && !raus)) {
+          if (raus) { wechsel('fertig', `Ausgang erreicht nach ${Math.floor(L.zeit / 60)}:${String(Math.floor(L.zeit % 60)).padStart(2, '0')} min, ${L.besucht.size} Felder erkundet`); loeserBtn.setAttribute('aria-pressed', 'false'); return [0, 0]; }
+          L.i = Math.round(ni); L.j = Math.round(nj); L.schritte++; L.besucht.add(L.i + ',' + L.j); L.seitOk = false; L.kRein = L.k;
+          wechsel('ausrichten', 'richtet sich an der Wand aus'); return [0, 0];
+        }
+        const eh = wrap(ps - schaetz.psi);
+        const lenk = Math.max(-0.25, Math.min(0.25, 0.006 * quer + 2.0 * eh));
+        return [Math.max(0.18, Math.min(0.55, along / 220)), lenk];
+      }
+      return [0, 0];                                      // fertig
+    }
+
+    let sensorBremse = true;
+    const bremsBtn = document.getElementById('bremsen');
+    bremsBtn.addEventListener('click', () => { sensorBremse = !sensorBremse; bremsBtn.setAttribute('aria-pressed', String(sensorBremse)); });
+    const laserBtn = document.getElementById('laser');
+    laserBtn.addEventListener('click', () => { laserGruppe.visible = !laserGruppe.visible; laserBtn.setAttribute('aria-pressed', String(laserGruppe.visible)); });
+    // Autopilot: geradeaus fahren, vor Wand/Kante auf der Stelle abdrehen, Rampen langsam hochfahren
+    let pilot = null;
+    const pilotBtn = document.getElementById('pilot');
+    function stopPilot() { if (pilot) { pilot = null; pilotBtn.setAttribute('aria-pressed', 'false'); } }
+    pilotBtn.addEventListener('click', () => {
+      if (pilot) stopPilot();
+      else { stopDemo(); pilot = { modus: 'fahren', t: 0, r: 1, dauer: 1, versuche: 0, blockZeit: 0 }; pilotBtn.setAttribute('aria-pressed', 'true'); sensorBremse = true; bremsBtn.setAttribute('aria-pressed', 'true'); }
+    });
+    // Autopilot als kleine Abfolge von Zuständen:
+    //   fahren  → geradeaus (Rampen langsam), bei Wand/Kante/Anstoß → drehen
+    //   drehen  → auf der Stelle, bis vorne frei; stößt es beim Drehen an → andere Richtung, nach 3 Versuchen → mitte
+    //   mitte   → zwischen Wand vorne und hinten mittig stellen (dort ist Platz zum Drehen), dann wieder drehen
+    function pilotSteuern(dt) {
+      const f = SENSOREN.vorne, blk = zu.blockiert;
+      zu.blockiert = false;
+      pilot.t += dt;
+      const wechsel = (m) => { pilot.modus = m; pilot.t = 0; pilot.blockZeit = 0; };
+      if (pilot.modus === 'fahren') {
+        if (blk || f.halten) { wechsel('drehen'); pilot.r = Math.random() < 0.5 ? 1 : -1; pilot.dauer = 0.5 + Math.random() * 1.2; pilot.versuche = 0; return [0, 0]; }
+        return [f.art === 'Rampe' ? 0.6 : 1, 0];
+      }
+      if (pilot.modus === 'drehen') {
+        if (blk) {
+          pilot.blockZeit += dt;
+          if (pilot.blockZeit > 0.25) { pilot.r = -pilot.r; pilot.versuche++; pilot.blockZeit = 0; if (pilot.versuche > 2) wechsel('mitte'); }
+          return [0, pilot.r];
+        }
+        // weiterdrehen, bis vorne mindestens 35 cm frei sind (und eine Mindestzeit, damit es nicht in die alte Richtung zurückfährt)
+        if (pilot.t > pilot.dauer && !f.halten && f.abstand > 350) wechsel('fahren');
+        return [0, pilot.r];
+      }
+      // 'mitte': zwischen Wand vorne und Wand hinten in die Mitte fahren, dort ist Platz zum Drehen
+      const h = SENSOREN.hinten, dv = isFinite(f.abstand) ? f.abstand : 600, dh = isFinite(h.abstand) ? h.abstand : 600;
+      if (blk) pilot.blockZeit += dt;
+      if (Math.abs(dv - dh) < 25 || pilot.t > 1.2 || pilot.blockZeit > 0.3) { wechsel('drehen'); pilot.versuche = 0; pilot.dauer = 0.2; return [0, 0]; }
+      return [dv > dh ? 0.4 : -0.4, 0];
+    }
+
+    function schritt(dt) {
+      let gas = (taste.vor ? 1 : 0) - (taste.zurueck ? 1 : 0), lenk = (taste.links ? 1 : 0) - (taste.rechts ? 1 : 0);
+      if (demo) {
+        const d = DEMO[demo.i]; gas = d[0]; lenk = d[1]; demo.t += dt;
+        if (demo.t > d[2]) { demo.t = 0; demo.i = (demo.i + 1) % DEMO.length; }
+      }
+      if (pilot) [gas, lenk] = pilotSteuern(dt);
+      if (scan) { gas = 0; lenk = 0.35; scan.gedreht += Math.abs(zu.w) * dt; if (scan.gedreht > 2 * Math.PI) stopScan(); }
+      const loeserAktiv = loeser && loeser.modus !== 'fertig';
+      if (loeserAktiv) [gas, lenk] = loeserSteuern(dt);
+      // Sensoren bremsen: nicht weiter auf eine Wand oder Kante zufahren (drehen bleibt erlaubt)
+      zu.gebremst = null;
+      // (der Labyrinth-Löser fährt selbst langsam und gezielt bis 8 cm an Wände heran – dann nicht bremsen)
+      if (sensorBremse && !loeserAktiv && gas > 0 && SENSOREN.vorne.halten) { gas = 0; zu.gebremst = 'vorne'; }
+      if (sensorBremse && !loeserAktiv && gas < 0 && SENSOREN.hinten.halten) { gas = 0; zu.gebremst = 'hinten'; }
+      // Gewünschte Radgeschwindigkeit je Seite (Panzerlenkung); Motoren folgen mit kurzer Verzögerung
+      const sollL = Math.max(-1, Math.min(1, gas - lenk)) * vmax, sollR = Math.max(-1, Math.min(1, gas + lenk)) * vmax;
+      const f = 1 - Math.exp(-dt / 0.15);
+      zu.vL += (sollL - zu.vL) * f; zu.vR += (sollR - zu.vR) * f;
+
+      const meld = [];
+      // Haftung unter den Rädern
+      zu.mu = RAEDER.reduce((s, [lx, lz]) => { const [x, z] = weltXZ(lx, lz); return s + gel.mu(x, z); }, 0) / 4;
+      // Schlupf beim Drehen: die Räder müssen seitlich rutschen. Griffiger Boden + langer Radstand → mehr Schlupf.
+      const chi = 1 + 0.9 * zu.mu * (RADSTAND / SPUR) ** 2;
+      let v = (zu.vL + zu.vR) / 2;
+      let w = (zu.vR - zu.vL) / (SPUR * chi);
+      zu.schlupf = Math.abs(zu.vR - zu.vL) > 20 ? 1 - 1 / chi : 0;
+
+      // Steigung: rutscht durch, wenn tan(Neigung) größer als die Haftung ist
+      const bergauf = Math.tan(zu.pitch) * Math.sign(v);
+      if (bergauf > zu.mu * 0.95) { v = -Math.sign(v) * 40; meld.push(['Zu steil – die Räder drehen durch', 'rot']); }
+      else if (bergauf > zu.mu * 0.7) { v *= 0.5; meld.push(['Sehr steil – fast an der Haftgrenze', 'gelb']); }
+
+      // Neue Lage berechnen und prüfen: Stufen zu hoch? Bauch setzt auf?
+      const alt = { x: zu.x, z: zu.z, psi: zu.psi };
+      zu.psi += w * dt;
+      const c = Math.cos(zu.psi), s = Math.sin(zu.psi);
+      zu.x += c * v * dt; zu.z += -s * v * dt;
+      const STUFE_MAX = 0.5 * RAD_R * Math.min(1, (zu.mu + 0.2) / 0.8);   // Allrad mit Gummireifen: ca. halber Radradius (auf glattem Boden etwas weniger)
+      let blockiert = false;
+      RAEDER.forEach(([lx, lz], i) => {
+        const [xn, zn] = weltXZ(lx, lz);
+        const cA = Math.cos(alt.psi), sA = Math.sin(alt.psi), dx = lx - DREHPUNKT_X;
+        const xa = alt.x + cA * dx + sA * lz, za = alt.z - sA * dx + cA * lz;
+        const d = Math.hypot(xn - xa, zn - za);
+        if (d < 0.01) return;
+        // 6 mm voraus in Bewegungsrichtung des Rades: Höhensprung größer als die Stufen-Grenze?
+        const ux = (xn - xa) / d, uz = (zn - za) / d;
+        const hier = gel.h(xa, za), vorn = gel.h(xn + ux * 6, zn + uz * 6);
+        if (vorn - hier > STUFE_MAX && vorn - hier < 60) blockiert = true;   // höher als 6 cm = Wand, das prüft der Umriss
+      });
+      if (blockiert) { zu.x = alt.x; zu.z = alt.z; zu.psi = alt.psi; v = 0; w = 0; meld.push(['Stufe zu hoch – Räder kommen nicht hoch', 'rot']); }
+      // Umriss der Wanne (und Außenseite der Räder): stößt er irgendwo an etwas, das mehr als 30 mm über den Rädern steht?
+      // Erlaubt ist jede Bewegung, die nicht MEHR Berührung bringt (so kann sich das Auto auch wieder befreien)
+      let anstoss = false;
+      if (!blockiert) {
+        const { e: en } = auflage();
+        let n = 0;
+        for (const [lx, lz] of UMRISS) if (hoehe(lx, lz) > en.a + en.b * lx + en.c * lz + 30) n++;
+        if (n > (zu.anstossZahl || 0)) { anstoss = true; zu.x = alt.x; zu.z = alt.z; zu.psi = alt.psi; v = 0; w = 0; meld.push(['Stößt an – Wanne oder Rad berührt eine Wand', 'rot']); }
+        else zu.anstossZahl = n;
+      }
+      zu.blockiert = blockiert || anstoss;
+      // Spielfeld begrenzen
+      const R = GROESSE / 2 - 200;
+      if (Math.abs(zu.x) > R || Math.abs(zu.z) > R) { zu.x = Math.max(-R, Math.min(R, zu.x)); zu.z = Math.max(-R, Math.min(R, zu.z)); meld.push(['Rand des Geländes', 'gelb']); }
+
+      const { e, luft } = auflage();
+      zu.luft = luft;
+      zu.pitch = Math.atan(e.b); zu.roll = Math.atan(e.c);
+      if (luft.some(Boolean)) meld.push(['Ein Rad hängt in der Luft – Boden ist verwunden', 'gelb']);
+      // Bodenfreiheit: Punkte unter dem Wannenboden prüfen
+      let aufgesetzt = false;
+      for (let lx = -118; lx <= 84 && !aufgesetzt; lx += 6) for (let lz = -58; lz <= 58; lz += 14.5) {
+        if (hoehe(lx, lz) > e.a + e.b * lx + e.c * lz + unterkante(lx)) { aufgesetzt = true; break; }
+      }
+      if (aufgesetzt) { meld.push(['Wanne setzt auf – zu wenig Bodenfreiheit', 'rot']); v *= 0.3; }
+      // Kippen?
+      if (Math.abs(zu.roll) > KIPP_SEITE * 0.85 || Math.abs(zu.pitch) > KIPP_LAENGS * 0.85) meld.push(['Kippgefahr!', 'rot']);
+
+      // Strom schätzen: Rollwiderstand + Steigung + seitliches Rutschen beim Drehen, Wirkungsgrad ca. 45 %
+      const vm = v / 1000, Lm = RADSTAND / 1000;
+      const leistung = (0.03 * MASSE * G * Math.abs(vm) + Math.max(0, MASSE * G * Math.sin(zu.pitch) * vm) + zu.mu * MASSE * G * Math.abs(w) * Lm / 2) / 0.45
+        + (Math.abs(zu.vL) + Math.abs(zu.vR) > 5 ? 0.6 : 0);
+      zu.strom += (leistung / 7.4 - zu.strom) * (1 - Math.exp(-dt / 0.3));
+      if (zu.gebremst) { const s = SENSOREN[zu.gebremst]; meld.unshift([`Sensor ${zu.gebremst}: ${s.art} in ${(s.abstand / 10).toFixed(0)} cm – angehalten`, 'rot']); }
+      zu.v = v; zu.w = w; zu.meldungen = meld;
+      schaetzen(dt);
+      const lw = wegE[wegE.length - 1];
+      if (!lw || Math.hypot(zu.x - lw[0], zu.z - lw[1]) > 25) { wegE.push([zu.x, zu.z]); wegS.push([schaetz.x, schaetz.z]); if (wegE.length > 4000) { wegE.shift(); wegS.shift(); } }
+
+      // ---- Auto in der Szene ausrichten: Drehung um y, dann Nicken (um z) und Rollen (um x)
+      const [ox, oz] = weltXZ(0, 0);
+      auto.position.set(ox, e.a, oz);
+      const q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), zu.psi);
+      q.multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), zu.pitch));
+      q.multiply(new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), -zu.roll));
+      auto.quaternion.copy(q);
+      // Räder drehen sich mit ihrer Seite (mit Schlupf drehen sie schneller, als das Auto fährt)
+      radGruppen.forEach((g) => { g.rotation.z -= (g.position.z > 0 ? zu.vL : zu.vR) / RAD_R * dt; });
+      if (Math.abs(zu.vL) + Math.abs(zu.vR) > 5) RAEDER.forEach(([lx, lz], i) => { const [x, z] = weltXZ(lx, lz); spurPunkt(i, x, z); });
+    }
+
+    // ===================================================================
+    // ANZEIGE
+    // ===================================================================
+    const hud = document.getElementById('hud'), warn = document.getElementById('warn');
+    const grad = (r) => (r * 180 / Math.PI).toFixed(0) + '°';
+    const zahl = (n, k = 2) => n.toFixed(k).replace('.', ',');
+    let hudZeit = 0;
+    function anzeigen() {
+      const zeile = (a, b) => `<div class="z"><span>${a}</span><span>${b}</span></div>`;
+      hud.innerHTML = zeile('Tempo', zahl(Math.abs(zu.v) / 1000) + ' m/s')
+        + zeile('Drehen', (zu.w * 180 / Math.PI).toFixed(0) + ' °/s')
+        + zeile('Nicken', grad(zu.pitch)) + zeile('Rollen', grad(zu.roll))
+        + zeile('Haftung μ', zahl(zu.mu)) + zeile('Schlupf', (zu.schlupf * 100).toFixed(0) + ' %')
+        + zeile('Motorstrom', 'ca. ' + zahl(zu.strom, 1) + ' A')
+        + (loeser ? zeile('Löser', loeser.text) : '')
+        + ['vorne', 'hinten'].map((n) => { const s = SENSOREN[n]; return zeile('Sensor ' + n, s.art + (isFinite(s.abstand) ? ' ' + (s.abstand / 10).toFixed(0) + ' cm' : '') + (s.art === 'Rampe' && s.winkel !== null ? ' ' + s.winkel.toFixed(0) + '°' : '')); }).join('')
+        + '<div class="raeder">' + RAEDER.map(([, , n], i) => `<i class="${zu.luft[i] ? 'luft' : ''}">${n}</i>`).join('') + '</div>';
+      warn.innerHTML = '';
+      zu.meldungen.forEach(([t, art]) => { const d = document.createElement('div'); d.textContent = t; if (art === 'gelb') d.className = 'gelb'; warn.append(d); });
+    }
+
+    // ===================================================================
+    // KAMERA, GELÄNDEWAHL, START
+    // ===================================================================
+    let folgen = true;
+    const folgenBtn = document.getElementById('folgen');
+    folgenBtn.addEventListener('click', () => { folgen = !folgen; folgenBtn.setAttribute('aria-pressed', String(folgen)); });
+    const letzte = V(0, 0, 0);
+    function neustart() {
+      const st = gel.start || [0, 0, 0];
+      zu.x = st[0]; zu.z = st[1]; zu.psi = st[2]; zu.vL = zu.vR = 0; spurenLeeren(); schritt(0.0001);
+      Object.values(SENSOREN).forEach((s) => { s.hist = []; s.halten = false; });
+      zu.anstossZahl = 0;
+      karteNeu();
+      if (typeof loeser !== 'undefined' && loeser) { loeser = null; loeserBtn.setAttribute('aria-pressed', 'false'); }
+      letzte.copy(auto.position);
+      camera.position.copy(auto.position).add(V(-420, 300, 380)); controls.target.copy(auto.position).add(V(0, 20, 0)); controls.update();
+    }
+    document.getElementById('neustart').addEventListener('click', neustart);
+    document.querySelectorAll('[data-gelaende]').forEach((b) => b.addEventListener('click', () => {
+      gel = GELAENDE[b.dataset.gelaende];
+      document.querySelectorAll('[data-gelaende]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      baueGelaende(); neustart();
+    }));
+    controls.autoRotate = false;
+    scene.add(sun.target);
+
+    function applyTheme() { renderer.setClearColor(new THREE.Color(tok('--scene') || '#dfe6ea')); }
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+    new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    applyTheme(); resize();
+    scene.fog = new THREE.Fog(new THREE.Color(tok('--scene') || '#dfe6ea'), 1600, 3200);
+    baueGelaende(); neustart();
+
+    let last = performance.now();
+    (function loop(now) {
+      const dt = Math.min(0.05, ((now || last) - last) / 1000); last = now || last;
+      // in kleinen Schritten rechnen, damit Stufen sicher erkannt werden
+      const n = Math.max(1, Math.ceil(dt / 0.008));
+      messen(); karteEintragen();
+      for (let i = 0; i < n; i++) schritt(dt / n);
+      if (folgen) {
+        const d = auto.position.clone().sub(letzte);
+        camera.position.add(d); controls.target.add(d);
+      }
+      letzte.copy(auto.position);
+      sun.position.copy(auto.position).add(V(180, 420, 220)); sun.target.position.copy(auto.position);
+      controls.update();
+      hudZeit += dt; if (hudZeit > 0.1) { hudZeit = 0; anzeigen(); karteZeichnen(); }
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+    try { start(); } catch (err) { loading.hidden = false; loading.textContent = 'Fehler beim Aufbau der Simulation: ' + err.message; console.error(err); }
+  });
+})();
+</script>
+</body>
+</html>

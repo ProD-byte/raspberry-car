@@ -32,10 +32,10 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Verteiler Plus Platz 2 | DRV8833 links VCC | Motorstrom Treiber links |
-| schwarz | Verteiler Minus Platz 2 | DRV8833 links GND | Masse Treiber links |
-| rot | Verteiler Plus Platz 3 | DRV8833 rechts VCC | Motorstrom Treiber rechts |
-| schwarz | Verteiler Minus Platz 3 | DRV8833 rechts GND | Masse Treiber rechts |
+| rot | Verteiler Plus Platz 2 | DRV8833 vorne VCC | Motorstrom Treiber vorne |
+| schwarz | Verteiler Minus Platz 2 | DRV8833 vorne GND | Masse Treiber vorne |
+| rot | Verteiler Plus Platz 3 | DRV8833 hinten VCC | Motorstrom Treiber hinten |
+| schwarz | Verteiler Minus Platz 3 | DRV8833 hinten GND | Masse Treiber hinten |
 | rot | Verteiler Plus Platz 4 | MP1584 IN+ | Eingang 5-V-Wandler für den Pico |
 | schwarz | Verteiler Minus Platz 4 | MP1584 IN− | Masse 5-V-Wandler |
 | rot | MP1584 OUT+ | Pico VSYS (Pin 39) | 5 V an VSYS – mit Schottky-Diode 1N5819 in der Leitung (Ring zur Pico-Seite) |
@@ -49,10 +49,10 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Motor vorne links M1 | DRV8833 links OUT1 | Motorstrom |
-| weiß | Motor vorne links M2 | DRV8833 links OUT2 | Motorstrom |
+| rot | Motor vorne links M1 | DRV8833 vorne OUT1 | Motorstrom |
+| weiß | Motor vorne links M2 | DRV8833 vorne OUT2 | Motorstrom |
 | schwarz | Motor vorne links GND | Pico GND (Pin 8) | Encoder Masse |
-| blau | Motor vorne links VCC | 3,3-V-Verteiler A Platz 2 | Encoder 3,3 V |
+| blau | Motor vorne links VCC | 3,3-V-Verteiler vorne Platz 2 | Encoder 3,3 V |
 | gelb | Motor vorne links A | Pico GP6 (Pin 9) | Encoder Kanal A |
 | grün | Motor vorne links B | Pico GP7 (Pin 10) | Encoder Kanal B |
 
@@ -60,10 +60,10 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Motor hinten links M1 | DRV8833 links OUT3 | Motorstrom |
-| weiß | Motor hinten links M2 | DRV8833 links OUT4 | Motorstrom |
+| rot | Motor hinten links M1 | DRV8833 hinten OUT1 | Motorstrom |
+| weiß | Motor hinten links M2 | DRV8833 hinten OUT2 | Motorstrom |
 | schwarz | Motor hinten links GND | Pico GND (Pin 3) | Encoder Masse |
-| blau | Motor hinten links VCC | 3,3-V-Verteiler A Platz 3 | Encoder 3,3 V |
+| blau | Motor hinten links VCC | 3,3-V-Verteiler hinten Platz 2 | Encoder 3,3 V |
 | gelb | Motor hinten links A | Pico GP8 (Pin 11) | Encoder Kanal A |
 | grün | Motor hinten links B | Pico GP9 (Pin 12) | Encoder Kanal B |
 
@@ -71,10 +71,10 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Motor vorne rechts M1 | DRV8833 rechts OUT1 | Motorstrom |
-| weiß | Motor vorne rechts M2 | DRV8833 rechts OUT2 | Motorstrom |
+| rot | Motor vorne rechts M1 | DRV8833 vorne OUT3 | Motorstrom |
+| weiß | Motor vorne rechts M2 | DRV8833 vorne OUT4 | Motorstrom |
 | schwarz | Motor vorne rechts GND | Pico GND (Pin 28) | Encoder Masse |
-| blau | Motor vorne rechts VCC | 3,3-V-Verteiler B Platz 2 | Encoder 3,3 V |
+| blau | Motor vorne rechts VCC | 3,3-V-Verteiler vorne Platz 3 | Encoder 3,3 V |
 | gelb | Motor vorne rechts A | Pico GP20 (Pin 26) | Encoder Kanal A |
 | grün | Motor vorne rechts B | Pico GP21 (Pin 27) | Encoder Kanal B |
 
@@ -82,10 +82,10 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| rot | Motor hinten rechts M1 | DRV8833 rechts OUT3 | Motorstrom |
-| weiß | Motor hinten rechts M2 | DRV8833 rechts OUT4 | Motorstrom |
+| rot | Motor hinten rechts M1 | DRV8833 hinten OUT3 | Motorstrom |
+| weiß | Motor hinten rechts M2 | DRV8833 hinten OUT4 | Motorstrom |
 | schwarz | Motor hinten rechts GND | Pico GND (Pin 33) | Encoder Masse |
-| blau | Motor hinten rechts VCC | 3,3-V-Verteiler B Platz 3 | Encoder 3,3 V |
+| blau | Motor hinten rechts VCC | 3,3-V-Verteiler hinten Platz 3 | Encoder 3,3 V |
 | gelb | Motor hinten rechts A | Pico GP26 (Pin 31) | Encoder Kanal A |
 | grün | Motor hinten rechts B | Pico GP27 (Pin 32) | Encoder Kanal B |
 
@@ -93,25 +93,25 @@ Hinweise:
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| orange | Pico GP2 (Pin 4) | DRV8833 links IN1 | PWM IN1 Treiber links |
-| gelb | Pico GP3 (Pin 5) | DRV8833 links IN2 | PWM IN2 Treiber links |
-| grün | Pico GP4 (Pin 6) | DRV8833 links IN3 | PWM IN3 Treiber links |
-| blau | Pico GP5 (Pin 7) | DRV8833 links IN4 | PWM IN4 Treiber links |
-| orange | Pico GP16 (Pin 21) | DRV8833 rechts IN1 | PWM IN1 Treiber rechts |
-| gelb | Pico GP17 (Pin 22) | DRV8833 rechts IN2 | PWM IN2 Treiber rechts |
-| grün | Pico GP18 (Pin 24) | DRV8833 rechts IN3 | PWM IN3 Treiber rechts |
-| blau | Pico GP19 (Pin 25) | DRV8833 rechts IN4 | PWM IN4 Treiber rechts |
-| violett | Pico GP22 (Pin 29) | DRV8833 links ULT | Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang |
-| violett | DRV8833 links ULT | DRV8833 rechts ULT | Treiber an/aus, weiter zum rechten Treiber |
+| orange | Pico GP2 (Pin 4) | DRV8833 vorne IN1 | PWM IN1 Treiber vorne (Motor vorne links) |
+| gelb | Pico GP3 (Pin 5) | DRV8833 vorne IN2 | PWM IN2 Treiber vorne (Motor vorne links) |
+| orange | Pico GP4 (Pin 6) | DRV8833 hinten IN1 | PWM IN1 Treiber hinten (Motor hinten links) |
+| gelb | Pico GP5 (Pin 7) | DRV8833 hinten IN2 | PWM IN2 Treiber hinten (Motor hinten links) |
+| grün | Pico GP16 (Pin 21) | DRV8833 vorne IN3 | PWM IN3 Treiber vorne (Motor vorne rechts) |
+| blau | Pico GP17 (Pin 22) | DRV8833 vorne IN4 | PWM IN4 Treiber vorne (Motor vorne rechts) |
+| grün | Pico GP18 (Pin 24) | DRV8833 hinten IN3 | PWM IN3 Treiber hinten (Motor hinten rechts) |
+| blau | Pico GP19 (Pin 25) | DRV8833 hinten IN4 | PWM IN4 Treiber hinten (Motor hinten rechts) |
+| violett | Pico GP22 (Pin 29) | DRV8833 vorne ULT | Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang |
+| violett | DRV8833 vorne ULT | DRV8833 hinten ULT | Treiber an/aus, weiter zum hinteren Treiber |
 
 ### 3,3 V für Sensoren
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| orange | Pico 3V3 (Pin 36) | 3,3-V-Verteiler A Platz 1 | 3,3 V vom Pico in Verteiler A |
-| orange | 3,3-V-Verteiler A Platz 5 | 3,3-V-Verteiler B Platz 1 | Brücke zu Verteiler B |
-| orange | 3,3-V-Verteiler B Platz 4 | BNO085 VIN | Versorgung BNO085 (und über STEMMA-QT die Nahsensoren) |
-| orange | 3,3-V-Verteiler B Platz 5 | INA226 VCC | Versorgung INA226 |
+| orange | Pico 3V3 (Pin 36) | 3,3-V-Verteiler vorne Platz 1 | 3,3 V vom Pico in Verteiler vorne |
+| orange | 3,3-V-Verteiler vorne Platz 5 | 3,3-V-Verteiler hinten Platz 1 | Brücke zu Verteiler hinten |
+| orange | 3,3-V-Verteiler hinten Platz 4 | BNO085 VIN | Versorgung BNO085 |
+| orange | 3,3-V-Verteiler hinten Platz 5 | INA226 VCC | Versorgung INA226 |
 
 ### Sensorbus I²C
 
@@ -123,13 +123,15 @@ Hinweise:
 | blau | BNO085 SDA | INA226 SDA | I²C SDA weiter zum INA226 |
 | gelb | BNO085 SCL | INA226 SCL | I²C SCL weiter zum INA226 |
 | schwarz | Pico GND (Pin 23) | INA226 GND | Masse INA226 |
-| schwarz (STEMMA-QT) | BNO085 STEMMA-QT | VL53L1X vorne links QT 1 | STEMMA-QT-Kabel: Bus zu den Nahsensoren |
-| schwarz (STEMMA-QT) | VL53L1X vorne links QT 2 | VL53L1X vorne QT 1 | STEMMA-QT-Kabel weiter |
-| schwarz (STEMMA-QT) | VL53L1X vorne QT 2 | VL53L1X vorne rechts QT 1 | STEMMA-QT-Kabel weiter |
-| schwarz (STEMMA-QT) | VL53L1X vorne rechts QT 2 | VL53L1X hinten QT 1 | STEMMA-QT-Kabel zum hinteren Sensor |
-| violett | Pico GP12 (Pin 16) | VL53L1X vorne links XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
+| orange | INA226 VCC | VL53L1X hinten VIN | 3,3 V zum hinteren Nahsensor (angelötet) |
+| schwarz | INA226 GND | VL53L1X hinten GND | Masse zum hinteren Nahsensor (angelötet) |
+| blau | INA226 SDA | VL53L1X hinten SDA | I²C SDA zum hinteren Nahsensor (angelötet) |
+| gelb | INA226 SCL | VL53L1X hinten SCL | I²C SCL zum hinteren Nahsensor (angelötet) |
+| orange | VL53L1X hinten VIN | VL53L1X vorne VIN | 3,3 V weiter zum vorderen Nahsensor (angelötet) |
+| schwarz | VL53L1X hinten GND | VL53L1X vorne GND | Masse weiter zum vorderen Nahsensor (angelötet) |
+| blau | VL53L1X hinten SDA | VL53L1X vorne SDA | I²C SDA weiter zum vorderen Nahsensor (angelötet) |
+| gelb | VL53L1X hinten SCL | VL53L1X vorne SCL | I²C SCL weiter zum vorderen Nahsensor (angelötet) |
 | violett | Pico GP13 (Pin 17) | VL53L1X vorne XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
-| violett | Pico GP14 (Pin 19) | VL53L1X vorne rechts XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 | violett | Pico GP15 (Pin 20) | VL53L1X hinten XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 
 ### Status-LEDs
@@ -164,10 +166,10 @@ Hinweise:
 | Pin | Name | Angeschlossen an |
 |---|---|---|
 | 3 | GND | Motor hinten links GND |
-| 4 | GP2 | DRV8833 links IN1 |
-| 5 | GP3 | DRV8833 links IN2 |
-| 6 | GP4 | DRV8833 links IN3 |
-| 7 | GP5 | DRV8833 links IN4 |
+| 4 | GP2 | DRV8833 vorne IN1 |
+| 5 | GP3 | DRV8833 vorne IN2 |
+| 6 | GP4 | DRV8833 hinten IN1 |
+| 7 | GP5 | DRV8833 hinten IN2 |
 | 8 | GND | Motor vorne links GND |
 | 9 | GP6 | Motor vorne links A |
 | 10 | GP7 | Motor vorne links B |
@@ -176,24 +178,24 @@ Hinweise:
 | 13 | GND | LED-Streifen GND |
 | 14 | GP10 | BNO085 SDA |
 | 15 | GP11 | BNO085 SCL |
-| 16 | GP12 | VL53L1X vorne links XSHUT |
+| 16 | GP12 | frei |
 | 17 | GP13 | VL53L1X vorne XSHUT |
 | 18 | GND | BNO085 GND |
-| 19 | GP14 | VL53L1X vorne rechts XSHUT |
+| 19 | GP14 | frei |
 | 20 | GP15 | VL53L1X hinten XSHUT |
-| 21 | GP16 | DRV8833 rechts IN1 |
-| 22 | GP17 | DRV8833 rechts IN2 |
+| 21 | GP16 | DRV8833 vorne IN3 |
+| 22 | GP17 | DRV8833 vorne IN4 |
 | 23 | GND | INA226 GND |
-| 24 | GP18 | DRV8833 rechts IN3 |
-| 25 | GP19 | DRV8833 rechts IN4 |
+| 24 | GP18 | DRV8833 hinten IN3 |
+| 25 | GP19 | DRV8833 hinten IN4 |
 | 26 | GP20 | Motor vorne rechts A |
 | 27 | GP21 | Motor vorne rechts B |
 | 28 | GND | Motor vorne rechts GND |
-| 29 | GP22 | DRV8833 links ULT |
+| 29 | GP22 | DRV8833 vorne ULT |
 | 31 | GP26 | Motor hinten rechts A |
 | 32 | GP27 | Motor hinten rechts B |
 | 33 | GND | Motor hinten rechts GND |
 | 34 | GP28 | LED-Streifen DIN |
-| 36 | 3V3 | 3,3-V-Verteiler A Platz 1 |
+| 36 | 3V3 | 3,3-V-Verteiler vorne Platz 1 |
 | 38 | GND | MP1584 OUT− |
 | 39 | VSYS | MP1584 OUT+ |

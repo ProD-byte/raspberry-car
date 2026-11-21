@@ -5,7 +5,7 @@ MicroPython auf dem Raspberry Pi Pico 2 W.
 ## Aufgaben
 - Motoren über die beiden DRV8833 steuern (PWM)
 - Encoder zählen (Geschwindigkeit, Strecke)
-- Sensoren lesen: INA226 (Akku), BNO085 (Lage), 4× VL53L1X (Nahbereich)
+- Sensoren lesen: INA226 (Akku), BNO085 (Lage), 2× VL53L1X (Nahbereich vorne und hinten)
 - Joystick-Webseite per WLAN (ab Stufe 1, bevor der Pi da ist)
 - Später: Befehle vom Pi über USB annehmen und Messwerte zurückschicken
 - Not-Stopp: Motoren aus, wenn keine Befehle mehr kommen

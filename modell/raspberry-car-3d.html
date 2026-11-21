@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}.seiten { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.seiten a { font: 500 13px var(--font-body); color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; }
+.seiten a:hover { border-color: var(--muted); }
+.seiten a[aria-current="page"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+</style>
 </head>
 <body>
 <title>Raspberry Car Sandwich</title>
@@ -80,6 +84,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 
 .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
 .modes { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; background: var(--surface); }
 .modes button { border: 0; padding: 7px 12px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.check input { width: 18px; height: 18px; accent-color: var(--l2); }
 button {
   font: 500 14px var(--font-body); color: var(--fg); background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
@@ -115,6 +121,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
 <div class="wrap">
   <header>
+    <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html">Werkstatt Ebene 3</a><a href="fahrsimulation.html">Fahrsimulation</a><a href="raspberry-car-3d.html" aria-current="page">Ganzes Auto</a></nav>
     <div class="eyebrow">Raspberry Car · 3D-Modell mit echten Bauteilen</div>
     <h1>Das Auto als Sandwich in vier Ebenen</h1>
     <p class="lead">Alle Bauteile in echter Größe nachgebaut. Ziehen zum Drehen, zwei Finger oder Mausrad zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
@@ -122,15 +129,18 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
   <div class="stage" id="stage">
     <div class="loading" id="loading">3D-Modell wird gebaut …</div>
-    <div class="dims">ca. 18 × 19 × 19 cm · vorne = Kamera</div>
+    <div class="dims">ca. 21 × 19 × 17 cm · vorne: Kamera · hinten: Ladebuchse und Schalter</div>
     <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Akku, den Pico oder den LiDAR.</span></div>
   </div>
 
   <div class="controls">
     <div class="modes" role="group" aria-label="Ansicht">
       <button id="m-teile" type="button" aria-pressed="true">Vorhandene Teile</button>
+      <button id="m-druck" type="button" aria-pressed="false">Druckteile</button>
       <button id="m-auto" type="button" aria-pressed="false">Ganzes Auto</button>
     </div>
+    <label class="range nur-druck" for="hub" hidden>Auseinanderziehen <input id="hub" type="range" min="0" max="70" value="0"></label>
+    <label class="check nur-druck" hidden><input id="einbau" type="checkbox"> Motoren, Räder und Akku zeigen</label>
     <label class="range nur-auto" for="explode">Ebenen auseinanderziehen <input id="explode" type="range" min="0" max="100" value="35"></label>
     <div class="toggles">
       <button id="rotate" type="button" aria-pressed="true">Drehen</button>
@@ -156,13 +166,13 @@ code { font-family: var(--font-mono); font-size: 13px; }
     <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="1" style="--c: var(--l1)">
       <h2>Ebene 2 · Antrieb <small>28 mm Abstand</small></h2>
       <p class="why">Echtzeit-Steuerung mit kurzen Wegen zu den Motoren.</p>
-      <ul><li>Pico 2 W auf dem Freenove-Board</li><li>2× DRV8833 Motortreiber</li><li>MP1584 5 V für den Pico</li><li>BNO085 nahe der Fahrzeugmitte</li></ul>
+      <ul><li>Pico 2 W auf dem Freenove-Board</li><li>2× DRV8833 Motortreiber</li><li>MP1584 5 V für den Pico</li><li>BNO085 (Kompass) genau in der Mitte, weit weg von Motoren und Strom</li><li>Ladeboard hinten links, USB-C hinten</li></ul>
       <span class="stage-tag">Stufe 1 (Gyro in Stufe 4)</span>
     </div>
     <div class="layer" role="button" tabindex="0" aria-pressed="false" data-layer="0" style="--c: var(--l0)">
       <h2>Ebene 1 · Fahrwerk &amp; Energie <small>Bodenplatte</small></h2>
       <p class="why">Das Schwerste ganz unten, für einen tiefen Schwerpunkt.</p>
-      <ul><li>4× JGA25-370 mit Encoder + 65-mm-Räder</li><li>Akku 2S2P (4× Samsung 35E) unter der Platte</li><li>BMS, Ladeboard mit USB-C hinten</li><li>Sicherung, Hauptschalter, INA226</li><li>4× VL53L1X-Nahsensoren</li></ul>
+      <ul><li>4× JGA25-370 mit Encoder + 65-mm-Räder</li><li>Akku 2S2P (4× Samsung 35E) in der Wanne</li><li>BMS, Sicherung, INA226, Verteiler – alles in der Wanne</li><li>Hauptschalter und USB-C-Ladebuchse hinten (Ladeboard auf Ebene 2)</li><li>2× VL53L1X-Nahsensoren innen (vorne, hinten)</li></ul>
       <span class="stage-tag">Stufe 1–2 (Nahsensoren in Stufe 4)</span>
     </div>
   </div>
@@ -194,9 +204,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js"></script>
+<script src="teile/teile.js?v=20261121122439"></script>
+<!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
+<script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261121122439"></script>
 <script>
 (function () {
   const stage = document.getElementById('stage');
@@ -391,6 +403,43 @@ code { font-family: var(--font-mono); font-size: 13px; }
       PARTS[name] = g;
       parent.add(g); return g;
     }
+    // CAD-Modell automatisch an die Stelle des einfachen Ersatzmodells setzen.
+    // Die Modelle sind vorher flach ausgerichtet (werkzeug/ausrichten.py: Bauteilseite oben, Mitte 0, Unterkante 0).
+    // Hier: lange Seite an die lange Seite des Ersatzmodells drehen, mittig auf dieselbe Unterkante setzen.
+    // opt.behalten(mesh): diese Teile des Ersatzmodells bleiben (z. B. gedruckte Halter)
+    // opt.kippenZ: CAD vorher um die z-Achse drehen (z. B. −90°: Oberseite zeigt nach vorne +x)
+    // opt.drehen: Drehung um y fest vorgeben;  opt.danach(): wird nach dem Laden aufgerufen
+    function einpassen(name, g, opt = {}) {
+      const ersatz = new THREE.Group();
+      [...g.children].forEach((c) => { if (!(opt.behalten && opt.behalten(c))) ersatz.add(c); });
+      g.add(ersatz);
+      g.updateWorldMatrix(true, true);
+      const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+      const box = new THREE.Box3(), tmp = new THREE.Box3();
+      ersatz.traverse((o) => {
+        // InstancedMesh (Stifte, SMD-Bauteile) überspringen: ihr Hüllkörper kennt nur ein Exemplar, nicht dessen Lage
+        if (!o.isMesh || !o.geometry || o.isInstancedMesh) return;
+        o.geometry.computeBoundingBox();
+        tmp.copy(o.geometry.boundingBox).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+        box.union(tmp);
+      });
+      if (box.isEmpty()) return;
+      cadTeil(name, g, ersatz, (m) => {
+        const k = new THREE.Group(); k.add(m); if (opt.kippenZ) k.rotation.z = opt.kippenZ;
+        const w = new THREE.Group(); w.add(k);
+        w.updateMatrixWorld(true);
+        let mb = new THREE.Box3().setFromObject(w);
+        const es = box.getSize(V()), ms = mb.getSize(V());
+        if (opt.drehen !== undefined) w.rotation.y = opt.drehen;
+        else if ((es.x >= es.z) !== (ms.x >= ms.z)) w.rotation.y = Math.PI / 2;
+        w.updateMatrixWorld(true);
+        mb = new THREE.Box3().setFromObject(w);
+        const ec = box.getCenter(V()), mc = mb.getCenter(V());
+        w.position.set(ec.x - mc.x, box.min.y - mb.min.y, ec.z - mc.z);
+        if (opt.danach) opt.danach();
+        return w;
+      });
+    }
     // Echtes CAD-Modell (aus teile/teile.js) laden. Klappt das nicht (offline, Datei fehlt),
     // bleibt das einfache Ersatzmodell sichtbar. place(mesh) richtet das Modell aus.
     function cadTeil(name, parent, ersatz, place, umfaerben) {
@@ -411,16 +460,16 @@ code { font-family: var(--font-mono); font-size: 13px; }
         });
         parent.add(place(gltf.scene));
         parent.remove(ersatz);
-        try { applyHighlight(); if (benchMode) placeBench(); } catch (e) { /* Szene noch im Aufbau */ }
+        try { applyHighlight(); if (benchMode) placeBench(); if (druckMode) applyDruck(); } catch (e) { /* Szene noch im Aufbau */ }
       }, (err) => console.warn('CAD-Modell ' + name + ' nicht geladen:', err));
     }
 
     // ---------- Platten & Ebenen ----------
-    const PL = { w: 170, d: 130, t: 3, r: 10 };
-    const LEVEL = [46.5, 74.5, 102.5, 150.5];      // Unterkante jeder Platte
+    const PL = { w: 205, d: 130, t: 3, r: 10, xm: -17.5 };   // Außenform wie die Wanne: vorne x = +85, hinten x = −120
+    const LEVEL = [50.25, 58.0, 84.0, 132.0];      // [0] nur noch Merkhöhe (kein Deckel mehr), [1] Elektronik-Deck = Deckel der Wanne      // Unterkante jeder Platte: Ebene 2 = 15 mm über dem Deckel (gehaeuse/ebene2_elektronik.py), Ebene 3 knapp über Pico + Freenove
     const TOP = LEVEL.map((y) => y + PL.t);
-    const STANDOFFS = [[78, 58], [78, -58], [-78, 58], [-78, -58]];
-    const SLOTS = { A: { x: 20, z: -50, w: 30, d: 9 }, B: { x: 20, z: 50, w: 30, d: 9 }, C: { x: -74, z: 0, w: 9, d: 30 } };
+    const STANDOFFS = [[76, 56], [76, -56], [-76, 56], [-76, -56]];   // Dome im Deckel von Ebene 1 (gehaeuse/ebene1_fahrwerk.py)
+    const SLOTS = { A: { x: 20, z: -50, w: 30, d: 9 }, B: { x: 20, z: 50, w: 30, d: 9 }, C: { x: -62, z: -52, w: 14, d: 9 } };   // C am rechten Rand: Strom weit weg vom Kompass (BNO085 in der Mitte)
     const layerNames = ['Ebene 1 · Fahrwerk & Energie', 'Ebene 2 · Antrieb', 'Ebene 3 · Gehirn', 'Ebene 4 · Dach'];
     const layerVars = ['--l0', '--l1', '--l2', '--l3'];
 
@@ -432,12 +481,24 @@ code { font-family: var(--font-mono); font-size: 13px; }
       path.quadraticCurveTo(x0, y1, x0, y1 - r); path.lineTo(x0, y0 + r); path.quadraticCurveTo(x0, y0, x0 + r, y0);
     }
     function plateGeo(extra) {
-      const s = new THREE.Shape(); roundedRect(s, 0, 0, PL.w, PL.d, PL.r);
+      const s = new THREE.Shape(); roundedRect(s, PL.xm, 0, PL.w, PL.d, PL.r);
       STANDOFFS.forEach(([x, z]) => { const h = new THREE.Path(); h.absarc(x, -z, 1.7, 0, Math.PI * 2, true); s.holes.push(h); });
       Object.values(SLOTS).concat(extra || []).forEach((sl) => { const h = new THREE.Path(); roundedRect(h, sl.x, sl.z, sl.w, sl.d, 3); s.holes.push(h); });
       const g = new THREE.ExtrudeGeometry(s, { depth: PL.t, bevelEnabled: true, bevelThickness: 0.4, bevelSize: 0.4, bevelSegments: 1, curveSegments: 10 });
       g.rotateX(-Math.PI / 2);
       return g;
+    }
+    // Schilder „VORNE“ / „HINTEN“: hinten ist die Seite mit Ladebuchse und Hauptschalter, vorne die mit Nahsensor und Kamera
+    function richtungsSchilder(parent, y = 14) {
+      [['VORNE', 128, '#2f7d3b'], ['HINTEN', -163, '#a8432a']].forEach(([text, x, farbe]) => {
+        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72;
+        const c = cv.getContext('2d');
+        c.fillStyle = farbe; c.beginPath(); if (c.roundRect) c.roundRect(2, 2, 252, 68, 18); else c.rect(2, 2, 252, 68); c.fill();
+        c.fillStyle = '#fff'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, 128, 38);
+        const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false }));
+        sp.scale.set(44, 12.4, 1); sp.position.set(x, y, 0); sp.userData.noPick = true; parent.add(sp);
+      });
     }
     function labelSprite(text, color) {
       const cv = document.createElement('canvas'); cv.width = 960; cv.height = 112;
@@ -470,7 +531,31 @@ code { font-family: var(--font-mono); font-size: 13px; }
       pm.userData.isPlate = true; plateMats.push(pm);
       const plate = add(g, plateGeo(extraHoles), pm, 0, LEVEL[i], 0);
       plate.userData.part = { name: `Platte ${layerNames[i]}`, desc: '3D-gedruckt, ca. 170 × 130 × 3 mm, mit Durchbrüchen für die Kabel.' };
-      if (i > 0) {
+      if (i === 0) { plate.visible = false; plate.userData.noPick = true; }   // Ebene 1 hat keine eigene Platte mehr – das Elektronik-Deck ist der Deckel der Wanne
+      if (i === 1) {
+        cadTeil('e2_platte', g, plate, (m) => {
+          const w = new THREE.Group(); w.add(m);
+          w.userData.druckteil = 'e2';
+          w.userData.part = { name: 'Elektronik-Deck Ebene 2 (Druckteil)', desc: 'Trägt Pico 2 W auf dem Freenove-Board (4 Schraubdome), 2 × DRV8833, MP1584, BNO085 (in der Mitte, als Kompass frei von Magneten und Strom) und 2 × WAGO in Einklick-Taschen. Ist zugleich der Deckel der Wanne: liegt auf dem Wannenrand, die Wanne wird von unten mit 4 × M3 × 45 an 4 Dome dieses Decks geschraubt. Alles auf der Oberseite – druckt flach ohne Stützen. Kabeldurchbrüche vorne und hinten. 205 × 130 × 3 mm. Datei: gehaeuse/ebene2/platte.stl' };
+          return w;
+        }, (mat) => { mat.color.copy(pm.color); mat.map = plateTex; mat.roughness = 0.85; mat.userData.isPlate = true; plateMats.push(mat); });
+        // Die Wanne wird von unten an dieses Deck geschraubt (Schrauben siehe wanne())
+        // Gehäuse-Ringe (Druckteile): unten zwischen Deckel Ebene 1 und dieser Platte, oben bis Ebene 3
+        [['e2_ring_oben', 'Gehäuse-Ring oben (Druckteil)', 'Seitenwand zwischen Elektronik-Deck und Ebene 3, 23 mm hoch. Hülsen über den Domen des Decks (M3 × 20 von oben, Kopf bündig), hinten die Scharnier-Lappen für den Klappdeckel, vorne zwei Laschen für dessen Schrauben. In der Rückwand Taster und USB-C. Aufrecht drucken, ohne Stützen. Datei: gehaeuse/ebene2/ring_oben.stl']].forEach(([datei, name, desc]) => {
+          const r = new THREE.Group(); r.userData.druckteil = 'e2'; r.userData.part = { name, desc }; g.add(r);
+          cadTeil(datei, r, new THREE.Group(), (m) => m);
+        });
+      }
+      if (i === 2) {
+        // Ebene 3 ist ein Klappdeckel: Boden und Seitenwände bis Ebene 4 in einem Druckteil (gehaeuse/ebene3_gehirn.py)
+        cadTeil('e3_deckel', g, plate, (m) => {
+          const w = new THREE.Group(); w.add(m);
+          w.userData.druckteil = 'e3';
+          w.userData.part = { name: 'Klappdeckel Ebene 3 (Druckteil)', desc: 'Boden von Ebene 3 und Seitenwände bis Ebene 4 in einem Stück. Klappt hinten an zwei Scharnieren (Achse M3 × 16) nach hinten auf wie eine Motorhaube – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2. Trägt Pi 5 (4 Dome, M2,5 von unten in die Abstandshalter des AI HAT+), Pololu und 4G-Modul in Einklick-Taschen, die Kamera in zwei Nuten hinter einem Fenster vorne, Lüftungsschlitze in den Seiten. Druckt mit dem Boden aufs Bett ohne Stützen. 215,5 × 130 × 48 mm. Datei: gehaeuse/ebene3/deckel.stl' };
+          return w;
+        }, (mat) => { mat.color.copy(pm.color); mat.map = plateTex; mat.roughness = 0.85; mat.userData.isPlate = true; plateMats.push(mat); });
+      }
+      if (i > 3) {   // Ebene 2 → 3 und 3 → 4: die Röhren in Ring und Klappdeckel übernehmen das
         const h = LEVEL[i] - TOP[i - 1];
         STANDOFFS.forEach(([x, z]) => {
           const s = cylY(g, 2.75, h, x, TOP[i - 1], z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 });
@@ -496,70 +581,127 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // =====================================================================
     // EBENE 1 – Fahrwerk & Energie
     // =====================================================================
+    richtungsSchilder(scene, 18);
     const L0 = makeLayer(0, [{ x: -30, z: 10, w: 16, d: 7 }]);
-    const AXLE = 32.5;
-    const MOTORS = { VL: [55, 1, 'vorne links'], HL: [-55, 1, 'hinten links'], VR: [55, -1, 'vorne rechts'], HR: [-55, -1, 'hinten rechts'] };
+    function m3Schraube(p, x, yKopfUnten, z, laenge, nachOben) {
+      // ISO 4762 M3: Kopf Ø 5,5 × 3 mm, Innensechskant SW 2,5 – schwarz brüniert
+      const s = new THREE.Group(); s.position.set(x, yKopfUnten, z); if (!nachOben) s.rotation.x = Math.PI; p.add(s);
+      cylY(s, 2.75, 3, 0, 0, 0, 0x1b1c1e, { metal: 0.6, rough: 0.4, seg: 24 });
+      cylY(s, 1.45, 0.3, 0, 2.75, 0, 0x050505, { seg: 6 });                     // Innensechskant (Andeutung)
+      cylY(s, 1.5, laenge, 0, 3, 0, 0x2a2b2d, { metal: 0.7, rough: 0.35, seg: 16 });
+      return s;
+    }
+    function m3Mutter(p, x, y, z) { cylY(p, 3.17, 2.4, x, y, z, 0xb9bec3, { metal: 0.85, rough: 0.3, seg: 6 }); }
+    const AXLE = 33.8;   // Radius des echten Rads (Ø 67,6 mm) = Höhe der Radachse über dem Boden
+    const MOTORS = { VL: [55, 1, 'vorne links'], HL: [-90, 1, 'hinten links'], VR: [55, -1, 'vorne rechts'], HR: [-90, -1, 'hinten rechts'] };   // Radstand 145 mm, Mitte = Wannenmitte (x −17,5)
 
+    // Motor JGA25-370 mit Encoder, L-Halterung und Rad: echte CAD-Modelle von GrabCAD (nur lokal, siehe teile/QUELLEN.md).
+    // Motor: Getriebe-Stirnseite liegt bei z = s·62 (direkt an der Halterung), Welle ragt 12,5 mm nach außen, Encoder innen bei z ≈ s·1.
+    // Halterung: Motorplatte mit Ø-8-Loch für die Welle, obere Platte unter der Bodenplatte (16,45 mm über der Achse).
+    // Rad (Solarbotics-Form, Ø 67,6 × 24,3 mm): Mitte bei z = s·83, Nabe zeigt zum Motor.
     function motor(key, x, s, nm) {
-      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Der Encoder (grüne Scheibe) zählt die Umdrehungen. Am weißen Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, 0);
-      cylZ(g, 12, s * 4, s * 35, 0, 0, 0xb8bec4, { metal: 0.85, rough: 0.28 });
-      cylZ(g, 12.2, s * 33, s * 35, 0, 0, 0x8f969c, { metal: 0.8, rough: 0.3 });
-      cylZ(g, 12.6, s * 35, s * 57, 0, 0, 0xd5d8db, { metal: 0.75, rough: 0.33 });
-      [-1, 1].forEach((k) => cylZ(g, 1.3, s * 57, s * 57.6, k * 8, 6, 0x5d6266, { metal: 0.8, seg: 10 }));
-      cylZ(g, 3.6, s * 57, s * 59, 0, 0, 0xcfd2d5, { metal: 0.8 });
-      cylZ(g, 2, s * 59, s * 69, 0, 0, 0xa3a9ae, { metal: 0.95, rough: 0.2 });
-      cylZ(g, 11.5, s * 2.4, s * 4, 0, 0, 0x2e6b3a, { rough: 0.5 });
-      cylZ(g, 6, s * 0.6, s * 2.4, 0, 0, 0x202224);
-      box(g, 10, 4, 3.5, 0, -15, s * 3.2, 0xf1efe8);
-      box(g, 32, 26, 2, 0, -12, s * 60, 0x6b7177, { metal: 0.7, rough: 0.35 });
-      box(g, 32, 2, 18, 0, 12, s * 52, 0x6b7177, { metal: 0.7, rough: 0.35 });
-      [-10, 10].forEach((k) => cylZ(g, 1.6, s * 61, s * 62, k, 6, 0x2a2c2e, { seg: 6 }));
-      ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, -15, s * 3.2, [0, -1, 0], `Motor ${nm} ${n}`));
+      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Ø 25 mm, mit Getriebe (hier 21 mm lang, je nach Übersetzung 17–27 mm) und Hall-Encoder (11 Polpaare) hinten. Am Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, 0);
+      const ersatz = new THREE.Group(); ersatz.position.z = s * 5; g.add(ersatz);
+      cadTeil('motor', g, ersatz, (m) => {
+        // CAD: Achse entlang z, Getriebe-Stirnseite bei z = 0, Welle bei z < 0, Encoder bei z ≈ 52…61
+        const w = new THREE.Group(); w.add(m);
+        m.rotation.z = -Math.PI / 2;   // um die Motorachse drehen: Encoder-Stecker nach oben, M3-Gewinde waagerecht (passend zu den Langlöchern)
+        if (s > 0) { w.rotation.y = Math.PI; w.position.z = 62; } else { w.position.z = -62; }
+        return w;
+      });
+      cylZ(ersatz, 12, s * 4, s * 35, 0, 0, 0xb8bec4, { metal: 0.85, rough: 0.28 });
+      cylZ(ersatz, 12.2, s * 33, s * 35, 0, 0, 0x8f969c, { metal: 0.8, rough: 0.3 });
+      cylZ(ersatz, 12.6, s * 35, s * 57, 0, 0, 0xd5d8db, { metal: 0.75, rough: 0.33 });
+      [-1, 1].forEach((k) => cylZ(ersatz, 1.3, s * 57, s * 57.6, k * 8, 6, 0x5d6266, { metal: 0.8, seg: 10 }));
+      cylZ(ersatz, 3.6, s * 57, s * 59, 0, 0, 0xcfd2d5, { metal: 0.8 });
+      cylZ(ersatz, 2, s * 59, s * 69.5, 0, 0, 0xa3a9ae, { metal: 0.95, rough: 0.2 });
+      cylZ(ersatz, 11.5, s * 2.4, s * 4, 0, 0, 0x2e6b3a, { rough: 0.5 });
+      cylZ(ersatz, 6, s * 0.6, s * 2.4, 0, 0, 0x202224);
+      box(ersatz, 10, 4, 3.5, 0, 11, s * 3.2, 0xf1efe8);   // Encoder-Stecker oben
+      // Befestigung: 2 × M3 × 6 (ISO 4762) von außen durch die Wannenwand (Langloch) in die Getriebe-Stirnseite
+      [-8.5, 8.5].forEach((k) => {
+        const sch = m3Schraube(g, k, 0, s * 68, 6, true);
+        sch.rotation.set(-s * Math.PI / 2, 0, 0);
+      });
+      ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen mit Kunststofffelge, sitzt mit Kupplung auf der 4-mm-Welle.', x, AXLE, s * 80);
+      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen auf gelber Kunststofffelge, Ø 67,6 × 24,3 mm (die übliche „65-mm“-Form). Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * 83);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cadTeil('rad', g, ersatz, (m) => {
+        // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen
+        m.rotation.x = -Math.PI / 2; m.position.z = 12.15;
+        const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
+        return w;
+      });
       const prof = [[19, -13], [28.5, -13], [31.2, -12.2], [32.5, -10.5], [32.5, 10.5], [31.2, 12.2], [28.5, 13], [19, 13]].map(([r, y]) => new THREE.Vector2(r, y));
-      add(g, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
+      add(ersatz, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
       const n = 30, tread = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 1.2, 20), std(0x18191b, { rough: 0.95 }), n);
-      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = V(1, 1, 1);
-      for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; q.setFromAxisAngle(V(0, 0, 1), a); m.compose(V(Math.cos(a) * 32.6, Math.sin(a) * 32.6, 0), q, sc); tread.setMatrixAt(i, m); }
-      tread.castShadow = true; g.add(tread);
-      cylZ(g, 19.5, -12, 12, 0, 0, 0xe2b23b, { rough: 0.45, seg: 40 });
-      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; cylZ(g, 3.6, s * 12, s * 12.4, Math.cos(a) * 12, Math.sin(a) * 12, 0x6d5a1f, { seg: 16 }); }
-      cylZ(g, 6.5, s * 12, s * 14, 0, 0, 0x2a2b2d, { seg: 6 });
+      const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = V(1, 1, 1);
+      for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; q.setFromAxisAngle(V(0, 0, 1), a); mx.compose(V(Math.cos(a) * 32.6, Math.sin(a) * 32.6, 0), q, sc); tread.setMatrixAt(i, mx); }
+      tread.castShadow = true; ersatz.add(tread);
+      cylZ(ersatz, 19.5, -12, 12, 0, 0, 0xe2b23b, { rough: 0.45, seg: 40 });
+      for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; cylZ(ersatz, 3.6, s * 12, s * 12.4, Math.cos(a) * 12, Math.sin(a) * 12, 0x6d5a1f, { seg: 16 }); }
+      cylZ(ersatz, 6.5, -s * 12, -s * 17, 0, 0, 0x2a2b2d, { seg: 6 });
     }
     Object.entries(MOTORS).forEach(([k, [x, s, nm]]) => { motor(k, x, s, nm); wheel(x, s); });
+    (function wanne() {
+      const g = part(L0, 'Fahrwerk-Wanne (Druckteil)', 'Trägt Motoren, Akku und die Stromversorgung (BMS, INA226, Sicherung und die Verteiler zwischen Akku und Hinterachse). Das Ladeboard sitzt oben auf dem Elektronik-Deck. Die Motoren werden mit 2 × M3 direkt an die Seitenwand geschraubt (waagerechte Langlöcher für 15,4–17 mm Lochabstand), Encoder-Stecker oben, und liegen in Sätteln. Wird von unten mit 4 × M3 × 45 an das Elektronik-Deck geschraubt: Auto umdrehen, 4 Schrauben lösen, Wanne abnehmen – alles darüber bleibt zusammen. Boden vorne und hinten gleich als Kufen schräg hochgezogen (45°, scharfer Knick – druckt ohne Stützen), damit sie über Steine gleitet, 4 Paar Kabelbinder-Schlitze im Boden (von unten einfädeln, Rille unten), Sechseck-Lüftung, Unterkante angefast. 205 × 130 × 42 mm, Radstand 145 mm. Datei: gehaeuse/ebene1/wanne.stl', 0, 0, 0);
+      g.userData.druckteil = 'wanne';
+      cadTeil('e1_wanne', g, new THREE.Group(), (m) => m);
+      const b = part(L0, 'Motorbügel (4 × Druckteil)', 'Drückt den Motor in den Sattel der Wanne. Je 2 × M3-Zylinderkopfschraube, die sich das Gewinde selbst in die Wanne schneiden (Kernloch 2,6 mm). Datei: gehaeuse/ebene1/motorbuegel.stl (4 × drucken)', 0, 0, 0);
+      b.userData.druckteil = 'buegel';
+      cadTeil('e1_motorbuegel', b, new THREE.Group(), (m) => m);
+      Object.values(MOTORS).forEach(([x, s]) => [-20, 20].forEach((k) => m3Schraube(b, x + k, AXLE + 6, s * 50, 8, false)));
+      // Köpfe sitzen versenkt in der Schräge der Kufen (vorne und hinten gleich): 4 × M3 × 45
+      [[77.5, 35, 20.4, 45], [77.5, -35, 20.4, 45], [-112.5, 35, 20.4, 45], [-112.5, -35, 20.4, 45]].forEach(([x, z, y, l]) => m3Schraube(g, x, y, z, l, true));
+    })();
 
     const cellTex = canvasTex(58, 65, 8, (c, w, h) => {
-      c.fillStyle = '#2f8fb3'; c.fillRect(0, 0, w, h);
-      c.fillStyle = '#1f6f8f'; c.fillRect(0, 0, w, 4); c.fillRect(0, h - 4, w, 4);
+      c.fillStyle = '#d97a9c'; c.fillRect(0, 0, w, h);   // Samsung 35E: rosa Hülle
+      c.fillStyle = '#b85a7d'; c.fillRect(0, 0, w, 4); c.fillRect(0, h - 4, w, 4);
       silk(c, 'SAMSUNG SDI', w * 0.25, h / 2, 4.2, { align: 'center', rot: -Math.PI / 2 });
       silk(c, 'INR18650-35E', w * 0.42, h / 2, 3.6, { align: 'center', rot: -Math.PI / 2, weight: 400 });
       silk(c, '3500mAh  3.6V', w * 0.56, h / 2, 2.8, { align: 'center', rot: -Math.PI / 2, weight: 400 });
     });
+    // Akku 2S2P: 2 × Keystone 1047 (Doppelhalter 18650, Lötfahnen) mit je 2 × Samsung INR18650-35E.
+    // Halter nach Keystone-Datenblatt K75p29: 77,1 × 39,8 × 18 mm, Zellabstand 19,1 mm, 2 Löcher Ø 3,2 mm im Abstand 55,2 mm (Mittelsteg).
+    // Zellen nach Samsung-Datenblatt: Ø 18,4 mm (max. 18,55), Länge 65,0 mm (max. 65,25), Pluspol flach (Flat-Top).
+    // Die Halter hängen kopfüber unter der Bodenplatte, je 2 × M3-Zylinderkopfschraube (ISO 4762) mit Mutter oben.
     (function battery() {
-      const g = part(L0, 'Akku 2S2P: 4× Samsung INR18650-35E', 'Zwei Halter mit je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Hängt unter der Bodenplatte.', 0, 21, 0);
+      const gp = part(L0, 'Akku 2S2P: 2 × Keystone 1047 mit 4 × Samsung INR18650-35E', 'Zwei Doppelhalter Keystone 1047 (77,1 × 39,8 × 18 mm, Lötfahnen), je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Stehen auf dem Boden der Fahrwerk-Wanne, je 2 × M3-Zylinderkopfschraube von innen mit Mutter unter dem Boden. Zellen: Samsung INR18650-35E, Flat-Top, Ø 18,4 × 65 mm.', 0, 22, 0);   // steht auf den 3 mm hohen Sockeln der Wanne
+      // Aufbau unten ist „kopfüber“ beschrieben (Boden bei y = 0, Zellen darunter) → umdrehen
+      const g = new THREE.Group(); g.rotation.x = Math.PI; gp.add(g);
+      const HL = 77.1, HB = 39.8, HH = 18.0, PITCH = 19.1, LOCH = 27.6, ZR = 9.2, ZL = 65.0;
+      const grau = 0x2b2d30;
       [[-21, 1, '1'], [21, -1, '2']].forEach(([hx, dir, grp]) => {
-        box(g, 40, 2, 77, hx, 0, 0, 0x151617, { rough: 0.7 });
-        [-37, 37].forEach((ez) => box(g, 40, 21, 3, hx, 0, ez, 0x151617, { rough: 0.7 }));
-        box(g, 1.4, 7, 71, hx, 2, 0, 0x151617);
-        [-1, 1].forEach((k) => [-34.6, 34.6].forEach((ez) => cylZ(g, 3, ez - Math.sign(ez) * 0.6, ez + Math.sign(ez) * 0.6, hx + k * 9.6, 11.4, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 12 })));
-        [-9.6, 9.6].forEach((cx) => {
+        // Halter (kopfüber: Boden oben an der Platte, Zellen hängen darunter)
+        box(g, HB, 1.5, HL, hx, -1.5, 0, grau, { rough: 0.7 });                           // Boden
+        [-1, 1].forEach((k) => box(g, HB, HH, 3, hx, -HH, k * (HL / 2 - 1.5), grau, { rough: 0.7 }));   // Stirnwände
+        box(g, 3.2, 7, HL - 6, hx, -8.5, 0, grau, { rough: 0.7 });                       // Mittelsteg
+        [-1, 1].forEach((k) => box(g, 1.2, 6, HL - 6, hx + k * (HB / 2 - 0.6), -7.5, 0, grau, { rough: 0.7 }));  // Seitenwände
+        // Befestigung: 2 × M3 im Mittelsteg, Kopf unten im Halter, Mutter oben auf der Platte
+        // Befestigung: M3 × 8 von unten durch Boden und Sockel (Kopf bündig in der Senkung), Mutter innen auf dem Halterboden
+        [-LOCH, LOCH].forEach((z) => { m3Schraube(gp, hx, -6, z, 8, true); m3Mutter(gp, hx, 1.5, z); });
+        // Federkontakte und Lötfahnen (je Zelle eigene Kontakte)
+        [-PITCH / 2, PITCH / 2].forEach((cx) => [-1, 1].forEach((k) => {
+          box(g, 8, 10, 0.4, hx + cx, -16, k * (HL / 2 - 3.2), 0xc9cdd1, { metal: 0.9, rough: 0.3 });
+          box(g, 3, 6, 0.4, hx + cx, -15, k * (HL / 2 + 0.4), 0xc9cdd1, { metal: 0.9, rough: 0.3 });   // Lötfahne außen
+        }));
+        // Zellen
+        [-PITCH / 2, PITCH / 2].forEach((cx) => {
           const side = std(0xffffff, { map: cellTex, rough: 0.35, metal: 0.1 });
           const capM = std(0xc9cdd1, { metal: 0.9, rough: 0.25 });
-          add(g, new THREE.CylinderGeometry(9.2, 9.2, 65, 40), [side, capM, capM], hx + cx, 11.4, 0, [dir * Math.PI / 2, 0, 0]);
-          cylZ(g, 3.5, dir * 32.5, dir * 33.6, hx + cx, 11.4, 0xc9cdd1, { metal: 0.9, rough: 0.25, seg: 16 });
+          add(g, new THREE.CylinderGeometry(ZR, ZR, ZL, 40), [side, capM, capM], hx + cx, -1.5 - 0.3 - ZR, 0, [dir * Math.PI / 2, 0, 0]);
+          cylZ(g, 7.5, dir * (ZL / 2), dir * (ZL / 2 + 0.15), hx + cx, -1.8 - ZR, 0xd5d8dc, { metal: 0.9, rough: 0.25, seg: 24 });  // flacher Pluspol
         });
-        // Lötfahnen an den Enden
-        box(g, 30, 2, 0.6, hx, 10.4, dir * 36.2, 0xc9cdd1, { metal: 0.9, rough: 0.3 });
-        box(g, 30, 2, 0.6, hx, 10.4, -dir * 36.2, 0xc9cdd1, { metal: 0.9, rough: 0.3 });
-        anchor(`G${grp}+`, g, hx, 11.4, dir * 38.6, [0, 0, dir], `Akku Gruppe ${grp} Plus`);
-        anchor(`G${grp}-`, g, hx, 11.4, -dir * 38.6, [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
+        anchor(`G${grp}+`, g, hx, -12, dir * (HL / 2 + 1.5), [0, 0, dir], `Akku Gruppe ${grp} Plus`);
+        anchor(`G${grp}-`, g, hx, -12, -dir * (HL / 2 + 1.5), [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
       });
     })();
 
     (function bms() {
-      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+.', -30, TOP[0], 30);
+      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+. Liegt links neben dem Akku in einer Tasche der Wanne.', -5, 19, 50);
       const pads = [['B-', 4], ['BM', 9], ['B+', 14], ['P-', 36], ['P+', 41]];
       pcb(g, 45, 20, '#244f9e', 0, 0, 0, (c, w, h) => {
         pads.forEach(([t, x]) => { pad(c, x, 2.6, 3.6, 3); silk(c, t, x, 6.6, 1.9, { align: 'center' }); });
@@ -568,11 +710,115 @@ code { font-family: var(--font-mono); font-size: 13px; }
       [-11, -4, 4, 11].forEach((x) => chip(g, 5, 4, 1.5, x, 1.6, 2, '', { legs: true }));
       smd(g, 45, 20, 10, 1.6, 0, 3);
       pads.forEach(([t, x]) => anchor(`BMS_${t}`, g, x - 22.5, 1.9, -7.4, [0, 1, 0], `BMS ${t.replace('-', '−')}`));
+      einpassen('bms', g);   // HW-391 (GrabCAD)
+    })();
+    (function ina226() {
+      // INA226-Modul 21 × 19 mm OHNE Stiftleiste: alle Leitungen direkt an die Lötpunkte gelötet (flach, nichts wackelt).
+      // Gedreht: Lötpunkte VIN+/VIN− zeigen nach hinten (−x, Platz bis zum Motor), die Reihe VBS…ALE nach vorne zum BMS.
+      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Ohne Stiftleiste eingebaut: alle Leitungen direkt angelötet – VIN+ (vom Schalter) und VIN− (zum Verteiler) mit dicker Litze (1,0 mm²), die Datenleitungen VBS, GND, VCC, SCL, SDA zum Pico über I²C. Liegt flach links neben dem Akku, hinter dem BMS, in einer Einklick-Tasche der Wanne. Platine 21 × 19 mm.', -46, 19, 50.5, Math.PI / 2);
+      const names = ['VBS', 'GND', 'VCC', 'SCL', 'SDA', 'ALE'];
+      pcb(g, 21, 19, '#4a2f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'INA226', w / 2, h / 2, 2.2, { align: 'center' });
+        silk(c, 'VIN+', 7.5, 3.2, 1.5, { align: 'center' }); silk(c, 'VIN-', 13.5, 3.2, 1.5, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 4.15 + 2.54 * i, h - 3.4, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+      });
+      const sh = canvasTex(6.3, 3.2, 30, (c) => { c.fillStyle = '#1b1b1b'; c.fillRect(0, 0, 6.3, 3.2); silk(c, 'R002', 3.15, 1.6, 1.4, { align: 'center', color: '#ddd', weight: 400 }); });
+      const shm = std(0x1b1b1b);
+      add(g, new THREE.BoxGeometry(6.3, 1.2, 3.2), [shm, shm, std(0xffffff, { map: sh }), shm, shm, shm], 0, 1.6 + 0.6, -2);
+      chip(g, 3, 3, 1, -5, 1.6, 2, '', { legs: true });
+      smd(g, 21, 12, 6, 1.6, 0, 0);
+      // Lötpunkte (verzinnt) statt Stiftleiste und Schraubklemme
+      [-3, 3].forEach((x) => cylY(g, 1.1, 0.06, x, 1.6, -8, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 16 }));
+      names.forEach((n, i) => cylY(g, 0.8, 0.06, -6.35 + 2.54 * i, 1.6, 8.2, 0xc9cdd1, { metal: 0.9, rough: 0.3, seg: 12 }));
+      anchor('INA_VIN+', g, -3, 1.9, -8, [0, 1, 0], 'INA226 VIN+');
+      anchor('INA_VIN-', g, 3, 1.9, -8, [0, 1, 0], 'INA226 VIN−');
+      names.forEach((n, i) => anchor(`INA_${n}`, g, -6.35 + 2.54 * i, 1.9, 8.2, [0, 1, 0], `INA226 ${n}`));
+      einpassen('ina226', g);   // GrabCAD, Stiftleiste entfernt
+    })();
+    (function fuse() {
+      // Inline-Sicherungshalter für Standard-Flachsicherung (ATO/ATC), wasserdicht, 16-AWG-Kabel (Amazon B078X977PK).
+      // Echtes CAD-Modell (GrabCAD, Dawson Dueck) – liegt nur lokal, siehe teile/QUELLEN.md. Steht aufrecht, Deckel oben.
+      const g = part(L0, 'Sicherungshalter mit 10-A-Flachsicherung', 'Inline-Halter für eine Standard-Kfz-Flachsicherung (ATO/ATC) mit 16-AWG-Kabel, wasserdicht mit Klappdeckel. Sitzt direkt hinter dem BMS im Plus und brennt bei einem Kurzschluss durch, bevor Kabel heiß werden. Steht rechts neben dem Akku, Deckel oben (zum Wechseln der Sicherung), die beiden Kabel sind links und rechts mit Kabelbindern durch Schlitze im Boden festgebunden. Halter ca. 25 × 25,5 × 12,5 mm, mit Kabelansätzen 54 mm lang.', -10, 19, -51);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      rbox(ersatz, 25, 22, 12.4, 0, 0, 0, 0x1a1b1d, { rough: 0.55, r: 2 });          // Körper
+      rbox(ersatz, 26, 3.5, 12.6, 0, 22, 0, 0x1a1b1d, { rough: 0.55, r: 1.2 });       // Deckel
+      [-1, 1].forEach((s) => cylX(ersatz, 1.6, s * 12.5, s * 27, 5.8, 0, 0xc23a2a, { rough: 0.5, seg: 12 }));   // Kabelansätze rot
+      cadTeil('sicherung', g, ersatz, (m) => { m.position.y = 11.5; return m; });
+      anchor('FUSE_IN', g, -27, 5.8, 0, [-1, 0, 0], 'Sicherung Eingang');
+      anchor('FUSE_OUT', g, 27, 5.8, 0, [1, 0, 0], 'Sicherung Ausgang');
+    })();
+    function wago(parent, key, name, desc, x, y, z, ry = 0) {
+      const g = part(parent, name, desc, x, y, z, ry);
+      rbox(g, 15, 8.5, 20.5, 0, 0, 0, 0xc5cdd3, { rough: 0.25, metal: 0.05, opacity: 0.85, r: 1.2 });
+      for (let i = 0; i < 5; i++) {
+        box(g, 9, 2.2, 3, 2.5, 8.5, -8.2 + 4.1 * i, 0xf08a24, { rough: 0.45 });
+        box(g, 0.6, 2.4, 2.4, 7.55, 2.3, -8.2 + 4.1 * i, 0x2a2d30);   // Kabelöffnung (unter dem Hebelgriff, Seite +x)
+        anchor(`${key}${i + 1}`, g, 7.8, 3.5, -8.2 + 4.1 * i, [1, 0, 0], `${name.split(' (')[0]} Platz ${i + 1}`);
+      }
+      einpassen('wago', g);   // WAGO 221-415 (GrabCAD), echte Größe 29,7 × 18,4 × 8,1 mm
+      return g;
+    }
+    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse, Kabelseite nach hinten (15 mm frei bis zum Motor), Hebel klappen nach oben.', -52.5, 19, 17, Math.PI);
+    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse neben der Plus-Klemme, Kabelseite nach hinten.', -52.5, 19, -17, Math.PI);
+    // Nahsensor VL53L1X als einfaches Modul 25 × 10,7 mm (z. B. Happysnow, Amazon B0CNGP7LCR) – kein Hersteller-CAD.
+    // Sitzt INNEN an der Stirnwand der Wanne in zwei Nuten, der Sensor schaut durch ein Fenster in der Wand.
+    // Ursprung = Unterkante Mitte der Platinen-Vorderseite, Sensor zeigt nach +x. Lötpunkte oben: VIN GND SCL SDA GPIO1 XSHUT.
+    function tof(key, x, ry, name) {
+      const g = part(L0, `Nahsensor VL53L1X (${name})`, 'Misst per Laser bis ca. 4 m und erkennt niedrige Hindernisse, die der LiDAR nicht sieht. Modul 25 × 10,5 mm, innen an der Stirnwand der Wanne: von oben in zwei Nuten geschoben, 5° nach oben gekippt (sieht den Boden nicht, erkennt Rampen besser), der Sensor schaut durch ein Fenster in der Wand. Kabel direkt angelötet (VIN, GND, SDA, SCL, XSHUT). Achtung beim Kauf: VL53L1X, nicht VL53L0X.', x, 38, 0, ry);
+      const pins = ['VIN', 'GND', 'SCL', 'SDA', 'GPIO1', 'XSHUT'];
+      const tex = canvasTex(25, 10.7, 12, (c, w, h) => {
+        c.fillStyle = '#17181a'; c.fillRect(0, 0, w, h);
+        [2.4, w - 2.4].forEach((x) => hole(c, x, h / 2, 1.5));
+        pins.forEach((p, i) => { hole(c, 6.15 + 2.54 * i, 1.6, 0.5); silk(c, p, 6.15 + 2.54 * i, 4.2, 0.9, { align: 'center', rot: -Math.PI / 2 }); });
+        silk(c, 'VL53L1XV2', w / 2, h - 1.6, 1.2, { align: 'center' });
+      });
+      const side = std(0x111214, { rough: 0.6 });
+      // Platine steht senkrecht: Breite 25 entlang z, Höhe 10,7 nach oben, 1,6 dick nach hinten (−x)
+      add(g, new THREE.BoxGeometry(1.6, 10.7, 25), [std(0xffffff, { map: tex, rough: 0.45 }), side, side, side, side, side], -0.8, 5.35, 0);
+      box(g, 1.56, 2.5, 4.9, 0.78, 5.35 - 3.25, 0, 0x1a1a1a, { rough: 0.4 });      // Sensor
+      box(g, 0.3, 0.9, 1.4, 1.56, 5.35 - 0.45, -1.2, 0x3b2a12, { rough: 0.2 });         // Linse Sender
+      box(g, 0.3, 0.9, 1.4, 1.56, 5.35 - 0.45, 1.2, 0x3b2a12, { rough: 0.2 });          // Linse Empfänger
+      box(g, 1, 1.4, 2.9, 0.5, 7.6, -6, 0x1d1d1d);                                          // Spannungsregler
+      ['VIN', 'GND', 'SCL', 'SDA'].forEach((p, i) => anchor(`T${key}_${p}`, g, -1.8, 10.2, -6.35 + 2.54 * [0, 1, 2, 3][i], [-1, 0, 0], `VL53L1X ${name} ${p}`));
+      anchor(`T${key}_X`, g, -1.8, 10.2, 6.35, [-1, 0, 0], `VL53L1X ${name} XSHUT`);
+      // Echtes CAD-Modell (GrabCAD, Mustafa Ali Özgönül, nur lokal): Platine 25 × 10,5 × 1,5 mm, Sensor auf −z, 2 mm unter der Mitte
+      const ersatz = new THREE.Group(); [...g.children].forEach((c) => ersatz.add(c)); g.add(ersatz);
+      cadTeil('vl53v2', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; m.position.set(-1.5, 5.25, 0); const w = new THREE.Group(); w.add(m); return w; });
+    }
+    // Vorderseite der Platine 1,8 mm hinter der Wand-Innenseite (vorne x = 82, hinten x = −117), um 5° nach oben gekippt
+    // (Drehpunkt in der Wanne = Sensor, 3,25 mm über der Platinen-Unterkante → Ursprung um 0,28 mm verschoben)
+    [['V', 80.2 + 0.28, 0, 'vorne'], ['H', -115.2 - 0.28, Math.PI, 'hinten']].forEach(([k, x, ry, n]) => {
+      tof(k, x, ry, n);
+      PARTS[`Nahsensor VL53L1X (${n})`].rotation.set(0, ry, 5 * Math.PI / 180);
+    });
+
+    // =====================================================================
+    // EBENE 2 – Antrieb
+    // =====================================================================
+    const L1 = makeLayer(1);
+    (function sw() {
+      // Hauptschalter: runder 12-mm-Taster (GrabCAD „Push button 12mm“, MATOX_3D – nur lokal, siehe teile/QUELLEN.md).
+      // Einbauloch Ø 12 mm in der Rückwand des Gehäuse-Rings (Außenseite x = −120). Frontring Ø 13,9 liegt außen auf,
+      // Taste steht 3,3 mm vor, Gewindekörper Ø 11,8 und Lötfahnen ragen 19 mm nach innen, innen eine Mutter.
+      const g = part(L1, 'Hauptschalter (Taster rund, Ø 12 mm)', 'Schaltet das ganze Auto an und aus. Runder 12-mm-Taster (rastend) hinten in der Rückwand des Gehäuse-Rings, gegenüber der USB-C-Buchse des Ladeboards. Einbauloch Ø 12,2 mm, innen mit Mutter festgezogen. Ragt 19 mm nach innen; die zwei Leitungen gehen durch das Deck hinunter in die Wanne. Achtung: Durch ihn fließt der ganze Strom (bis ca. 9 A) – vor dem Kauf die Stromangabe des Tasters prüfen. Kleine Taster schaffen oft nur 1–3 A, dann schaltet er ein Relais- oder MOSFET-Modul.', -120, 74, -49);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cylX(ersatz, 6.93, -0.5, -3.3, 0, 0, 0xc0c5ca, { metal: 0.9, rough: 0.25, seg: 32 });   // Frontring außen
+      cylX(ersatz, 4.45, -3.3, -4.6, 0, 0, 0xdedede, { rough: 0.4, seg: 28 });             // Taste
+      cylX(ersatz, 5.9, 0, 15.2, 0, 0, 0x8d9297, { metal: 0.6, rough: 0.4, seg: 28 });       // Gewindekörper
+      [-2, 2].forEach((yy) => box(ersatz, 4, 1, 1.4, 17.5, yy - 0.5, 0, 0xc9cdd1, { metal: 0.9, rough: 0.3 }));
+      cylX(g, 8.0, 2.4, 5.0, 0, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3, seg: 6 });   // Mutter innen an der Wand (nicht im CAD)
+      cadTeil('taster', g, ersatz, (m) => {
+        // CAD: Achse entlang y, Taste vorne bei y = 0, Körper nach −y → Taste nach außen (−x), Körper nach innen (+x)
+        const w = new THREE.Group(); w.add(m); w.rotation.z = Math.PI / 2; w.position.x = -3.3;
+        return w;
+      });
+      anchor('SW_1', g, 19.5, -2, 0, [1, 0, 0], 'Hauptschalter Anschluss 1');
+      anchor('SW_2', g, 19.5, 2, 0, [1, 0, 0], 'Hauptschalter Anschluss 2');
     })();
     // Ladeboard DDTCCRUB 2S (Walfront, Amazon B08LVN7FLH): 39 × 18 mm, ca. 6,3 mm hoch, 4 Befestigungslöcher.
     // Nachgebaut nach Händlerangaben und Produktfotos. Oben USB-C mit VIN/GND, unten Lötflächen BAT und GND.
     (function charger() {
-      const g = part(L0, 'Ladeboard DDTCCRUB 2S', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku (Ladestrom ca. 0,55 A). Auf der Unterseite die Lötbrücken 2S und 1A setzen, sonst nichts. 39 × 18 mm, 4 Löcher für M2-Schrauben. Die USB-C-Buchse schaut hinten aus dem Auto.', -64, TOP[0], -32);
+      const g = part(L1, 'Ladeboard DDTCCRUB 2S', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku (Ladestrom ca. 0,55 A). Auf der Unterseite die Lötbrücken 2S und 1A setzen, sonst nichts. 39 × 18 mm, 4 Löcher für M2-Schrauben. Sitzt hinten links auf dem Elektronik-Deck in einer Einklick-Tasche, die Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt im Ausschnitt der Wand (nur 1 mm hinter der Außenseite) – der Stecker ist gut zu erreichen und rastet voll ein. Hier wird das Auto geladen. BAT und GND gehen durch das Deck hinunter zum BMS.', -99.0, 61, 49.5);
       const ersatz = new THREE.Group(); g.add(ersatz);
       // Echtes CAD-Modell (GrabCAD, Aleksey Zablotskiy) – liegt nur lokal, siehe teile/QUELLEN.md.
       // CAD: Breite x 0…18, Länge y −38,4…0 (USB bei −y), Bauteile zeigen nach −z, Unterseite z = 0
@@ -625,83 +871,16 @@ code { font-family: var(--font-mono); font-size: 13px; }
       anchor('CH_BAT', g, 17.4, 1.9, 2.4, [0, 1, 0], 'Ladeboard BAT');
       anchor('CH_GND', g, 17.4, 1.9, -2.3, [0, 1, 0], 'Ladeboard GND');
     })();
-    (function ina226() {
-      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Schraubklemme VIN+ (vom Schalter) und VIN− (zum Verteiler). Datenleitungen zum Pico über I²C.', 4, TOP[0], -12);
-      const names = ['VBS', 'GND', 'VCC', 'SCL', 'SDA', 'ALE'];
-      pcb(g, 20, 25, '#4a2f86', 0, 0, 0, (c, w, h) => {
-        silk(c, 'INA226', w / 2, h / 2 + 2, 2.2, { align: 'center' });
-        silk(c, 'VIN+', 7.5, 7.6, 1.5, { align: 'center' }); silk(c, 'VIN-', 12.5, 7.6, 1.5, { align: 'center' });
-        names.forEach((n, i) => silk(c, n, 3.65 + 2.54 * i, h - 5.2, 1.0, { align: 'center', rot: -Math.PI / 2 }));
-      });
-      const sh = canvasTex(6.3, 3.2, 30, (c) => { c.fillStyle = '#1b1b1b'; c.fillRect(0, 0, 6.3, 3.2); silk(c, 'R002', 3.15, 1.6, 1.4, { align: 'center', color: '#ddd', weight: 400 }); });
-      const shm = std(0x1b1b1b);
-      add(g, new THREE.BoxGeometry(6.3, 1.2, 3.2), [shm, shm, std(0xffffff, { map: sh }), shm, shm, shm], 0, 1.6 + 0.6, 1);
-      chip(g, 3, 3, 1, -4, 1.6, 5, '', { legs: true });
-      terminals(g, 2, 5, 0, 1.6, -8.5, 0x2a62c4, -1);
-      pins(g, 6, 1, 0, 1.6, 10.5, { pinH: 5 });
-      smd(g, 20, 14, 6, 1.6, 0, 2);
-      anchor('INA_VIN+', g, -2.5, 5.1, -12.3, [0, 0, -1], 'INA226 VIN+');
-      anchor('INA_VIN-', g, 2.5, 5.1, -12.3, [0, 0, -1], 'INA226 VIN−');
-      names.forEach((n, i) => anchor(`INA_${n}`, g, -6.35 + 2.54 * i, 8.8, 10.5, [0, 1, 0], `INA226 ${n}`));
-    })();
-    (function fuse() {
-      const g = part(L0, 'Sicherungshalter mit 10-A-Kfz-Sicherung', 'Sitzt direkt hinter dem BMS im Plus. Brennt bei einem Kurzschluss durch, bevor Kabel heiß werden.', 22, TOP[0], 32);
-      rbox(g, 30, 9, 12, 0, 0, 0, 0x1a1b1d, { rough: 0.55, r: 2 });
-      box(g, 10, 4, 4, 0, 9, 0, 0xd8321f, { rough: 0.4 });
-      box(g, 10.5, 1.5, 12.5, 0, 6.5, 0, 0x1a1b1d);
-      anchor('FUSE_IN', g, -15, 4.5, 0, [-1, 0, 0], 'Sicherung Eingang');
-      anchor('FUSE_OUT', g, 15, 4.5, 0, [1, 0, 0], 'Sicherung Ausgang');
-    })();
-    (function sw() {
-      const g = part(L0, 'Hauptschalter (Kippschalter 10 A)', 'Schaltet das ganze Auto an und aus. Sitzt an der linken Seite zwischen den Rädern.', 0, TOP[0], 56);
-      rbox(g, 16, 6, 10, 0, 0, 0, 0x3b3f43, { rough: 0.6, r: 1.5 });
-      box(g, 12, 9, 8, 0, 6, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3 });
-      cylY(g, 3.2, 2, 0, 15, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3, seg: 6 });
-      add(g, new THREE.CylinderGeometry(1, 1.4, 12, 14), std(0xd7dbdf, { metal: 0.9, rough: 0.2 }), 2.5, 22, 0, [0, 0, -0.35]);
-      [-3.5, 3.5].forEach((x) => box(g, 2.4, 3, 1.4, x, 1, -5.6, 0xc9cdd1, { metal: 0.9, rough: 0.3 }));
-      anchor('SW_1', g, -3.5, 2.5, -6.3, [0, 0, -1], 'Hauptschalter Anschluss 1');
-      anchor('SW_2', g, 3.5, 2.5, -6.3, [0, 0, -1], 'Hauptschalter Anschluss 2');
-    })();
-    function wago(parent, key, name, desc, x, y, z) {
-      const g = part(parent, name, desc, x, y, z);
-      rbox(g, 15, 8.5, 20.5, 0, 0, 0, 0xc5cdd3, { rough: 0.25, metal: 0.05, opacity: 0.85, r: 1.2 });
-      for (let i = 0; i < 5; i++) {
-        box(g, 9, 2.2, 3, 2.5, 8.5, -8.2 + 4.1 * i, 0xf08a24, { rough: 0.45 });
-        box(g, 0.6, 2.4, 2.4, -7.55, 2.3, -8.2 + 4.1 * i, 0x2a2d30);
-        anchor(`${key}${i + 1}`, g, -7.8, 3.5, -8.2 + 4.1 * i, [-1, 0, 0], `${name.split(' (')[0]} Platz ${i + 1}`);
-      }
-      return g;
-    }
-    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt.', 45, TOP[0], -12);
-    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu.', 45, TOP[0], -36);
-    function tof(key, x, z, ry, name) {
-      const g = part(L0, `Nahsensor VL53L1X (${name})`, 'Misst per Laser bis ca. 4 m und erkennt niedrige Hindernisse. Angeschlossen über STEMMA-QT-Kabel (I²C, verriegelnd) und eine XSHUT-Leitung zum Pico.', x, 26, z, ry);
-      box(g, 3, 20, 22, -2.6, -2, 0, 0x2a2e33, { rough: 0.85 });
-      box(g, 1.6, 13, 20, 0, 0, 0, 0x5a3a8c);
-      box(g, 1.2, 2.4, 4.9, 1.4, 6, 0, 0x111111);
-      [-5.5, 5.5].forEach((zz) => box(g, 3.2, 3, 4.5, -0.2, 13, zz, 0xf2efe6));
-      box(g, 0.8, 2, 0.8, -0.2, 13, 0, 0xd8b04a, { metal: 0.85 });
-      box(g, 3, 8, 3, -2.6, 18, 0, 0x2a2e33);
-      anchor(`T${key}_Q1`, g, -1.8, 14.5, -5.5, [-1, 0, 0], `VL53L1X ${name} QT 1`);
-      anchor(`T${key}_Q2`, g, -1.8, 14.5, 5.5, [-1, 0, 0], `VL53L1X ${name} QT 2`);
-      anchor(`T${key}_X`, g, -0.6, 14.6, 0, [-1, 0, 0], `VL53L1X ${name} XSHUT`);
-    }
-    tof('VL', 86, 42, -0.5, 'vorne links'); tof('V', 88, 0, 0, 'vorne'); tof('VR', 86, -42, 0.5, 'vorne rechts'); tof('H', -88, 0, Math.PI, 'hinten');
-
-    // =====================================================================
-    // EBENE 2 – Antrieb
-    // =====================================================================
-    const L1 = makeLayer(1);
     // Freenove Breakout Board für Pico (FNK0081, Platine CB8101). Maße aus der offiziellen mechanischen Zeichnung
     // CB8101_mechanical-drawing_v1.1 (github.com/Freenove/Freenove_Breakout_Board_for_Raspberry_Pi_Pico):
     // Platine 63 × 57 mm, 4 Befestigungslöcher im Abstand 58 × 52 mm. Je Seite 20 Schraubklemmen (2 Blöcke à 10, Raster 2,54 mm),
     // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
     // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
     (function freenove() {
-      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse.', -24, TOP[1] + 5, 0);
+      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M3 × 8 verschraubt.', -38, TOP[1] + 4, 0);
       const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
       [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
-        (cylY(g, 2.75, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }).userData.nurImAuto = true));
+        (m3Schraube(g, x, 1.6 + 3, z, 8, false).userData.nurImAuto = true));
       pcb(g, BW, BD, '#2f9a45', 0, 0, 0, (c, w, h) => {
         const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;
         [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) => hole(c, X(x), Y(z), 1.6));
@@ -772,16 +951,14 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // Zwei Reihen mit je 6 Lötaugen im Raster 2,54 mm, Reihenabstand 15,24 mm. Beschriftung steht auf der Unterseite.
     // Reihe Eingänge: IN4 IN3 GND VCC IN2 IN1 – gegenüber Reihe Ausgänge: EEP OUT1 OUT2 OUT3 OUT4 ULT.
     // ULT = Schlaf-Eingang (LOW = Motoren aus), EEP = Fehler-Ausgang. Lötbrücke J1 („en/sleep“) offen lassen!
-    function drv(n, s) {
-      const nm = s > 0 ? 'links' : 'rechts';
+    function drv(n, x, nm) {
       const ins = ['IN4', 'IN3', 'GND', 'VCC', 'IN2', 'IN1'], outs = ['EEP', 'OUT1', 'OUT2', 'OUT3', 'OUT4', 'ULT'];
-      const g = part(L1, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden ${nm}en Motoren. Schwarzes Modul 16 × 18,5 mm, mit doppelseitigem Schaumklebeband auf der Platte. Kabel direkt in die Lötaugen gelötet. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – Reihe zu den Motoren: EEP, OUT1–OUT4, ULT. ULT ist der Not-Stopp-Eingang.`, 52, TOP[1] + 1, s * 30, s > 0 ? 0 : Math.PI);
+      const g = part(L1, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden Motoren der Achse ${nm} (OUT1/OUT2 links, OUT3/OUT4 rechts). Schwarzes Modul 16 × 18,5 mm, sitzt in der Motorzone ${nm} neben dem Griffloch in einer Einklick-Tasche des Elektronik-Decks – die Motorkabel sind kurz. Kabel direkt in die Lötaugen gelötet. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – Reihe zu den Motoren: EEP, OUT1–OUT4, ULT. ULT ist der Not-Stopp-Eingang. Die Motor-Reihe zeigt zum Griffloch.`, x, TOP[1], 26, Math.PI);
       const ersatz = new THREE.Group(); g.add(ersatz);
       // Echtes CAD-Modell (GrabCAD, Juan Manuel Dominici, ohne Stiftleisten) – liegt nur lokal, siehe teile/QUELLEN.md.
       // CAD: Reihen entlang z bei x = ±7,62, Reihe IN… bei −x, IN4/EEP-Ende bei +z → um −90° drehen
       cadTeil('drv8833', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; return m; });
       const W_ = 16, D_ = 18.5, ROW = 7.62, px = (i) => -6.35 + 2.54 * i;
-      box(g, 14, 1, 16, 0, -1, 0, 0x9aa0a6, { rough: 0.9 }).userData.nurImAuto = true;  // Schaumklebeband
       pcb(ersatz, W_, D_, '#141414', 0, 0, 0, (c, w, h) => {
         for (let i = 0; i < 6; i++) [h / 2 - ROW, h / 2 + ROW].forEach((y) => hole(c, w / 2 + px(i), y, 0.5));
         c.strokeStyle = '#d0d0d0'; c.lineWidth = 0.2; c.strokeRect(0.4, 0.4, w - 0.8, h - 0.8);
@@ -795,9 +972,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ins.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, -ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
       outs.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
     }
-    drv('L', 1); drv('R', -1);
+    drv('V', 55, 'vorne'); drv('H', -90, 'hinten');
     (function mp1584() {
-      const g = part(L1, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs.', 52, TOP[1] + 2, 0);
+      const g = part(L1, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -40, TOP[1], -50);
       pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
         pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
         silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
@@ -810,9 +987,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
       anchor('MP_IN-', g, -9, 1.9, 5.5, [0, 1, 0], 'MP1584 IN−');
       anchor('MP_OUT+', g, 9, 1.9, -5.5, [0, 1, 0], 'MP1584 OUT+');
       anchor('MP_OUT-', g, 9, 1.9, 5.5, [0, 1, 0], 'MP1584 OUT−');
+      einpassen('mp1584', g);   // D-SUN MP1584EN (GrabCAD)
     })();
     (function bno() {
-      const g = part(L1, 'Lagesensor BNO085 (Gyroskop + Kompass)', 'Misst Drehung, Neigung und Himmelsrichtung. Sitzt nahe der Fahrzeugmitte. Über seinen STEMMA-QT-Ausgang geht der I²C-Bus weiter zu den Nahsensoren.', 27, TOP[1] + 2, 0);
+      const g = part(L1, 'Lagesensor BNO085 (Gyroskop + Kompass)', 'Misst Drehung, Neigung und Himmelsrichtung (Kompass). Sitzt vor dem Freenove-Board, um 90° gedreht (die STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist Platz für die Stecker), ca. 5 cm vom vorderen und 10 cm vom hinteren Motor – Motormagnete, Spulen und Leitungen mit viel Strom stören den Kompass, deshalb ist rund um ihn alles frei. Einklick-Tasche, Befestigung ohne Stahlschrauben. Über seinen STEMMA-QT-Ausgang geht der I²C-Bus weiter zu den Nahsensoren.', 8, TOP[1], 0, Math.PI / 2);
       const names = ['VIN', '3Vo', 'GND', 'SCL', 'SDA', 'INT', 'RST', 'DI'];
       pcb(g, 25.4, 20.3, '#3a3f86', 0, 0, 0, (c, w, h) => {
         silk(c, 'BNO085', w / 2, 3.5, 2, { align: 'center' });
@@ -825,9 +1003,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
       smd(g, 16, 10, 6, 1.6, -2, -3);
       names.forEach((n, i) => anchor(`BNO_${n}`, g, -8.89 + 2.54 * i, 7.9, 8.2, [0, 1, 0], `BNO085 ${n}`));
       anchor('BNO_QT', g, 12.9, 3.1, -4, [1, 0, 0], 'BNO085 STEMMA-QT');
+      einpassen('bno085', g);   // Adafruit 4754 (offizielles CAD, MIT)
     })();
-    wago(L1, 'W3A', '3,3-V-Verteiler A (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der linken Motoren und an Verteiler B.', 25, TOP[1], 24);
-    wago(L1, 'W3B', '3,3-V-Verteiler B (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der rechten Motoren, den BNO085 und den INA226.', 25, TOP[1], -24);
+    wago(L1, 'W3V', '3,3-V-Verteiler vorne (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der beiden Vordermotoren und weiter zum Verteiler hinten. Sitzt in der Motorzone vorne neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', 55, TOP[1], -29, Math.PI / 2);
+    wago(L1, 'W3H', '3,3-V-Verteiler hinten (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der beiden Hintermotoren, den BNO085 und den INA226. Sitzt in der Motorzone hinten neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', -88.5, TOP[1], -29, Math.PI / 2);
 
     // =====================================================================
     // EBENE 3 – Gehirn
@@ -870,9 +1049,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
       piFan = new THREE.Group(); piFan.position.set(7, 9.0, 8); ac.add(piFan);
       for (let i = 0; i < 9; i++) { const bl = box(piFan, 7.5, 0.4, 2.2, 0, 0, 0, 0x2a2c2f); bl.position.set(Math.cos(i * 0.698) * 5.5, 0.2, Math.sin(i * 0.698) * 5.5); bl.rotation.y = -i * 0.698 + 0.5; }
       cylY(ac, 4.5, 0.9, 7, 8.6, 8, 0xd6d9dc, { seg: 32 });
+      einpassen('cooler', ac);   // Active Cooler (GrabCAD)
       // Stapel-Buchsenleiste für den AI HAT+ (auf der GPIO-Leiste)
       const stapel = new THREE.Group(); stapel.userData.nurImAuto = true; g.add(stapel);
-      pins(stapel, 20, 2, 10, 1.3 + 8.5, 24.5, { female: true, h: 14 });
+      pins(stapel, 20, 2, 10, 1.3 + 8.5, 24.5, { female: true, h: 16 - 8.5 });   // reicht bis unter den AI HAT+ (16-mm-Abstandshalter)
       // Stecker der Kabel
       const kabel = new THREE.Group(); kabel.userData.nurImAuto = true; g.add(kabel);
       const plug = (x, y, z) => { rbox(kabel, 13, 7, 14, x, y - 3.5, z, 0x2a2c2f, { r: 1.5 }); };
@@ -883,35 +1063,54 @@ code { font-family: var(--font-mono); font-size: 13px; }
       anchor('PI_U3L', g, -58.7, 5.6, 1.05, [-1, 0, 0], 'Pi 5 USB 3.0 unten');
       anchor('PI_USBC', g, 31.3, 2.5, -43.2, [0, 0, -1], 'Pi 5 USB-C (Strom)');
     })();
+    // Raspberry Pi AI HAT+ – Maße nach der offiziellen Zeichnung (Raspberry Pi Produktdatenblatt RP-008133-DS-1, Seite 4):
+    // Platine 65 × 56,5 mm, Löcher 58 × 49 mm, KI-Chip 17 × 17 mm, Aussparung 10 × 16 mm, Flachbandstecker links.
+    // 3D-Modell: GrabCAD, Nick Williamson (stimmt mit der Zeichnung überein, mit 16-mm-Abstandshaltern) – nur lokal.
+    const HAT_Y = PI.y + 1.3 + 16;                 // 16-mm-Abstandshalter aus dem Lieferumfang (Platz für den Active Cooler)
     (function aiHat() {
-      const g = part(L2, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden.', PI.x + 10, PI.y + 1.3 + 8.5 + 14, 0, Math.PI);
-      pcb(g, 65, 56.5, '#2b7a3d', 0, 0, 0, (c, w, h) => {
+      const g = part(L2, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden. Sitzt auf 4 Abstandshaltern 16 mm (liegen bei) über dem Active Cooler, die GPIO-Leiste geht über die Stapel-Buchsenleiste durch. 65 × 56,5 mm.', PI.x + 10, HAT_Y, 0, Math.PI);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Ersatzmodell nach der offiziellen Zeichnung (dx/dy wie in der Zeichnung: von links / von der GPIO-Kante)
+      const X = (dx) => dx - 32.5, Z = (dy) => dy - 28.25;
+      pcb(ersatz, 65, 56.5, '#1f6b30', 0, 0, 0, (c, w, h) => {
         [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
-        for (let i = 0; i < 20; i++) [1.27, 3.81].forEach((dy) => hole(c, 8.4 + i * 2.54, 2.6 + dy - 1.27, 0.5));
+        for (let i = 0; i < 20; i++) [2.23, 4.77].forEach((y) => hole(c, 8.37 + i * 2.54, y, 0.5));
+        c.fillStyle = '#d9dee2'; c.fillRect(47.5, 40.5, 10, 16);   // Aussparung (im CAD ausgeschnitten)
         silk(c, 'Raspberry Pi AI HAT+', 26, h - 8, 2.4, { align: 'center' });
         silk(c, '13 TOPS', 26, h - 4.6, 1.8, { align: 'center', weight: 400 });
       });
-      chip(g, 15, 15, 1.4, 8, 1.6, 4, 'HAILO-8L');
-      box(g, 2.6, 2.2, 17, 30.5, 1.6, 0, 0xf2efe6);
-      smd(g, 50, 40, 26, 1.6, -4, 6);
+      chip(ersatz, 17, 17, 1.9, X(31), 1.6, Z(29.5), 'HAILO-8L');
+      box(ersatz, 5, 2.0, 18, X(7.9), 1.6, Z(26.5), 0xf2efe6);                // Flachbandstecker PCIe
+      smd(ersatz, 50, 40, 26, 1.6, X(32), Z(30));
+      cadTeil('aihat', g, ersatz, (m) => {
+        // CAD: Platine in x/y (lange Seite y), Bauteile zeigen nach −z, Abstandshalter nach +z, Mitte 0
+        // → lange Seite entlang x, GPIO-Kante nach −z, Bauteile nach oben (x' = −y, y' = −z, z' = x)
+        m.applyMatrix4(new THREE.Matrix4().set(0, -1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
     })();
-    ribbon(L2, [V(PI.x + 41.8, PI.y + 1.3 + 8.5 + 14 + 2.6, -9.6), V(PI.x + 47, PI.y + 20, -9.6), V(PI.x + 47, PI.y + 8, -9.6), V(PI.x + 41.8, PI.y + 3.6, -9.6)], 16, 0xb8752b)
+    ribbon(L2, [V(PI.x + 37.5, HAT_Y + 3.2, 1.75), V(PI.x + 47, HAT_Y + 3, 1.75), V(PI.x + 47, PI.y + 8, 1.75), V(PI.x + 41.8, PI.y + 3.6, 1.75)], 16, 0xb8752b)
       .userData.part = { name: 'PCIe-Flachbandkabel: AI HAT+ → Pi 5 PCIe', desc: 'Liegt dem AI HAT+ bei. Verbindet den KI-Chip mit dem schnellen PCIe-Anschluss des Pi 5.' };
-    (function camera3() {
-      const g = part(L2, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera mit Autofokus für das Live-Video. Das Flachbandkabel (22 auf 15 Pin) geht zum Anschluss CAM/DISP 0 am Pi 5.', 80, TOP[2], 0);
-      box(g, 3, 36, 32, -1.5, 0, 0, 0x3f6db5, { rough: 0.85 });
-      box(g, 8, 3, 32, -5, 0, 0, 0x3f6db5, { rough: 0.85 });
-      const ct = canvasTex(24, 25, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, 'Camera Module 3', w / 2, h - 4.5, 1.5, { align: 'center' }); });
+    (function camera() {
+      // Kamera Modul 3 Wide: Platine 25 × 23,9 mm senkrecht in den zwei Nuten des Klappdeckels (Vorderseite bei x = 73,6,
+      // Unterkante 4 mm über dem Boden), Objektiv 14,4 mm über der Unterkante – schaut durch das Fenster in der Vorderwand.
+      const g = part(L2, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera (120°) mit Autofokus für das Live-Video. Wird von oben in zwei Nuten an der Vorderwand des Klappdeckels geschoben, ohne Schrauben; das Objektiv schaut durch ein großes, außen angefastes Fenster. Das Flachbandkabel (22 auf 15 Pin) geht unten heraus zum Anschluss CAM/DISP 0 am Pi 5.', 72.6, TOP[2] + 4 + 11.95, 0);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      const ct = canvasTex(25, 23.9, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, 'Camera Module 3', w / 2, h - 3, 1.8, { align: 'center' }); });
       const cs = std(0x23663a);
-      add(g, new THREE.BoxGeometry(1, 25, 24), [std(0xffffff, { map: ct }), cs, cs, cs, cs, cs], 0.5, 22, 0);
-      rbox(g, 4.5, 8.5, 8.5, 3.2, 21.5, 0, 0x151617, { rough: 0.5, r: 0.8 });
-      cylX(g, 5.2, 5.4, 8.4, 25.8, 0, 0x151617, { rough: 0.4 });
-      cylX(g, 3.6, 8.4, 8.8, 25.8, 0, 0x1b2a3a, { metal: 0.6, rough: 0.05 });
+      add(ersatz, new THREE.BoxGeometry(1, 23.9, 25), [std(0xffffff, { map: ct }), cs, cs, cs, cs, cs], 0.5, 0, 0);
+      rbox(ersatz, 4.5, 8.5, 8.5, 3.2, 2.47 - 4.25, 0, 0x151617, { rough: 0.5, r: 0.8 });
+      cylX(ersatz, 5.0, 5.4, 11.35, 2.47, 0, 0x151617, { rough: 0.4 });
+      cadTeil('kamera3', g, ersatz, (m) => {
+        // CAD: Tiefe x (Rückseite 0, Objektiv +x), Breite y (±12,5), Höhe z (±11,95, Objektiv bei +2,47)
+        m.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
     })();
-    ribbon(L2, [V(81, TOP[2] + 10.5, 0), V(76, TOP[2] + 2, 2), V(56, TOP[2] + 3, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
+    ribbon(L2, [V(72.2, TOP[2] + 4.5, 0), V(68, TOP[2] + 1.5, 2), V(56, TOP[2] + 3, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
       .userData.part = { name: 'Kamerakabel: Camera Module 3 → Pi 5 CAM/DISP 0', desc: 'Flachbandkabel 22 auf 15 Pin (beim Pi 5 nötig). Kontakte zeigen zur Platine.' };
     (function pololu() {
-      const g = part(L2, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1, VOUT/GND über einen USB-C-Stecker in den Pi.', 58, TOP[2] + 2, 40);
+      const g = part(L2, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1 (Kabel hinten am Scharnier hoch), VOUT/GND über einen kurzen USB-C-Stecker in den Pi. Sitzt vorne rechts im Klappdeckel in einer Einklick-Tasche, nah an der USB-C-Buchse des Pi.', 52, TOP[2], -36);
       const names = ['EN', 'VIN', 'GND', 'GND', 'VOUT', 'PG'];
       pcb(g, 25.4, 20.3, '#1f5f8a', 0, 0, 0, (c, w, h) => {
         silk(c, 'POLOLU 5V 5.5A', w / 2, h - 2.6, 1.6, { align: 'center' });
@@ -924,15 +1123,28 @@ code { font-family: var(--font-mono); font-size: 13px; }
       anchor('PO_GNDA', g, -9.7 + 7.8, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
       anchor('PO_GNDB', g, -9.7 + 11.7, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
       anchor('PO_VOUT', g, -9.7 + 15.6, 1.9, -8.15, [0, 1, 0], 'Pololu VOUT');
+      einpassen('pololu', g);   // offizielles STEP von Pololu
     })();
     (function lte() {
-      const g = part(L2, '4G/LTE- und GPS-Modul SIM7600G-H (USB)', 'Mobilfunk für die Steuerung von überall und GPS für die Position draußen. Antennen an MAIN, AUX und GNSS, USB-Kabel zum Pi.', -50, TOP[2] + 1, -48);
-      const lt = canvasTex(60, 26, 10, (c, w, h) => { c.fillStyle = '#1b1d20'; c.fillRect(0, 0, w, h); silk(c, '4G LTE + GNSS', w / 2 + 4, h / 2 - 2.5, 3.4, { align: 'center', color: '#e8e8e8' }); silk(c, 'SIM7600G-H', w / 2 + 4, h / 2 + 3.5, 2.2, { align: 'center', color: '#9aa', weight: 400 }); silk(c, 'MAIN', 2, 5, 1.6, { color: '#ccc' }); silk(c, 'AUX', 2, 21, 1.6, { color: '#ccc' }); silk(c, 'GNSS', 10, 5, 1.6, { color: '#ccc' }); });
-      const ls = std(0x1b1d20, { rough: 0.5 });
-      add(g, new THREE.BoxGeometry(60, 11, 26), [ls, ls, std(0xffffff, { map: lt, rough: 0.5 }), ls, ls, ls], 0, 5.5, 0);
-      box(g, 4, 4, 9, 31, 3.5, 0, 0xc5c9cd, { metal: 0.9, rough: 0.25 });
-      [[-24, 8, 'MAIN'], [-24, -8, 'AUX'], [-16, 8, 'GNSS']].forEach(([x, z, n]) => { cylY(g, 1.3, 2, x, 11, z, 0xd4b058, { metal: 0.9, seg: 12 }); anchor(`LTE_${n}`, g, x, 13, z, [0, 1, 0], `4G-Modul ${n}`); });
-      anchor('LTE_USB', g, 33.4, 5.5, 0, [1, 0, 0], '4G-Modul USB');
+      // Waveshare SIM7600G-H 4G DONGLE, Platine ohne Kunststoffhülle (82,3 × 40,2 mm, keine Befestigungslöcher).
+      // Steht senkrecht links neben dem Pi in zwei Nut-Säulen des Deckels (gehaeuse/ebene3_gehirn.py: LTE_X0, LTE_Z).
+      // Ursprung = hinteres Platinen-Ende, Unterkante, Bauteilseite; Bauteile zeigen zum Pi (−z).
+      const g = part(L2, '4G/LTE- und GPS-Modul Waveshare SIM7600G-H 4G DONGLE', 'Mobilfunk für die Steuerung von überall und GPS für die Position draußen. Gekauft wird der „Waveshare SIM7600G-H 4G DONGLE“ (z. B. Amazon ASIN B08BZKTZDJ); eingebaut wird nur die Platine – die Kunststoffhülle ist zu groß und wird abgezogen. Die Platine (82,3 × 40,2 mm, ohne Löcher) wird von oben in zwei Nut-Säulen im Deckel geschoben. USB-A-Stecker nach hinten, kurzes USB-Kabel zum Pi. Hauptantenne (MAIN) an der SMA-Buchse vorne, AUX und GNSS an den zwei u.FL-Buchsen daneben (Beschriftung auf der Platine prüfen). 3D-Form aus dem offiziellen 3D-Modell von Waveshare.', -59, TOP[2], 48.4);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      box(ersatz, 82.3, 40.2, 1.6, 41.15, 0, 0.8, 0x1d4f8f, { rough: 0.6 });
+      box(ersatz, 30, 30, 3, 54, 5.9, -1.5, 0x2a2c2f, { rough: 0.5 });
+      box(ersatz, 22, 12, 4.5, -4.3, 14, -0.7, 0xc5c9cd, { metal: 0.9, rough: 0.25 });
+      cylX(ersatz, 3.1, 82.3, 91.8, 20.1, -0.45, 0xd4b058, { metal: 0.9 });
+      [9.8, 30.4].forEach((y) => box(ersatz, 3, 3, 1.2, 79.4, y - 1.5, -0.6, 0xd4b058, { metal: 0.9 }));
+      cadTeil('sim7600', g, ersatz, (m) => {
+        // CAD (Waveshare): Länge x (USB-Stecker bei x < 0, SMA bei x > 82,3), Breite z (0 … −40,2), Bauteilseite +y
+        m.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 40.2, 0, -1, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
+      anchor('LTE_USB', g, -15.3, 20.0, -0.7, [-1, 0, 0], '4G-Modul USB');
+      anchor('LTE_MAIN', g, 91.8, 20.1, -0.45, [1, 0, 0], '4G-Modul MAIN (SMA)');
+      anchor('LTE_GNSS', g, 79.4, 30.4, -1.2, [0, 0, -1], '4G-Modul GNSS (u.FL)');
+      anchor('LTE_AUX', g, 79.4, 9.8, -1.2, [0, 0, -1], '4G-Modul AUX (u.FL)');
     })();
 
     // =====================================================================
@@ -956,6 +1168,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const fan = new THREE.Mesh(new THREE.CircleGeometry(260, 32, -0.35, 0.35), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false }));
       fan.rotation.x = -Math.PI / 2; fan.position.y = 8.5; fan.userData.fx = true; sweep.add(fan);
       anchor('LID_CON', g, -24.4, 5, 12, [-1, 0, 0], 'LiDAR-Anschluss');
+      // GrabCAD-Modell; der Drehkopf mit dem Laserstrahl bleibt (nur seine Ersatz-Teile werden ausgeblendet)
+      einpassen('ld19', g, { behalten: (c) => c === lidarHead, danach: () => lidarHead.children.forEach((c) => { if (c !== sweep) c.visible = false; }) });
     })();
     (function lidarAdapter() {
       const g = part(L3, 'USB-Adapter für den LiDAR', 'Liegt dem LD19 bei. Wandelt das Signal des LiDAR auf USB um.', -36, TOP[3], 34);
@@ -1011,12 +1225,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
     W('Akku & Schutz', 'INA_VBS', 'INA_VIN-', 'rot', 0.4, null, 'Spannungsmessung des INA226');
 
     // Stromversorgung der Ebenen
-    W('Stromverteilung', 'WP2', 'DL_VCC', 'rot', 0.8, 'B', 'Motorstrom Treiber links');
-    W('Stromverteilung', 'WM2', 'DL_GND', 'schwarz', 0.8, 'B', 'Masse Treiber links');
-    W('Stromverteilung', 'WP3', 'DR_VCC', 'rot', 0.8, 'A', 'Motorstrom Treiber rechts');
-    W('Stromverteilung', 'WM3', 'DR_GND', 'schwarz', 0.8, 'A', 'Masse Treiber rechts');
-    W('Stromverteilung', 'WP4', 'MP_IN+', 'rot', 0.7, 'A', 'Eingang 5-V-Wandler für den Pico');
-    W('Stromverteilung', 'WM4', 'MP_IN-', 'schwarz', 0.7, 'A', 'Masse 5-V-Wandler');
+    W('Stromverteilung', 'WP2', 'DV_VCC', 'rot', 0.8, 'C', 'Motorstrom Treiber vorne');
+    W('Stromverteilung', 'WM2', 'DV_GND', 'schwarz', 0.8, 'C', 'Masse Treiber vorne');
+    W('Stromverteilung', 'WP3', 'DH_VCC', 'rot', 0.8, 'C', 'Motorstrom Treiber hinten');
+    W('Stromverteilung', 'WM3', 'DH_GND', 'schwarz', 0.8, 'C', 'Masse Treiber hinten');
+    W('Stromverteilung', 'WP4', 'MP_IN+', 'rot', 0.7, 'C', 'Eingang 5-V-Wandler für den Pico');
+    W('Stromverteilung', 'WM4', 'MP_IN-', 'schwarz', 0.7, 'C', 'Masse 5-V-Wandler');
     W('Stromverteilung', 'MP_OUT+', 'P39', 'rot', 0.6, null, '5 V an VSYS – mit Schottky-Diode 1N5819 in der Leitung (Ring zur Pico-Seite)');
     W('Stromverteilung', 'MP_OUT-', 'P38', 'schwarz', 0.6, null, 'Masse Pico');
     W('Stromverteilung', 'WP5', 'PO_VIN', 'rot', 1.2, 'B', 'Eingang 5-V-Wandler für den Pi');
@@ -1025,7 +1239,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     W('Stromverteilung', 'PO_GNDB', 'PI_USBC', 'schwarz', 1.1, null, 'Masse in den Pi');
 
     // Motoren
-    const MW = { VL: ['L', 'OUT1', 'OUT2', 9, 10, 8, 'W3A2', 'B'], HL: ['L', 'OUT3', 'OUT4', 11, 12, 3, 'W3A3', 'B'], VR: ['R', 'OUT1', 'OUT2', 26, 27, 28, 'W3B2', 'A'], HR: ['R', 'OUT3', 'OUT4', 31, 32, 33, 'W3B3', 'A'] };
+    const MW = { VL: ['V', 'OUT1', 'OUT2', 9, 10, 8, 'W3V2', null], VR: ['V', 'OUT3', 'OUT4', 26, 27, 28, 'W3V3', null], HL: ['H', 'OUT1', 'OUT2', 11, 12, 3, 'W3H2', null], HR: ['H', 'OUT3', 'OUT4', 31, 32, 33, 'W3H3', null] };   // je Achse ein Treiber, Kabel durch das Griffloch
     Object.entries(MW).forEach(([k, [d, o1, o2, pa, pb, pg, w3, via]]) => {
       const nm = MOTORS[k][2];
       const grp = `Motor ${nm}`;
@@ -1038,17 +1252,17 @@ code { font-family: var(--font-mono); font-size: 13px; }
     });
 
     // Steuerleitungen
-    [['L', [4, 5, 6, 7]], ['R', [21, 22, 24, 25]]].forEach(([d, pins4]) => {
-      ['IN1', 'IN2', 'IN3', 'IN4'].forEach((n, i) => W('Steuerleitungen Motortreiber', `P${pins4[i]}`, `D${d}_${n}`, ['orange', 'gelb', 'gruen', 'blau'][i], 0.4, null, `PWM ${n} Treiber ${d === 'L' ? 'links' : 'rechts'}`));
+    [['V', [4, 5, 21, 22]], ['H', [6, 7, 24, 25]]].forEach(([d, pins4]) => {
+      ['IN1', 'IN2', 'IN3', 'IN4'].forEach((n, i) => W('Steuerleitungen Motortreiber', `P${pins4[i]}`, `D${d}_${n}`, ['orange', 'gelb', 'gruen', 'blau'][i], 0.4, null, `PWM ${n} Treiber ${d === 'V' ? 'vorne' : 'hinten'}`));
     });
-    W('Steuerleitungen Motortreiber', 'P29', 'DL_ULT', 'violett', 0.4, null, 'Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang');
-    W('Steuerleitungen Motortreiber', 'DL_ULT', 'DR_ULT', 'violett', 0.4, null, 'Treiber an/aus, weiter zum rechten Treiber');
+    W('Steuerleitungen Motortreiber', 'P29', 'DV_ULT', 'violett', 0.4, null, 'Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang');
+    W('Steuerleitungen Motortreiber', 'DV_ULT', 'DH_ULT', 'violett', 0.4, null, 'Treiber an/aus, weiter zum hinteren Treiber');
 
     // 3,3 V
-    W('3,3 V für Sensoren', 'P36', 'W3A1', 'orange', 0.5, null, '3,3 V vom Pico in Verteiler A');
-    W('3,3 V für Sensoren', 'W3A5', 'W3B1', 'orange', 0.5, null, 'Brücke zu Verteiler B');
-    W('3,3 V für Sensoren', 'W3B4', 'BNO_VIN', 'orange', 0.4, null, 'Versorgung BNO085 (und über STEMMA-QT die Nahsensoren)');
-    W('3,3 V für Sensoren', 'W3B5', 'INA_VCC', 'orange', 0.4, 'A', 'Versorgung INA226');
+    W('3,3 V für Sensoren', 'P36', 'W3V1', 'orange', 0.5, null, '3,3 V vom Pico in Verteiler vorne');
+    W('3,3 V für Sensoren', 'W3V5', 'W3H1', 'orange', 0.5, null, 'Brücke zu Verteiler hinten');
+    W('3,3 V für Sensoren', 'W3H4', 'BNO_VIN', 'orange', 0.4, null, 'Versorgung BNO085');
+    W('3,3 V für Sensoren', 'W3H5', 'INA_VCC', 'orange', 0.4, 'A', 'Versorgung INA226');
 
     // I²C-Sensorbus
     W('Sensorbus I²C', 'P14', 'BNO_SDA', 'blau', 0.4, null, 'I²C SDA (GP10)');
@@ -1057,11 +1271,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
     W('Sensorbus I²C', 'BNO_SDA', 'INA_SDA', 'blau', 0.4, 'A', 'I²C SDA weiter zum INA226');
     W('Sensorbus I²C', 'BNO_SCL', 'INA_SCL', 'gelb', 0.4, 'A', 'I²C SCL weiter zum INA226');
     W('Sensorbus I²C', 'P23', 'INA_GND', 'schwarz', 0.4, 'A', 'Masse INA226');
-    W('Sensorbus I²C', 'BNO_QT', 'TVL_Q1', 'qt', 1.0, 'B', 'STEMMA-QT-Kabel: Bus zu den Nahsensoren');
-    W('Sensorbus I²C', 'TVL_Q2', 'TV_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel weiter');
-    W('Sensorbus I²C', 'TV_Q2', 'TVR_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel weiter');
-    W('Sensorbus I²C', 'TVR_Q2', 'TH_Q1', 'qt', 1.0, null, 'STEMMA-QT-Kabel zum hinteren Sensor');
-    [['VL', 16], ['V', 17], ['VR', 19], ['H', 20]].forEach(([k, p]) => W('Sensorbus I²C', `P${p}`, `T${k}_X`, 'violett', 0.4, k === 'H' ? 'C' : 'B', 'XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt'));
+    // Nahsensoren: Leitungen angelötet, Bus läuft vom INA226 (in der Wanne) zum hinteren und weiter zum vorderen Sensor
+    [['VCC', 'VIN', 'orange', '3,3 V'], ['GND', 'GND', 'schwarz', 'Masse'], ['SDA', 'SDA', 'blau', 'I²C SDA'], ['SCL', 'SCL', 'gelb', 'I²C SCL']].forEach(([von, nach, col, was]) => {
+      W('Sensorbus I²C', `INA_${von}`, `TH_${nach}`, col, 0.4, null, `${was} zum hinteren Nahsensor (angelötet)`);
+      W('Sensorbus I²C', `TH_${nach}`, `TV_${nach}`, col, 0.4, null, `${was} weiter zum vorderen Nahsensor (angelötet)`);
+    });
+    [['V', 17], ['H', 20]].forEach(([k, p]) => W('Sensorbus I²C', `P${p}`, `T${k}_X`, 'violett', 0.4, k === 'H' ? 'C' : 'B', 'XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt'));
 
     // LEDs
     W('Status-LEDs', 'P34', 'LED_DIN', 'gruen', 0.4, 'A', 'Daten (GP28)');
@@ -1189,8 +1404,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       { name: 'Freenove Breakout Board für Pico', x: -65, z: 30, ry: 0, text: 'Freenove Breakout Board', tz: 33 },
       { name: 'Raspberry Pi Pico 2 W', x: -65, z: -45, ry: 0, text: 'Pico 2 W', tz: 14 },
       { name: 'Ladeboard DDTCCRUB 2S', x: -8, z: -45, ry: 0, text: 'Ladeboard 2S', tz: 14 },
-      { name: 'Motortreiber DRV8833 links', x: 5, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
-      { name: 'Motortreiber DRV8833 rechts', x: 35, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
+      { name: 'Motortreiber DRV8833 vorne', x: 5, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
+      { name: 'Motortreiber DRV8833 hinten', x: 35, z: 40, ry: Math.PI / 2, text: 'DRV8833', tz: 14 },
     ];
     const MAT = { w: 230, d: 150, t: 2 };
     const bench = new THREE.Group(); bench.visible = false; scene.add(bench);
@@ -1231,29 +1446,65 @@ code { font-family: var(--font-mono); font-size: 13px; }
       });
     }
     let benchMode = true;
+    let druckMode = false;        // Ansicht „Druckteile“: nur die gedruckten Teile von Ebene 1
+    const druckVersteckt = new Set();
+    const istEinbau = (n) => /^Motor |^Rad |^Akku |^BMS|^INA226|^Ladeboard|^Sicherung|^Hauptschalter|^Verteiler/.test(n);
+    function applyDruck() {
+      const L0 = layers[0].g;
+      const mitEinbau = document.getElementById('einbau').checked;
+      const hub = Number(document.getElementById('hub').value);
+      L0.children.forEach((c) => {
+        const n = (c.userData.part && c.userData.part.name) || '';
+        const zeigen = !!c.userData.druckteil || (mitEinbau && istEinbau(n));
+        if (!zeigen && c.visible) { c.visible = false; druckVersteckt.add(c); }
+        if (zeigen && druckVersteckt.has(c)) { c.visible = true; druckVersteckt.delete(c); }
+        if (c.userData.druckteil === 'deckel') c.position.y = hub;
+      });
+      // Ebene 2: nur die gedruckte Platte (mit ihren Schrauben), mit Haken auch die Module darauf
+      layers[1].g.visible = true;
+      layers[1].g.position.y = hub * 2;
+      layers[1].g.children.forEach((c) => {
+        const n = (c.userData.part && c.userData.part.name) || '';
+        const zeigen = !!c.userData.druckteil || (mitEinbau && !!n) || c.userData.schraubeE2;
+        if (!zeigen && c.visible) { c.visible = false; druckVersteckt.add(c); }
+        if (zeigen && druckVersteckt.has(c)) { c.visible = true; druckVersteckt.delete(c); }
+      });
+    }
+    function endeDruck() {
+      druckVersteckt.forEach((c) => (c.visible = true)); druckVersteckt.clear();
+      layers[0].g.children.forEach((c) => { if (c.userData.druckteil === 'deckel') c.position.y = 0; });
+      layers[1].g.position.y = 0;
+    }
     const HOME_BENCH = { pos: V(105, 200, 245), target: V(0, 0, 4) };
-    const homeView = () => (benchMode ? HOME_BENCH : HOME);
-    const hint = () => '<b>Tippe auf ein Bauteil</b><span>' + (benchMode ? 'Zum Beispiel auf den Pico oder einen Motortreiber.' : 'Zum Beispiel auf den Akku, den Pico oder den LiDAR.') + '</span>';
+    const HOME_DRUCK = { pos: V(200, 190, 250), target: V(0, 32, 0) };
+    const homeView = () => (benchMode ? HOME_BENCH : druckMode ? HOME_DRUCK : HOME);
+    const hint = () => '<b>Tippe auf ein Bauteil</b><span>' + (benchMode ? 'Zum Beispiel auf den Pico oder einen Motortreiber.' : druckMode ? 'Zum Beispiel auf die Wanne, den Deckel oder einen Motorbügel.' : 'Zum Beispiel auf den Akku, den Pico oder den LiDAR.') + '</span>';
     const txt = {
       bench: { h1: 'Was schon da ist', lead: 'Nur die Teile, die schon auf dem Tisch liegen – in echter Größe auf einer Schneidematte mit 1-cm-Raster. Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.', dims: `vorhanden: ${VORHANDEN.length} Teile · Raster 1 cm` },
+      druck: { h1: 'Druckteile: Ebene 1 und 2', lead: 'Nur die Teile zum Selberdrucken: Wanne, Deckel und 4 Motorbügel (Ebene 1) und das Elektronik-Deck (Ebene 2), mit allen M3-Zylinderkopfschrauben. Mit dem Regler ziehst du die Teile auseinander, mit dem Haken blendest du die Bauteile zum Prüfen ein. Dateien: <code>gehaeuse/ebene1/</code> und <code>gehaeuse/ebene2/</code>.', dims: 'Ebene 1: Wanne, Deckel, 4 Bügel · Ebene 2: Elektronik-Deck' },
       car: { h1: document.querySelector('h1').textContent, lead: document.querySelector('header .lead').innerHTML, dims: document.querySelector('.dims').textContent },
     };
     function applyMode() {
-      const tx = benchMode ? txt.bench : txt.car;
+      const tx = benchMode ? txt.bench : druckMode ? txt.druck : txt.car;
       document.querySelector('h1').textContent = tx.h1;
       document.querySelector('header .lead').innerHTML = tx.lead;
       document.querySelector('.dims').textContent = tx.dims;
-      document.querySelectorAll('.nur-auto').forEach((el) => (el.hidden = benchMode));
+      document.querySelectorAll('.nur-auto').forEach((el) => (el.hidden = benchMode || druckMode));
+      document.querySelectorAll('.nur-druck').forEach((el) => (el.hidden = !druckMode));
       document.getElementById('m-teile').setAttribute('aria-pressed', String(benchMode));
-      document.getElementById('m-auto').setAttribute('aria-pressed', String(!benchMode));
+      document.getElementById('m-druck').setAttribute('aria-pressed', String(druckMode));
+      document.getElementById('m-auto').setAttribute('aria-pressed', String(!benchMode && !druckMode));
       if (benchMode) placeBench(); else placeCar();
       layers.forEach(({ g }) => (g.visible = !benchMode));
-      dynGroup.visible = !benchMode; bench.visible = benchMode;
+      dynGroup.visible = !benchMode && !druckMode; bench.visible = benchMode;
+      if (druckMode) { layers.forEach(({ g, i }) => (g.visible = i <= 1)); applyDruck(); } else endeDruck();
+      [0, 1].forEach((i) => layers[i].g.children.forEach((c) => { if (c.userData.label) c.visible = !druckMode; }));
       controls.minDistance = benchMode ? 25 : 90;
       selected = null; sel = null; selBox.visible = false;
       info.innerHTML = hint();
       const h = homeView(); camera.position.copy(h.pos); controls.target.copy(h.target); controls.update();
-      if (!benchMode) applyLayout();
+      if (!benchMode && !druckMode) applyLayout();
+      if (druckMode) { layers.forEach(({ g, i }) => { if (i !== 1) g.position.y = 0; }); applyDruck(); }
       applyHighlight();
     }
 
@@ -1309,6 +1560,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       for (const h of hits) {
         let o = h.object, skip = false;
         if (o.userData.noPick || o.userData.fx) continue;
+        let sichtbar = true; for (let q = o; q; q = q.parent) if (!q.visible) { sichtbar = false; break; }
+        if (!sichtbar) continue;
         eachMat(o, (m) => { if (m.opacity < 0.2) skip = true; });
         if (skip) continue;
         while (o && !o.userData.part) o = o.parent;
@@ -1320,6 +1573,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
         const b = document.createElement('b'); b.textContent = found.userData.part.name;
         const s = document.createElement('span'); s.textContent = found.userData.part.desc;
         info.append(b, s);
+        const druck = window.rcDruckInfo && window.rcDruckInfo(found.userData.part.name);
+        if (druck) info.append(druck);
         selBox.setFromObject(found); selBox.visible = true;
       } else {
         info.innerHTML = hint();
@@ -1337,8 +1592,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
     const laserBtn = document.getElementById('laser');
     laserBtn.addEventListener('click', () => { sweep.visible = !sweep.visible; laserBtn.setAttribute('aria-pressed', String(sweep.visible)); });
     document.getElementById('reset').addEventListener('click', () => { const h = homeView(); camera.position.copy(h.pos); controls.target.copy(h.target); controls.update(); });
-    document.getElementById('m-teile').addEventListener('click', () => { if (!benchMode) { benchMode = true; applyMode(); } });
-    document.getElementById('m-auto').addEventListener('click', () => { if (benchMode) { benchMode = false; applyMode(); } });
+    document.getElementById('m-teile').addEventListener('click', () => { benchMode = true; druckMode = false; applyMode(); });
+    document.getElementById('m-druck').addEventListener('click', () => { benchMode = false; druckMode = true; applyMode(); });
+    document.getElementById('m-auto').addEventListener('click', () => { benchMode = false; druckMode = false; applyMode(); });
+    document.getElementById('einbau').addEventListener('change', () => { if (druckMode) applyDruck(); });
+    document.getElementById('hub').addEventListener('input', () => { if (druckMode) applyDruck(); });
     document.querySelectorAll('.layer').forEach((el) => {
       const act = () => { const n = Number(el.dataset.layer); selected = selected === n ? null : n; applyHighlight(); };
       el.addEventListener('click', act);

@@ -27,3 +27,14 @@ def packen(ordner, ziel):
 packen(teile, teile / "teile.js")
 if (teile / "lokal").is_dir():
     packen(teile / "lokal", teile / "lokal" / "teile-lokal.js")
+
+# Versionsnummer in den HTML-Seiten erneuern, damit der Browser die neuen Teile lädt
+# und nicht eine alte Fassung aus seinem Zwischenspeicher zeigt.
+import re, time
+stempel = time.strftime("%Y%m%d%H%M%S")
+for seite in teile.parent.glob("*.html"):
+    t = seite.read_text(encoding="utf-8")
+    neu = re.sub(r'(src="teile/(?:lokal/)?teile(?:-lokal)?\.js)(\?v=\d+)?"', rf'\1?v={stempel}"', t)
+    if neu != t:
+        seite.write_text(neu, encoding="utf-8")
+        print(f"{seite.name}: Versionsnummer {stempel}")

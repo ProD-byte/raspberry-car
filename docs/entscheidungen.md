@@ -8,10 +8,12 @@
 | Einkauf | Stück für Stück, monatlich | Budget; jede Stufe läuft für sich |
 | Motorspannung | 6 V statt 12 V | Auto soll klein bleiben |
 | Motoren | JGA25-370, 6 V, Encoder, Räder 65 mm (im Set) | Kompakt, kräftig genug, Encoder für Geschwindigkeit/Strecke |
-| Räder | Normale Gummiräder (Panzerlenkung) | Im Motor-Set dabei; Mecanum später nachrüstbar |
+| Räder | Normale Gummiräder (Panzerlenkung), „65 mm“-Form, real Ø 67,6 × 24,3 mm | Im Motor-Set dabei; Mecanum später nachrüstbar. Radachse 33,8 mm über dem Boden |
+| Schrauben | **M3-Zylinderkopfschrauben mit Innensechskant (ISO 4762 / DIN 912)** für Platten, Halterungen und Module mit M3-Löchern | Einheitlich, ein Werkzeug (Inbus 2,5 mm), sauberer Kopf. Kopf Ø 5,5 × 3 mm – im Gehäuse Platz dafür lassen |
 | Motortreiber | DRV8833 (schwarzes 2-Kanal-Modul, MakerMind) | Günstig, reicht bei 6 V; bis 10,8 V. Not-Stopp über ULT (= nSLEEP) |
 | 3D-Modell | Echte Hersteller-CAD-Daten, wo es sie gibt; sonst nach Datenblatt/Fotos nachgebaut | Maße und Aussehen sollen stimmen, damit die Druckplatten passen |
 | Akku | 2S2P 18650 (Samsung 35E), kein LiPo | Li-Ion im Metallgehäuse ist robuster, darf im Auto geladen werden |
+| Akkuhalter | 2 × Keystone 1047 (Doppelhalter, Lötfahnen), kopfüber unter der Bodenplatte mit M3 | Markenhalter für Zellen ohne Schutzschaltung; jede Zelle eigene Kontakte → 2S2P sauber lötbar; Löcher passen zu M3 |
 | Akkuschutz | BMS 2S 20 A mit Balance | Pflicht: Überladen, Tiefentladen, Kurzschluss, Ausgleich |
 | Laden | DDTCCRUB 2S, Brücken 2S + 1A | Lieferbar, sicher an jedem USB-Ladegerät; über Nacht voll |
 | Akkuanzeige | INA226 mit R002 statt Spannungsteiler | Misst auch Strom → Prozent, Verbrauch, Restzeit wie bei DJI |
@@ -21,7 +23,24 @@
 | Gehirn | Raspberry Pi 5 (8 GB) | Kamera, SLAM, Web-App, KI |
 | KI | AI HAT+ 13 TOPS (Hailo-8L) | Reicht für Objekterkennung in Echtzeit, bester Preis/Strom |
 | Umgebung | 360°-LiDAR LD19 (oder RPLIDAR C1) oben auf dem Dach | Karte, Grundriss (PNG/SVG/DXF), Navigation; ±2–3 cm |
-| Nahbereich | 4× VL53L1X mit STEMMA QT | Niedrige Hindernisse, die der LiDAR nicht sieht |
+| Nahbereich | 2× VL53L1X (Modul 25 × 10,7 mm), innen hinter Fenstern vorne und hinten in der Wanne, Kabel angelötet | Niedrige Hindernisse direkt vor und hinter dem Auto, die der LiDAR nicht sieht. Für Eck-Sensoren ist innen kein Platz; der LiDAR deckt die Seiten ab. Glatte Außenwand, Sensoren geschützt, günstig (2 × 11 € statt 4 × 23 €) |
 | Mobilfunk/GPS | SIM7600G-H als USB-Modul | Kein zweiter HAT auf dem Stapel |
 | Form | Sandwich mit 4 Ebenen | Jede Ebene eigener Zweck, einzeln baubar und testbar |
+| Fahrwerk | Gedruckte Wanne (Ebene 1), das Elektronik-Deck ist ihr Deckel; Motoren direkt mit 2 × M3 an die Seitenwand (Langloch 15,4–17 mm), Encoder-Stecker oben, Sättel + Motorbügel. Wanne von unten mit 4 × M3 × 45 an das Deck geschraubt | Keine gekauften Motorhalter; Akku geschützt in der Wanne; Schwerpunkt ganz unten; zum Arbeiten nur die Wanne abnehmen, alles darüber bleibt zusammen |
+| Stromversorgung | In der Wanne: BMS und INA226 links neben dem Akku, Sicherung rechts, WAGO-Verteiler quer zwischen Akku und Hinterachse. Nur das Ladeboard sitzt oben auf dem Elektronik-Deck, damit seine USB-C-Buchse direkt hinten durch den Gehäuse-Ring geht (keine Verlängerung nötig). INA226 ohne Stiftleiste, Leitungen direkt angelötet. Auto dafür 3,5 cm länger (205 statt 170 mm) | Keine eigene Zwischenetage → Auto ca. 1 cm flacher; dicke Akkukabel bleiben kurz; alles Schwere ganz unten |
+| Höhe | Möglichst flach: Elektronik-Deck direkt als Deckel auf der Wanne (58 mm), Ebene 3 direkt über Pico + Freenove (Auto ca. 17 cm hoch) | Kein Turm, Schwerpunkt tief |
+| Ebenen-Verbindung | Säulen mitgedruckt statt Messingbolzen. Wanne von unten an das Deck, ab Ebene 3 schraubt jede Ebene mit M3 von oben in Kernlöcher der Ebene darunter; die Stellen wechseln je Ebene | Weniger Teile, nichts kollidiert |
+| Vorne und hinten | **Hinten** ist die Seite mit Ladebuchse (USB-C) und Hauptschalter, **vorne** die mit Nahsensor und Kamera. In allen Skripten und 3D-Ansichten zeigt x nach vorne (x > 0 vorne, x < 0 hinten); die Ansichten zeigen Schilder „VORNE“ / „HINTEN“ | Eindeutige Begriffe beim Bauen, Verkabeln und Programmieren (Motor „vorne links“ usw.) |
+| Kompass (BNO085) | Vor dem Pico auf Ebene 2 (ca. 5 cm zum vorderen, 10 cm zum hinteren Motor); MP1584 ca. 7 cm entfernt; Plus/Minus paarweise am Rand (Durchbruch C rechts); das Plus vom BMS zur Sicherung läuft vorne am Akku entlang statt quer über die Mitte | Die Kompass-Funktion soll bleiben. Kompromiss mit der Erreichbarkeit: Damit alle Klemmen, WAGO und Stecker gut erreichbar sind, liegt er etwas näher am vorderen Motor als ideal. Nach dem Einbau kalibrieren; ist er trotzdem unruhig, wandert er später nach oben (Ebene 4) |
+| Ebene 2 in Zonen | Vorne und hinten je eine Motorzone (Griffloch über den Motorsteckern, ein DRV8833 je Achse, ein 3,3-V-Verteiler je Achse), Mitte Steuerung (Pico, Kompass), Rand Strom und Laden. Ebene 3 wird ein Klappdeckel (Scharnier an den hinteren Domen) | Gut erreichbar und ordentlich: Deckel auf, alles liegt offen; Motorstecker direkt am Motor ab- und anstecken, keine Zwischenstecker; Motorkabel höchstens ca. 7 cm bis zum Treiber |
+| Module ohne Löcher | Einklick-Taschen (Rahmen + Rastnasen) im Druckteil | Kein Klebeband, nichts rüttelt los, Modul tauschbar |
+| Radstand | 145 mm (Achsen bei x = +55 und −90), Räder an den Ecken, vorne und hinten je 30 mm Überhang | Räder mittig unter dem Auto, sieht ausgewogen aus und kippt nicht nach hinten; Drehen auf der Stelle geht noch gut (Radstand ≈ Spurweite) |
+| Hauptschalter und Laden | Runder Taster Ø 12 mm (rastend, GrabCAD „Push button 12mm“) und die USB-C-Buchse des Ladeboards hinten im Gehäuse-Ring über dem Elektronik-Deck, außen links und rechts (nicht über den Grifflöchern). Schalter muss den ganzen Strom (bis ca. 9 A) können – sonst schaltet er ein Relais/MOSFET-Modul | Hinter den Hinterrädern ist in der Wanne kein Platz; so sitzen Schalten und Laden sauber an einer Stelle hinten |
+| Schraubenköpfe | Von außen sichtbare Köpfe bündig versenkt (Senkung Ø 6,5 × 3,1 mm), innen dürfen sie aufliegen | Sieht wertiger aus |
+| Gewinde im Druckteil | M3 schneidet selbst: Kernloch 2,6 mm, Dom Ø 10 mm, mind. 3,5 mm Material rundum, 4 Perimeter | Hält nach Erfahrung gut, keine Einschmelzmuttern nötig; genug Material, damit nichts reißt |
+| Konstruktion | Druckteile als Python-Skript (build123d), Ausgabe STL + STEP | Maße als Parameter, jeder kann anpassen und neu erzeugen |
 | Aufbewahrung | Box von Action, innen ≥ 30 × 22 × 14 cm | |
+| Zugang zu Ebene 2 | Ebene 3 ist ein **Klappdeckel** (Boden + Seitenwände bis Ebene 4 in einem Druckteil), hinten 2 Scharniere (Achse M3 × 16), vorne 2 × M3 × 12 waagerecht | Ebene 2 ist mit zwei Schrauben offen, ohne Kabel abzuziehen; die Kabel nach unten laufen nah am Scharnier und knicken kaum |
+| Pololu 5 V | Auf Ebene 3 neben dem Pi | Kurze, dicke 5-V-Leitung zum Pi (bis 5 A); nur Akku-Plus/Minus geht durch den Durchbruch nach oben |
+| Schrauben am Pi | **M2,5** (Ausnahme von „nur M3“) | Die Löcher des Pi 5 sind nur 2,7 mm groß; die Abstandshalter des AI HAT+ haben M2,5 |
+| 4G-Modul | Waveshare SIM7600G-H 4G DONGLE, nur die Platine, senkrecht links neben dem Pi in zwei Nut-Säulen | Fertiges USB-Gerät mit GPS (läuft unter Linux ohne Löten). Mit Hülle (89 × 45 × 15 mm) passt es weder flach noch stehend in den Deckel; die Platine hat keine Löcher, deshalb Nuten wie bei der Kamera |

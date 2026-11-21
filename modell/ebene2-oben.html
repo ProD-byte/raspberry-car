@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Werkstatt Ebene 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Werkstatt-Skizze – 3D-Bühne oben, darunter Bedienung, Bauteil-Info und die vier Ebenen als Karten (oben → unten) */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --fg: #172026;
+  --muted: #56656f;
+  --line: #d3dbe0;
+  --scene: #dfe6ea;
+  --ground: #c9d3d9;
+  --focus: #1f6feb;
+  --l0: #c97a1e;
+  --l1: #23897d;
+  --l2: #3f6db5;
+  --l3: #c4472f;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+    --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161a; --surface: #192127; --fg: #e4ebef; --muted: #98a7b1;
+  --line: #2a353c; --scene: #161d22; --ground: #252f36; --focus: #6aa6ff;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 5vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 65ch; }
+.stage {
+  position: relative; background: var(--scene); border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; height: min(68vh, 620px); min-height: 360px;
+  touch-action: none;
+}
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.dims {
+  position: absolute; left: 10px; top: 10px; font-family: var(--font-mono); font-size: 12px;
+  color: var(--muted); background: color-mix(in srgb, var(--surface) 82%, transparent);
+  padding: 4px 8px; border-radius: 6px; pointer-events: none;
+}
+.info {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; display: grid; gap: 2px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; font-size: 14px; pointer-events: none; max-width: 520px;
+}
+.info b { font-family: var(--font-display); font-size: 16px; }
+.info span { color: var(--muted); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+.loading[hidden] { display: none; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.controls label.range { display: flex; align-items: center; gap: 10px; font-size: 14px; min-width: 0; flex: 1 1 240px; }
+.controls input[type=range] { flex: 1; accent-color: var(--l2); min-width: 0; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; background: var(--surface); }
+.modes button { border: 0; padding: 7px 12px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.check input { width: 18px; height: 18px; accent-color: var(--l2); }
+button {
+  font: 500 14px var(--font-body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, .layer:focus-visible, input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.layer {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 16px; display: grid; gap: 8px; cursor: pointer; min-width: 0;
+  border-top: 4px solid var(--c); align-content: start;
+}
+.layer[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--c); }
+.layer h2 { font-family: var(--font-display); font-size: 18px; margin: 0; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.layer h2 small { font-family: var(--font-mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+.why { margin: 0; font-size: 14px; color: var(--muted); }
+.layer ul { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 2px; }
+.stage-tag { font-family: var(--font-mono); font-size: 12px; color: var(--c); }
+.wiring-sec { display: grid; gap: 10px; }
+.wiring-sec h2 { font-family: var(--font-display); font-size: 24px; margin: 8px 0 0; }
+.wiring-sec h3 { font-family: var(--font-display); font-size: 16px; margin: 10px 0 0; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.tbl table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 560px; }
+.tbl th, .tbl td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.tbl tr:last-child td { border-bottom: 0; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); }
+code { font-family: var(--font-mono); font-size: 13px; }
+.notes { font-size: 14px; color: var(--muted); max-width: 70ch; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+.seiten { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.seiten a { font: 500 13px var(--font-body); color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 12px; }
+.seiten a:hover { border-color: var(--muted); }
+.seiten a[aria-current="page"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+</style>
+<style>
+/* Werkstatt: nur der Bereich, an dem wir gerade bauen */
+.teile { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.gruppe { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--l1); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.gruppe h2 { font-family: var(--font-display); font-size: 18px; margin: 0; }
+.gruppe ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.gruppe li button { width: 100%; text-align: left; padding: 6px 10px; font-size: 14px; }
+.gruppe li button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html" aria-current="page">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html">Werkstatt Ebene 3</a><a href="fahrsimulation.html">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
+    <div class="eyebrow">Raspberry Car · Werkstatt</div>
+    <h1>Ebene 2: Antrieb</h1>
+    <p class="lead">Nur das Elektronik-Deck, an dem wir gerade bauen – aufgeteilt in Zonen: vorne und hinten je eine <strong>Motorzone</strong> (Griffloch über den Motorsteckern, Motortreiber, 3,3-V-Verteiler), in der Mitte die <strong>Steuerung</strong> (Pico und Kompass), am Rand <strong>Strom und Laden</strong>. Ohne Kabel. Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="loading" id="loading">3D-Modell wird gebaut …</div>
+    <div class="dims">Deck 205 × 130 × 3 mm · bis Ebene 3: 23 mm · vorne: Nahsensor · hinten: Ladebuchse und Schalter</div>
+    <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Pico, den Kompass oder einen Motortreiber.</span></div>
+  </div>
+
+  <div class="controls">
+    <label class="check"><input id="bauteile" type="checkbox" checked> Bauteile zeigen</label>
+    <label class="check"><input id="ring" type="checkbox" checked> Gehäuse-Ring</label>
+    <label class="check"><input id="glas" type="checkbox"> Ring durchsichtig</label>
+    <label class="check"><input id="kompass" type="checkbox" checked> Freiraum um den Kompass</label>
+    <label class="check"><input id="decke" type="checkbox"> Höhe von Ebene 3</label>
+    <label class="check"><input id="wanne" type="checkbox"> Wanne darunter</label>
+    <div class="toggles">
+      <button id="rotate" type="button" aria-pressed="true">Drehen</button>
+      <button id="oben" type="button">Von oben</button>
+      <button id="unten" type="button">Von unten</button>
+      <button id="reset" type="button">Ansicht zurücksetzen</button>
+    </div>
+  </div>
+
+  <div class="teile" id="teile"></div>
+
+  <div class="notes">
+    <p><strong>Druckdateien:</strong> <code>gehaeuse/ebene2/</code>, erzeugt von <code>gehaeuse/ebene2_elektronik.py</code>. Beschreibung und Zusammenbau: <code>gehaeuse/README.md</code>.</p>
+    <p><strong>Kompass:</strong> Der BNO085 sitzt vor dem Pico, ca. 5 cm vom vorderen und 10 cm vom hinteren Motor. Der grüne Kreis (Haken „Freiraum um den Kompass“, 5 cm) zeigt, wo kein Magnet, keine Spule und keine Leitung mit viel Strom hin darf. Der Pico darf hinein – er macht kaum ein Magnetfeld. Der MP1584 (Spule) sitzt deshalb rechts neben dem Pico, ca. 7 cm entfernt, Plus und Minus kommen am rechten Rand durch Durchbruch C hoch.</p>
+    <p><strong>Erreichbar:</strong> Ebene 3 wird ein Klappdeckel (Scharnier an den beiden hinteren Domen, vorne eine Schraube). Deckel auf – dann liegen alle Klemmen offen, und durch die beiden Grifflöcher steckt man die Motorstecker direkt am Motor ein und aus.</p>
+    <p><strong>Erreichbarkeit geprüft:</strong> <code>gehaeuse/ebene2_elektronik.py</code> prüft bei jedem Lauf nicht nur Überschneidungen, sondern auch, ob man herankommt: vor jeder Klemmen-Reihe 13 mm frei für Kabel, vor jeder WAGO-Kabelseite 15 mm, vor jeder STEMMA-QT-Buchse 12 mm, um jedes Griffloch nichts Hohes, unter dem Schalter frei. Ergebnis: 0 Probleme.</p>
+    <p><strong>Höhe:</strong> Zwischen Deck und Ebene 3 sind 23 mm Platz (Haken „Höhe von Ebene 3“). Am höchsten ist der Pico auf dem Freenove-Board – die echte Höhe vor dem Druck nachmessen.</p>
+    <p><strong>Das ganze Auto</strong> mit allen Ebenen und Kabeln zeigt <code>raspberry-car-3d.html</code>, die Wanne darunter <code>ebene1-unten.html</code>.</p>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
+<script src="teile/teile.js?v=20261121122439"></script>
+<!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
+<script src="teile/druckteile.js"></script>
+<!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
+<script src="teile/lokal/teile-lokal.js?v=20261121122439"></script>
+<script>
+// Werkstatt-Ansicht: nur Ebene 2. Die Bauteile sind dieselben wie in raspberry-car-3d.html
+// (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 2, hier mit ändern.
+(function () {
+  const stage = document.getElementById('stage');
+  const loading = document.getElementById('loading');
+  if (!window.THREE || !THREE.OrbitControls) { loading.textContent = 'Die 3D-Ansicht konnte nicht geladen werden. Bitte Seite neu laden.'; return; }
+
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function start() {
+    loading.hidden = true;
+
+    // ---------- Renderer & Szene ----------
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.78;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stage.insertBefore(renderer.domElement, stage.firstChild);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, 1, 2, 6000);
+    const HOME = { pos: V(170, 270, 260), target: V(-17.5, 62, 0) };
+    camera.position.copy(HOME.pos);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.copy(HOME.target);
+    controls.enableDamping = true;
+    controls.minDistance = 50;
+    controls.maxDistance = 900;
+    controls.autoRotate = !reduceMotion;
+    controls.autoRotateSpeed = 0.9;
+
+    if (THREE.RoomEnvironment) {
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+    }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x7d8a96, scene.environment ? 0.25 : 0.65));
+    const sun = new THREE.DirectionalLight(0xffffff, scene.environment ? 0.75 : 1.0);
+    sun.position.set(180, 420, 220);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1000 });
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+    const rim = new THREE.DirectionalLight(0xdfe8ff, 0.45);
+    rim.position.set(-300, 200, -260);
+    scene.add(rim);
+
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 1 });
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(320, 72), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.userData.noPick = true;
+    scene.add(ground);
+
+    // ---------- Hilfsfunktionen ----------
+    function std(color, o = {}) {
+      const m = new THREE.MeshStandardMaterial({
+        color, metalness: o.metal ?? 0.05, roughness: o.rough ?? 0.6, map: o.map || null,
+        emissive: o.emissive ?? 0x000000, emissiveIntensity: o.ei ?? 1, envMapIntensity: o.env ?? 0.55
+      });
+      m.userData.base = o.opacity ?? 1;
+      return m;
+    }
+    function add(parent, geo, mat, x = 0, y = 0, z = 0, r) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if (r) m.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
+      m.castShadow = true; m.receiveShadow = true;
+      parent.add(m); return m;
+    }
+    // Quader: y = Unterkante
+    const box = (p, w, h, d, x, y, z, color, o) => add(p, new THREE.BoxGeometry(w, h, d), std(color, o), x, y + h / 2, z);
+    // Abgerundeter Quader: y = Unterkante
+    const rbox = (p, w, h, d, x, y, z, color, o = {}) => {
+      const r = Math.min(o.r ?? 0.8, w / 2 - 0.01, h / 2 - 0.01, d / 2 - 0.01);
+      const geo = THREE.RoundedBoxGeometry ? new THREE.RoundedBoxGeometry(w, h, d, 3, r) : new THREE.BoxGeometry(w, h, d);
+      return add(p, geo, std(color, o), x, y + h / 2, z);
+    };
+    let seed = 1234;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    function smd(p, w, d, n, y = 1.6, cx = 0, cz = 0) {
+      const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1.6, 0.55, 0.8), std(0xffffff, { rough: 0.45 }), n);
+      const cols = [0x1d1d1d, 0x8b6b46, 0x1d1d1d, 0x70757a, 0xb08d57, 0x1d1d1d];
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = V(1, 1, 1);
+      for (let i = 0; i < n; i++) {
+        q.setFromAxisAngle(V(0, 1, 0), rnd() < 0.5 ? 0 : Math.PI / 2);
+        m.compose(V(cx + (rnd() - 0.5) * (w - 5), y + 0.27, cz + (rnd() - 0.5) * (d - 5)), q, one);
+        im.setMatrixAt(i, m); im.setColorAt(i, new THREE.Color(cols[i % cols.length]));
+      }
+      p.add(im);
+    }
+    // Zylinder entlang y: y = Unterkante
+    const cylY = (p, r, h, x, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, h, o.seg || 28), std(color, o), x, y + h / 2, z);
+    // Zylinder entlang z von z0 bis z1, Mitte (x,y)
+    const cylZ = (p, r, z0, z1, x, y, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), o.seg || 32), std(color, o), x, y, (z0 + z1) / 2, [Math.PI / 2, 0, 0]);
+    // Zylinder entlang x von x0 bis x1, Mitte (y,z)
+    const cylX = (p, r, x0, x1, y, z, color, o = {}) => add(p, new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), o.seg || 28), std(color, o), (x0 + x1) / 2, y, z, [0, 0, Math.PI / 2]);
+
+    function canvasTex(wmm, hmm, ppm, draw) {
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(16, Math.round(wmm * ppm)); cv.height = Math.max(16, Math.round(hmm * ppm));
+      const c = cv.getContext('2d');
+      c.scale(cv.width / wmm, cv.height / hmm);
+      draw(c, wmm, hmm);
+      const t = new THREE.CanvasTexture(cv);
+      t.encoding = THREE.sRGBEncoding;
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return t;
+    }
+    const silk = (c, s, x, y, size, o = {}) => {
+      c.save(); c.fillStyle = o.color || '#f1f3f1';
+      c.font = `${o.weight || 600} ${size}px "JetBrains Mono", ui-monospace, monospace`;
+      c.textAlign = o.align || 'left'; c.textBaseline = 'middle';
+      c.translate(x, y); if (o.rot) c.rotate(o.rot); c.fillText(s, 0, 0); c.restore();
+    };
+    const pad = (c, x, y, w, h) => { c.fillStyle = '#d8b46a'; c.fillRect(x - w / 2, y - h / 2, w, h); };
+    const hole = (c, x, y, r) => {
+      c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(x, y, r + 0.9, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#222'; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    };
+    function shade(hex, f) { const col = new THREE.Color(hex); col.multiplyScalar(f); return col; }
+
+    // Leiterplatte: Oberseite mit Aufdruck. Origin = Mitte, Unterkante y.
+    function pcb(p, w, d, color, x, y, z, draw, t = 1.6) {
+      const tex = canvasTex(w, d, 10, (c) => { c.fillStyle = color; c.fillRect(0, 0, w, d); if (draw) draw(c, w, d); });
+      const side = std(shade(color, 0.8), { rough: 0.7 });
+      const mats = [side, side, std(0xffffff, { map: tex, rough: 0.45, metal: 0.05 }), std(shade(color, 0.7)), side, side];
+      return add(p, new THREE.BoxGeometry(w, t, d), mats, x, y + t / 2, z);
+    }
+    function chip(p, w, d, h, x, y, z, label, o = {}) {
+      let mats = std(o.color ?? 0x1c1d1f, { rough: 0.5 });
+      if (label) {
+        const tex = canvasTex(w, d, 24, (c) => { c.fillStyle = '#1c1d1f'; c.fillRect(0, 0, w, d); silk(c, label, w / 2, d / 2, Math.min(d * 0.32, w / label.length * 1.5), { align: 'center', color: '#b9bcbf', weight: 400 }); });
+        const s = std(0x1c1d1f, { rough: 0.5 });
+        mats = [s, s, std(0xffffff, { map: tex, rough: 0.5 }), s, s, s];
+      }
+      add(p, new THREE.BoxGeometry(w, h, d), mats, x, y + h / 2, z);
+      if (o.legs) {
+        const legMat = std(0xc9ccd0, { metal: 0.8, rough: 0.3 });
+        add(p, new THREE.BoxGeometry(w * 0.85, 0.3, d + 2), legMat, x, y + 0.2, z);
+      }
+    }
+    // Stiftleiste entlang x
+    function pins(p, n, rows, x, y, z, o = {}) {
+      const pitch = 2.54, len = n * pitch, wid = rows * pitch;
+      const baseH = o.female ? (o.h || 8.5) : 2.5;
+      box(p, len, baseH, wid, x, y, z, 0x151617, { rough: 0.7 });
+      const pinH = o.female ? 0.6 : (o.pinH || 6);
+      const geo = new THREE.BoxGeometry(0.64, pinH, 0.64);
+      const im = new THREE.InstancedMesh(geo, std(o.female ? 0x050505 : 0xd8b04a, { metal: o.female ? 0 : 0.85, rough: 0.3 }), n * rows);
+      const m = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < n; i++) for (let r = 0; r < rows; r++) {
+        m.makeTranslation(x - len / 2 + pitch / 2 + i * pitch, y + baseH + pinH / 2 - (o.female ? 0.5 : 0), z - wid / 2 + pitch / 2 + r * pitch);
+        im.setMatrixAt(k++, m);
+      }
+      im.castShadow = true; p.add(im);
+    }
+    // Schraubklemmenleiste entlang x
+    function terminals(p, n, pitch, x, y, z, color, facing = 1) {
+      const len = n * pitch;
+      box(p, len, 9, 7.5, x, y, z, color, { rough: 0.55 });
+      const screw = new THREE.InstancedMesh(new THREE.CylinderGeometry(1.35, 1.35, 0.8, 14), std(0xc7cbcf, { metal: 0.9, rough: 0.3 }), n);
+      const holeM = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch * 0.55, 3, 0.6), std(0x0d0d0d), n);
+      const m = new THREE.Matrix4();
+      for (let i = 0; i < n; i++) {
+        const px = x - len / 2 + pitch / 2 + i * pitch;
+        m.makeTranslation(px, y + 9.2, z - facing * 1.2); screw.setMatrixAt(i, m);
+        m.makeTranslation(px, y + 3.5, z + facing * 3.8); holeM.setMatrixAt(i, m);
+      }
+      p.add(screw); p.add(holeM);
+    }
+    const PARTS = {};   // alle Bauteile nach Namen (für die Ansicht „Vorhandene Teile“)
+    function part(parent, name, desc, x, y, z, ry = 0) {
+      const g = new THREE.Group();
+      g.position.set(x, y, z); g.rotation.y = ry;
+      g.userData.part = { name, desc };
+      PARTS[name] = g;
+      parent.add(g); return g;
+    }
+    // CAD-Modell automatisch an die Stelle des einfachen Ersatzmodells setzen.
+    // Die Modelle sind vorher flach ausgerichtet (werkzeug/ausrichten.py: Bauteilseite oben, Mitte 0, Unterkante 0).
+    // Hier: lange Seite an die lange Seite des Ersatzmodells drehen, mittig auf dieselbe Unterkante setzen.
+    // opt.behalten(mesh): diese Teile des Ersatzmodells bleiben (z. B. gedruckte Halter)
+    // opt.kippenZ: CAD vorher um die z-Achse drehen (z. B. −90°: Oberseite zeigt nach vorne +x)
+    // opt.drehen: Drehung um y fest vorgeben;  opt.danach(): wird nach dem Laden aufgerufen
+    function einpassen(name, g, opt = {}) {
+      const ersatz = new THREE.Group();
+      [...g.children].forEach((c) => { if (!(opt.behalten && opt.behalten(c))) ersatz.add(c); });
+      g.add(ersatz);
+      g.updateWorldMatrix(true, true);
+      const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
+      const box = new THREE.Box3(), tmp = new THREE.Box3();
+      ersatz.traverse((o) => {
+        // InstancedMesh (Stifte, SMD-Bauteile) überspringen: ihr Hüllkörper kennt nur ein Exemplar, nicht dessen Lage
+        if (!o.isMesh || !o.geometry || o.isInstancedMesh) return;
+        o.geometry.computeBoundingBox();
+        tmp.copy(o.geometry.boundingBox).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+        box.union(tmp);
+      });
+      if (box.isEmpty()) return;
+      cadTeil(name, g, ersatz, (m) => {
+        const k = new THREE.Group(); k.add(m); if (opt.kippenZ) k.rotation.z = opt.kippenZ;
+        const w = new THREE.Group(); w.add(k);
+        w.updateMatrixWorld(true);
+        let mb = new THREE.Box3().setFromObject(w);
+        const es = box.getSize(V()), ms = mb.getSize(V());
+        if (opt.drehen !== undefined) w.rotation.y = opt.drehen;
+        else if ((es.x >= es.z) !== (ms.x >= ms.z)) w.rotation.y = Math.PI / 2;
+        w.updateMatrixWorld(true);
+        mb = new THREE.Box3().setFromObject(w);
+        const ec = box.getCenter(V()), mc = mb.getCenter(V());
+        w.position.set(ec.x - mc.x, box.min.y - mb.min.y, ec.z - mc.z);
+        if (opt.danach) opt.danach();
+        return w;
+      });
+    }
+    // Echtes CAD-Modell (aus teile/teile.js) laden. Klappt das nicht (offline, Datei fehlt),
+    // bleibt das einfache Ersatzmodell sichtbar. place(mesh) richtet das Modell aus.
+    function cadTeil(name, parent, ersatz, place, umfaerben) {
+      const b64 = window.RC_TEILE && window.RC_TEILE[name];
+      if (!b64 || !THREE.GLTFLoader) return;
+      const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)).buffer;
+      new THREE.GLTFLoader().parse(bin, '', (gltf) => {
+        gltf.scene.traverse((o) => {
+          if (!o.isMesh) return;
+          o.castShadow = true; o.receiveShadow = true;
+          eachMat(o, (m) => {
+            m.userData.base = 1; m.envMapIntensity = 0.55;
+            m.side = THREE.DoubleSide;   // manche STEP-Flächen zeigen nach innen
+            const c = m.color, grau = Math.abs(c.r - c.g) < 0.03 && Math.abs(c.g - c.b) < 0.03;
+            if (grau && c.r > 0.1 && c.r < 0.8) { m.metalness = 0.85; m.roughness = 0.3; }  // Blech, Pins
+            if (umfaerben) umfaerben(m);
+          });
+        });
+        parent.add(place(gltf.scene));
+        parent.remove(ersatz);
+        anwenden();
+      }, (err) => console.warn('CAD-Modell ' + name + ' nicht geladen:', err));
+    }
+
+
+    // Schilder „VORNE“ / „HINTEN“: hinten ist die Seite mit Ladebuchse und Hauptschalter, vorne die mit Nahsensor und Kamera
+    function richtungsSchilder(parent, y = 14) {
+      [['VORNE', 128, '#2f7d3b'], ['HINTEN', -163, '#a8432a']].forEach(([text, x, farbe]) => {
+        const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72;
+        const c = cv.getContext('2d');
+        c.fillStyle = farbe; c.beginPath(); if (c.roundRect) c.roundRect(2, 2, 252, 68, 18); else c.rect(2, 2, 252, 68); c.fill();
+        c.fillStyle = '#fff'; c.font = '700 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, 128, 38);
+        const tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthWrite: false }));
+        sp.scale.set(44, 12.4, 1); sp.position.set(x, y, 0); sp.userData.noPick = true; parent.add(sp);
+      });
+    }
+
+
+    // ---------- Ebene 2 ----------
+    const L0 = new THREE.Group(); scene.add(L0);
+    richtungsSchilder(scene);
+    const ANCH = {};
+    function anchor(key, g, x, y, z, d, label) { ANCH[key] = { g, p: V(x, y, z), label: label || key }; }
+    const TOP = [0, 61];           // Oberkante des Elektronik-Decks (liegt bei 58 mm auf dem Wannenrand, 3 mm dick)
+    const PIN = { 1: 'GP0', 2: 'GP1', 3: 'GND', 4: 'GP2', 5: 'GP3', 6: 'GP4', 7: 'GP5', 8: 'GND', 9: 'GP6', 10: 'GP7', 11: 'GP8', 12: 'GP9', 13: 'GND', 14: 'GP10', 15: 'GP11', 16: 'GP12', 17: 'GP13', 18: 'GND', 19: 'GP14', 20: 'GP15', 21: 'GP16', 22: 'GP17', 23: 'GND', 24: 'GP18', 25: 'GP19', 26: 'GP20', 27: 'GP21', 28: 'GND', 29: 'GP22', 30: 'RUN', 31: 'GP26', 32: 'GP27', 33: 'GND', 34: 'GP28', 35: 'VREF', 36: '3V3', 37: '3V3_EN', 38: 'GND', 39: 'VSYS', 40: 'VBUS' };
+    let zeigeBauteile = true, zeigeRing = true, glas = false;
+    let sel = null;
+    function eachMat(o, fn) { if (!o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); }
+    function setOpacity(o, op) {
+      eachMat(o, (m) => {
+        const tr = op < 0.999;
+        if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
+        m.opacity = op; m.depthWrite = !tr;
+      });
+    }
+    function anwenden() {
+      L0.children.forEach((g) => {
+        if (!g.userData.part) return;
+        const d = g.userData.druckteil;
+        g.visible = d === 'ring' ? zeigeRing : (d ? true : zeigeBauteile);
+        if (d === 'ring') g.traverse((o) => { if (o.isMesh) setOpacity(o, glas ? 0.25 : 1); });
+      });
+    }
+    function m3Schraube(p, x, yKopfUnten, z, laenge, nachOben) {
+      const s = new THREE.Group(); s.position.set(x, yKopfUnten, z); if (!nachOben) s.rotation.x = Math.PI; p.add(s);
+      cylY(s, 2.75, 3, 0, 0, 0, 0x1b1c1e, { metal: 0.6, rough: 0.4, seg: 24 });
+      cylY(s, 1.45, 0.3, 0, 2.75, 0, 0x050505, { seg: 6 });
+      cylY(s, 1.5, laenge, 0, 3, 0, 0x2a2b2d, { metal: 0.7, rough: 0.35, seg: 16 });
+      return s;
+    }
+    const deckFarbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
+    (function deck() {
+      const g = part(L0, 'Elektronik-Deck Ebene 2 (Druckteil)', 'In Zonen aufgeteilt: vorne und hinten je eine Motorzone (Griffloch mit Rand über den beiden Motorsteckern, DRV8833 und 3,3-V-Verteiler für diese Achse), in der Mitte Pico auf dem Freenove-Board (Klemmen zu den Seiten) und davor der Kompass BNO085, hinten links das Ladeboard, rechts MP1584 und Strom-Durchbruch C. Ist zugleich der Deckel der Wanne: liegt auf dem Wannenrand, die Wanne wird von unten mit 4 × M3 × 45 an 4 Dome dieses Decks geschraubt. 4 Dome mit Kernloch für Ebene 3 – die beiden hinteren tragen das Scharnier des Klappdeckels. Dazu Durchbrüche hinten links/rechts (Daten), A/B an den Seiten und C am rechten Rand (Strom). Alles auf der Oberseite – druckt flach ohne Stützen. 205 × 130 × 3 mm. Datei: gehaeuse/ebene2/platte.stl', 0, 0, 0);
+      g.userData.druckteil = 'deck';
+      cadTeil('e2_platte', g, new THREE.Group(), (m) => m, deckFarbe);
+    })();
+    (function ring() {
+      const g = part(L0, 'Gehäuse-Ring oben (Druckteil)', 'Seitenwand zwischen Elektronik-Deck und Ebene 3, 23 mm hoch. In der Rückwand: links (von hinten) das Loch Ø 12,2 mm für den 12-mm-Taster, rechts ein Ausschnitt 13,5 × 8 mm (außen angefast) für die USB-C-Buchse des Ladeboards. Röhren über den 4 Domen – dort wird Ebene 3 festgeschraubt. Umgedreht drucken (Oberkante aufs Bett), ohne Stützen. Datei: gehaeuse/ebene2/ring_oben.stl', 0, 0, 0);
+      g.userData.druckteil = 'ring';
+      cadTeil('e2_ring_oben', g, new THREE.Group(), (m) => m, deckFarbe);
+    })();
+    // Wanne darunter (nur zur Orientierung, durchsichtig, nicht anklickbar)
+    const wanneGrau = new THREE.Group(); wanneGrau.visible = false; scene.add(wanneGrau);
+    cadTeil('e1_wanne', wanneGrau, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; },
+      (mat) => { mat.color.set(0x9aa3aa).convertSRGBToLinear(); mat.transparent = true; mat.opacity = 0.22; mat.depthWrite = false; });
+
+    function wago(parent, key, name, desc, x, y, z, ry = 0) {
+      const g = part(parent, name, desc, x, y, z, ry);
+      rbox(g, 15, 8.5, 20.5, 0, 0, 0, 0xc5cdd3, { rough: 0.25, metal: 0.05, opacity: 0.85, r: 1.2 });
+      for (let i = 0; i < 5; i++) {
+        box(g, 9, 2.2, 3, 2.5, 8.5, -8.2 + 4.1 * i, 0xf08a24, { rough: 0.45 });
+        box(g, 0.6, 2.4, 2.4, 7.55, 2.3, -8.2 + 4.1 * i, 0x2a2d30);   // Kabelöffnung (unter dem Hebelgriff, Seite +x)
+        anchor(`${key}${i + 1}`, g, 7.8, 3.5, -8.2 + 4.1 * i, [1, 0, 0], `${name.split(' (')[0]} Platz ${i + 1}`);
+      }
+      einpassen('wago', g);   // WAGO 221-415 (GrabCAD), echte Größe 29,7 × 18,4 × 8,1 mm
+      return g;
+    }
+    (function sw() {
+      // Hauptschalter: runder 12-mm-Taster (GrabCAD „Push button 12mm“, MATOX_3D – nur lokal, siehe teile/QUELLEN.md).
+      // Einbauloch Ø 12 mm in der Rückwand des Gehäuse-Rings (Außenseite x = −120). Frontring Ø 13,9 liegt außen auf,
+      // Taste steht 3,3 mm vor, Gewindekörper Ø 11,8 und Lötfahnen ragen 19 mm nach innen, innen eine Mutter.
+      const g = part(L0, 'Hauptschalter (Taster rund, Ø 12 mm)', 'Schaltet das ganze Auto an und aus. Runder 12-mm-Taster (rastend) hinten in der Rückwand des Gehäuse-Rings, gegenüber der USB-C-Buchse des Ladeboards. Einbauloch Ø 12,2 mm, innen mit Mutter festgezogen. Ragt 19 mm nach innen; die zwei Leitungen gehen durch das Deck hinunter in die Wanne. Achtung: Durch ihn fließt der ganze Strom (bis ca. 9 A) – vor dem Kauf die Stromangabe des Tasters prüfen. Kleine Taster schaffen oft nur 1–3 A, dann schaltet er ein Relais- oder MOSFET-Modul.', -120, 74, -49);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cylX(ersatz, 6.93, -0.5, -3.3, 0, 0, 0xc0c5ca, { metal: 0.9, rough: 0.25, seg: 32 });   // Frontring außen
+      cylX(ersatz, 4.45, -3.3, -4.6, 0, 0, 0xdedede, { rough: 0.4, seg: 28 });             // Taste
+      cylX(ersatz, 5.9, 0, 15.2, 0, 0, 0x8d9297, { metal: 0.6, rough: 0.4, seg: 28 });       // Gewindekörper
+      [-2, 2].forEach((yy) => box(ersatz, 4, 1, 1.4, 17.5, yy - 0.5, 0, 0xc9cdd1, { metal: 0.9, rough: 0.3 }));
+      cylX(g, 8.0, 2.4, 5.0, 0, 0, 0xc0c5ca, { metal: 0.85, rough: 0.3, seg: 6 });   // Mutter innen an der Wand (nicht im CAD)
+      cadTeil('taster', g, ersatz, (m) => {
+        // CAD: Achse entlang y, Taste vorne bei y = 0, Körper nach −y → Taste nach außen (−x), Körper nach innen (+x)
+        const w = new THREE.Group(); w.add(m); w.rotation.z = Math.PI / 2; w.position.x = -3.3;
+        return w;
+      });
+      anchor('SW_1', g, 19.5, -2, 0, [1, 0, 0], 'Hauptschalter Anschluss 1');
+      anchor('SW_2', g, 19.5, 2, 0, [1, 0, 0], 'Hauptschalter Anschluss 2');
+    })();
+    // Ladeboard DDTCCRUB 2S (Walfront, Amazon B08LVN7FLH): 39 × 18 mm, ca. 6,3 mm hoch, 4 Befestigungslöcher.
+    // Nachgebaut nach Händlerangaben und Produktfotos. Oben USB-C mit VIN/GND, unten Lötflächen BAT und GND.
+    (function charger() {
+      const g = part(L0, 'Ladeboard DDTCCRUB 2S', 'Macht aus 5 V vom USB-C-Ladegerät die 8,4 V für den Akku (Ladestrom ca. 0,55 A). Auf der Unterseite die Lötbrücken 2S und 1A setzen, sonst nichts. 39 × 18 mm, 4 Löcher für M2-Schrauben. Sitzt hinten links auf dem Elektronik-Deck in einer Einklick-Tasche, die Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt im Ausschnitt der Wand (nur 1 mm hinter der Außenseite) – der Stecker ist gut zu erreichen und rastet voll ein. Hier wird das Auto geladen. BAT und GND gehen durch das Deck hinunter zum BMS.', -99.0, 61, 49.5);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Aleksey Zablotskiy) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Breite x 0…18, Länge y −38,4…0 (USB bei −y), Bauteile zeigen nach −z, Unterseite z = 0
+      cadTeil('ddtccrub', g, ersatz, (m) => {
+        m.applyMatrix4(new THREE.Matrix4().set(0, 1, 0, 18.5, 0, 0, -1, 0, -1, 0, 0, 9, 0, 0, 0, 1));
+        return m;
+      }, (mat) => {   // reines CAD-Grün → Platinengrün wie auf den Fotos
+        const c = mat.color;
+        if (c.g > 0.9 && c.r < 0.05 && c.b < 0.05) { c.set(0x2aa848).convertSRGBToLinear(); mat.roughness = 0.5; }     // Lötstopplack
+        if (c.r > 0.9 && c.g > 0.9 && c.b > 0.02 && c.b < 0.3) { c.set(0x1c8a38).convertSRGBToLinear(); mat.roughness = 0.6; }  // Platinenkern
+      });
+      const L = 39, B = 18, LOCH = [[-16.5, 7.0], [-16.5, -7.0], [16.5, 7.0], [16.5, -7.0]];  // Ø 2,4 mm, 33 × 14 mm (BAT-Ende aus CAD, USB-Ende gespiegelt)
+      pcb(ersatz, L, B, '#1f9a3e', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;   // Bauteil-Koordinaten → Leiterplatte
+        LOCH.forEach(([x, z]) => hole(c, X(x), Y(z), 1.2));
+        c.fillStyle = '#e8e8e8';
+        [[-15.4, 7.6], [-15.4, -7.6]].forEach(([x, z]) => c.fillRect(X(x) - 0.9, Y(z) - 0.9, 1.8, 1.8));
+        [[17.4, 2.4], [17.4, -2.3]].forEach(([x, z]) => {        // Lötflächen BAT / GND
+          c.fillStyle = '#d9dcdf'; c.fillRect(X(x) - 1.9, Y(z) - 1.8, 3.8, 3.6);
+          c.fillStyle = '#b9bdc1'; c.beginPath(); c.arc(X(x), Y(z), 0.7, 0, Math.PI * 2); c.fill();
+        });
+        c.strokeStyle = '#f1f3f1'; c.lineWidth = 0.18;
+        c.strokeRect(X(-12.9), Y(2.0), 6.6, 5.8); c.strokeRect(X(-1.8), Y(2.2), 5.9, 5.0);
+        const r = -Math.PI / 2;
+        silk(c, 'GND', X(-14.6), Y(6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'VIN', X(-14.6), Y(-6.6), 1.3, { align: 'center', rot: r });
+        silk(c, 'RCS', X(-13.2), Y(-1.2), 1.2, { align: 'center' });
+        silk(c, 'BAT', X(14.6), Y(7.4), 1.3, { align: 'center' });
+        silk(c, 'GND', X(14.6), Y(-7.4), 1.3, { align: 'center' });
+        silk(c, 'DDTCCRUB', X(14.7), Y(0), 1.25, { align: 'center' });
+        silk(c, 'OK', X(7.9), Y(-8.0), 1.2, { align: 'center' });
+        silk(c, 'CR', X(10.4), Y(-8.0), 1.2, { align: 'center' });
+      });
+      // USB-C-Buchse (8,9 × 3,2 mm), steht ca. 1 mm über den Rand
+      rbox(ersatz, 7.4, 3.2, 8.9, -16.6, 1.6, 0, 0xc4c8cc, { metal: 0.9, rough: 0.25, r: 1.4 });
+      box(ersatz, 0.3, 2.2, 7.0, -20.35, 2.1, 0, 0x111111);
+      // Speicherdrossel „100“ (10 µH)
+      const ind = canvasTex(6, 6, 24, (c) => { c.fillStyle = '#6f7378'; c.fillRect(0, 0, 6, 6); silk(c, '100', 3, 3, 2.2, { align: 'center', color: '#1b1b1b', weight: 400 }); });
+      const ig = std(0x6f7378, { rough: 0.6 });
+      add(ersatz, new THREE.BoxGeometry(6, 3.2, 6), [ig, ig, std(0xffffff, { map: ind }), ig, ig, ig], -9.6, 1.6 + 1.6, 4.9);
+      chip(ersatz, 5.3, 3.6, 2.2, 1.1, 1.6, 4.8, 'SS34');                       // Schottky-Diode
+      chip(ersatz, 4.9, 3.9, 1.5, -2.0, 1.6, -5.2, '4468', { legs: true });      // MOSFET
+      chip(ersatz, 4.9, 3.9, 1.5, 4.3, 1.6, -5.2, 'CN3302', { legs: true });     // Lade-IC
+      box(ersatz, 2.0, 0.5, 1.25, -11.7, 1.6, -2.6, 0x1d1d1d);                  // R100 (Strommessung)
+      [-10.6, -9.0, -7.4].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, -7.3, 0x9a7650, { rough: 0.5 }));
+      [8.7, 10.5, 12.3].forEach((x) => box(ersatz, 1.6, 1.2, 3.2, x, 1.6, 5.0, 0x9a7650, { rough: 0.5 }));
+      box(ersatz, 1.6, 0.6, 0.8, 7.9, 1.6, -5.8, 0x3fe07a, { emissive: 0x20c060, ei: 0.35 });  // LED OK
+      box(ersatz, 1.6, 0.6, 0.8, 10.4, 1.6, -5.8, 0xff4a3a, { emissive: 0xff2a1a, ei: 0.35 }); // LED CR
+      [7.9, 10.4].forEach((x) => box(ersatz, 1.6, 0.45, 0.8, x, 1.6, -3.2, 0x1d1d1d));
+      anchor('CH_BAT', g, 17.4, 1.9, 2.4, [0, 1, 0], 'Ladeboard BAT');
+      anchor('CH_GND', g, 17.4, 1.9, -2.3, [0, 1, 0], 'Ladeboard GND');
+    })();
+    // Freenove Breakout Board für Pico (FNK0081, Platine CB8101). Maße aus der offiziellen mechanischen Zeichnung
+    // CB8101_mechanical-drawing_v1.1 (github.com/Freenove/Freenove_Breakout_Board_for_Raspberry_Pi_Pico):
+    // Platine 63 × 57 mm, 4 Befestigungslöcher im Abstand 58 × 52 mm. Je Seite 20 Schraubklemmen (2 Blöcke à 10, Raster 2,54 mm),
+    // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
+    // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
+    (function freenove() {
+      const g = part(L0, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M3 × 8 verschraubt.', -38, TOP[1] + 4, 0);
+      const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
+      [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
+        (m3Schraube(g, x, 1.6 + 3, z, 8, false)));
+      pcb(g, BW, BD, '#2f9a45', 0, 0, 0, (c, w, h) => {
+        const X = (x) => w / 2 + x, Y = (z) => h / 2 + z;
+        [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) => hole(c, X(x), Y(z), 1.6));
+        for (let i = 0; i < 20; i++) {
+          [[i + 1, 1], [40 - i, -1]].forEach(([pin, s]) => {
+            const name = PIN[pin];
+            c.fillStyle = name === 'GND' ? '#1d1d1d' : '#f4f6f4';
+            c.fillRect(X(pinX(i)) - 1.05, Y(s * 16.6) - 2.6, 2.1, 5.2);              // Beschriftungsfeld
+            silk(c, name, X(pinX(i)), Y(s * 16.6), 0.95, { align: 'center', rot: -Math.PI / 2, color: name === 'GND' ? '#f4f6f4' : '#1d1d1d' });
+          });
+        }
+        silk(c, 'Freenove', X(26), Y(-21.6), 1.9, { align: 'center', rot: -Math.PI / 2 });
+        silk(c, 'Breakout Board for Raspberry Pi Pico', X(28.7), Y(0), 1.5, { align: 'center', rot: -Math.PI / 2 });
+      });
+      // Schraubklemmen: 2 Blöcke à 10 je Seite, Drahteinführung nach außen
+      [-1, 1].forEach((s) => [-12.7, 12.7].forEach((x) => terminals(g, 10, 2.54, x, 1.6, s * 24.6, 0x2fae4e, s)));
+      // Buchsenleisten für den Pico (innen) und Stiftleisten (außen)
+      pins(g, 20, 1, 0, 1.6, -8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, 8.89, { female: true, h: 8.5 });
+      pins(g, 20, 1, 0, 1.6, -11.43, { pinH: 6 });
+      pins(g, 20, 1, 0, 1.6, 11.43, { pinH: 6 });
+      // GPIO-Status-LEDs (eine je Pin) und die 5 Inverter-Chips 74HC04 unter dem Pico
+      const led = new THREE.InstancedMesh(new THREE.BoxGeometry(0.8, 0.5, 1.6), std(0xf2f2ee, { emissive: 0x6aa8ff, ei: 0.15 }), 40);
+      const mm = new THREE.Matrix4(); let k = 0;
+      for (let i = 0; i < 20; i++) [-1, 1].forEach((s) => { mm.makeTranslation(pinX(i) + 0.9, 1.85, s * 13.9); led.setMatrixAt(k++, mm); });
+      g.add(led);
+      for (let i = 0; i < 5; i++) chip(g, 8.7, 3.9, 1.5, -20 + i * 10, 1.6, 0, '74HC04', { legs: true });
+      for (let i = 0; i < 20; i++) {
+        anchor(`P${i + 1}`, g, pinX(i), 5.1, 28.4, [0, 0, 1], `Pico ${PIN[i + 1]} (Pin ${i + 1})`);
+        anchor(`P${40 - i}`, g, pinX(i), 5.1, -28.4, [0, 0, -1], `Pico ${PIN[40 - i]} (Pin ${40 - i})`);
+      }
+      // Pico 2 W – steckt mit seinen (bei Waveshare vorgelöteten) Stiftleisten in den Buchsen des Freenove-Boards.
+      const p = part(g, 'Raspberry Pi Pico 2 W', 'Steuert in Echtzeit die Motoren, liest Encoder und Sensoren und stellt per WLAN die Joystick-Seite bereit. Hält das Auto an, wenn der Pi hängt. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi (51 × 21 × 1 mm).', 0, 1.6 + 8.5 + 2.5, 0);
+      // Einfaches Ersatzmodell – wird ausgeblendet, sobald das echte CAD-Modell geladen ist
+      const ersatz = new THREE.Group(); p.add(ersatz);
+      // Vorgelötete Stiftleisten: 2,5 mm Kunststoff unter der Platine, Stifte 6 mm nach unten
+      [-8.89, 8.89].forEach((z) => {
+        box(p, 50.8, 2.5, 2.5, 0, -2.5, z, 0x151617, { rough: 0.7 });
+        const im = new THREE.InstancedMesh(new THREE.BoxGeometry(0.64, 10.3, 0.64), std(0xd8b04a, { metal: 0.85, rough: 0.3 }), 20);
+        const mm = new THREE.Matrix4();
+        for (let i = 0; i < 20; i++) { mm.makeTranslation(-24.13 + 2.54 * i, -8.5 + 10.3 / 2, z); im.setMatrixAt(i, mm); }
+        im.castShadow = true; p.add(im);
+      });
+      cadTeil('pico2w', p, ersatz, (m) => {
+        // CAD: Breite entlang x (0…21), Länge entlang z (−51…0, USB bei −51), Oberseite y = 0
+        // → Länge entlang x, USB nach hinten (−x), Pin 1 auf +z wie auf dem Freenove-Board
+        m.position.set(-10.5, 1.0, 25.5);
+        const dreh = new THREE.Group(); dreh.rotation.y = Math.PI / 2; dreh.add(m); return dreh;
+      });
+      pcb(ersatz, 51, 21, '#2f7d3b', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 20; i++) { const px = 1.61 + i * 2.54; [0.6, h - 0.6].forEach((py) => { c.fillStyle = '#d8b46a'; c.beginPath(); c.arc(px, py, 0.8, 0, Math.PI * 2); c.fill(); }); }
+        silk(c, 'Raspberry Pi Pico 2 W', w * 0.55, h - 3.6, 1.9, { align: 'center' });
+        silk(c, 'BOOTSEL', 12.5, 4, 1.4, { align: 'center' });
+      });
+      box(ersatz, 7.6, 2.7, 5.8, -22.6, 1.6, 0, 0xc6cacd, { metal: 0.9, rough: 0.25 });
+      chip(ersatz, 7, 7, 0.9, -2, 1.6, 0, 'RP2350');
+      chip(ersatz, 4, 3, 0.8, -10, 1.6, 4, '');
+      box(ersatz, 11, 1.4, 10.5, 14.5, 1.6, 0, 0xcfd3d6, { metal: 0.9, rough: 0.28 });
+      box(ersatz, 3.4, 1.2, 4.2, -12.5, 1.6, -5, 0xf5f5f0);
+      box(ersatz, 1.2, 0.6, 0.8, -18.5, 1.6, -6, 0x3fe07a, { emissive: 0x20c060, ei: 0.6 });
+      smd(ersatz, 30, 18, 16, 1.6, -4, 0);
+      // Micro-USB-Stecker des Kabels zum Pi (Buchsenmitte ca. 2,3 mm über der Pico-Unterseite)
+      anchor('PICO_USB', p, -35.6, 2.3, 0, [-1, 0, 0], 'Pico Micro-USB');
+    })();
+    // DRV8833-Modul (MakerMind / roboter-bausatz.de RBS12954): schwarze Platine 16 × 18,5 mm, keine Befestigungslöcher.
+    // Zwei Reihen mit je 6 Lötaugen im Raster 2,54 mm, Reihenabstand 15,24 mm. Beschriftung steht auf der Unterseite.
+    // Reihe Eingänge: IN4 IN3 GND VCC IN2 IN1 – gegenüber Reihe Ausgänge: EEP OUT1 OUT2 OUT3 OUT4 ULT.
+    // ULT = Schlaf-Eingang (LOW = Motoren aus), EEP = Fehler-Ausgang. Lötbrücke J1 („en/sleep“) offen lassen!
+    function drv(n, x, nm) {
+      const ins = ['IN4', 'IN3', 'GND', 'VCC', 'IN2', 'IN1'], outs = ['EEP', 'OUT1', 'OUT2', 'OUT3', 'OUT4', 'ULT'];
+      const g = part(L0, `Motortreiber DRV8833 ${nm}`, `Steuert die beiden Motoren der Achse ${nm} (OUT1/OUT2 links, OUT3/OUT4 rechts). Schwarzes Modul 16 × 18,5 mm, sitzt in der Motorzone ${nm} neben dem Griffloch in einer Einklick-Tasche des Elektronik-Decks – die Motorkabel sind kurz. Kabel direkt in die Lötaugen gelötet. Reihe zum Pico: IN4, IN3, GND, VCC, IN2, IN1 – Reihe zu den Motoren: EEP, OUT1–OUT4, ULT. ULT ist der Not-Stopp-Eingang. Die Motor-Reihe zeigt zum Griffloch.`, x, TOP[1], 26, Math.PI);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Echtes CAD-Modell (GrabCAD, Juan Manuel Dominici, ohne Stiftleisten) – liegt nur lokal, siehe teile/QUELLEN.md.
+      // CAD: Reihen entlang z bei x = ±7,62, Reihe IN… bei −x, IN4/EEP-Ende bei +z → um −90° drehen
+      cadTeil('drv8833', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; return m; });
+      const W_ = 16, D_ = 18.5, ROW = 7.62, px = (i) => -6.35 + 2.54 * i;
+      pcb(ersatz, W_, D_, '#141414', 0, 0, 0, (c, w, h) => {
+        for (let i = 0; i < 6; i++) [h / 2 - ROW, h / 2 + ROW].forEach((y) => hole(c, w / 2 + px(i), y, 0.5));
+        c.strokeStyle = '#d0d0d0'; c.lineWidth = 0.2; c.strokeRect(0.4, 0.4, w - 0.8, h - 0.8);
+      });
+      chip(ersatz, 5, 4.4, 1.0, 0, 1.6, 0, 'DRV8833', { legs: true });
+      box(ersatz, 2.8, 1.9, 3.5, -5.6, 1.6, -1.2, 0xc98a1e, { rough: 0.4 });  // Tantal-Elko 10 µF
+      box(ersatz, 0.6, 1.95, 3.5, -4.4, 1.6, -1.2, 0x8a5a1c);                  // Polungsstreifen
+      box(ersatz, 1.6, 0.6, 0.8, 5.9, 1.6, 0, 0xf2f2ee, { emissive: 0xff3030, ei: 0.25 }); // LED
+      [[-3.8, 4.6, 0], [5.4, -4.6, 0], [-1.4, 4.8, 1], [1.2, 4.8, 1], [3.4, 3.6, 1]].forEach(([x, z, cap]) =>
+        box(ersatz, 1.6, 0.5, 0.8, x, 1.6, z, cap ? 0xb08d57 : 0x1d1d1d, { rough: 0.45 }));
+      ins.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, -ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+      outs.forEach((p, i) => anchor(`D${n}_${p}`, g, px(i), 1.9, ROW, [0, 1, 0], `DRV8833 ${nm} ${p}`));
+    }
+    drv('V', 55, 'vorne'); drv('H', -90, 'hinten');
+    (function mp1584() {
+      const g = part(L0, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -40, TOP[1], -50);
+      pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
+        pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
+        silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
+        silk(c, 'OUT+', w - 6, 3, 1.4, { align: 'center' }); silk(c, 'OUT-', w - 6, h - 3, 1.4, { align: 'center' });
+      });
+      rbox(g, 6.5, 3.5, 6.5, 2, 1.6, 2, 0x6f7377, { rough: 0.55, r: 0.8 });
+      chip(g, 3, 2, 1, -4, 1.6, -3, '', { legs: true });
+      [[-5, 4], [7, -4]].forEach(([x, z]) => box(g, 3.2, 1.6, 1.6, x, 1.6, z, 0x9c7a4a));
+      anchor('MP_IN+', g, -9, 1.9, -5.5, [0, 1, 0], 'MP1584 IN+');
+      anchor('MP_IN-', g, -9, 1.9, 5.5, [0, 1, 0], 'MP1584 IN−');
+      anchor('MP_OUT+', g, 9, 1.9, -5.5, [0, 1, 0], 'MP1584 OUT+');
+      anchor('MP_OUT-', g, 9, 1.9, 5.5, [0, 1, 0], 'MP1584 OUT−');
+      einpassen('mp1584', g);   // D-SUN MP1584EN (GrabCAD)
+    })();
+    (function bno() {
+      const g = part(L0, 'Lagesensor BNO085 (Gyroskop + Kompass)', 'Misst Drehung, Neigung und Himmelsrichtung (Kompass). Sitzt vor dem Freenove-Board, um 90° gedreht (die STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist Platz für die Stecker), ca. 5 cm vom vorderen und 10 cm vom hinteren Motor – Motormagnete, Spulen und Leitungen mit viel Strom stören den Kompass, deshalb ist rund um ihn alles frei. Einklick-Tasche, Befestigung ohne Stahlschrauben. Über seinen STEMMA-QT-Ausgang geht der I²C-Bus weiter zu den Nahsensoren.', 8, TOP[1], 0, Math.PI / 2);
+      const names = ['VIN', '3Vo', 'GND', 'SCL', 'SDA', 'INT', 'RST', 'DI'];
+      pcb(g, 25.4, 20.3, '#3a3f86', 0, 0, 0, (c, w, h) => {
+        silk(c, 'BNO085', w / 2, 3.5, 2, { align: 'center' });
+        names.forEach((n, i) => silk(c, n, 3.81 + 2.54 * i, h - 5, 1.0, { align: 'center', rot: -Math.PI / 2 }));
+        hole(c, 2.5, 2.5, 1.2); hole(c, w - 2.5, 2.5, 1.2);
+      });
+      chip(g, 5.2, 3.8, 1, 0, 1.6, -1, 'BNO');
+      pins(g, 8, 1, 0, 1.6, 8.2, { pinH: 4 });
+      box(g, 3, 3, 6, 11.2, 1.6, -4, 0xf2efe6);
+      smd(g, 16, 10, 6, 1.6, -2, -3);
+      names.forEach((n, i) => anchor(`BNO_${n}`, g, -8.89 + 2.54 * i, 7.9, 8.2, [0, 1, 0], `BNO085 ${n}`));
+      anchor('BNO_QT', g, 12.9, 3.1, -4, [1, 0, 0], 'BNO085 STEMMA-QT');
+      einpassen('bno085', g);   // Adafruit 4754 (offizielles CAD, MIT)
+    })();
+    wago(L0, 'W3V', '3,3-V-Verteiler vorne (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der beiden Vordermotoren und weiter zum Verteiler hinten. Sitzt in der Motorzone vorne neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', 55, TOP[1], -29, Math.PI / 2);
+    wago(L0, 'W3H', '3,3-V-Verteiler hinten (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der beiden Hintermotoren, den BNO085 und den INA226. Sitzt in der Motorzone hinten neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', -88.5, TOP[1], -29, Math.PI / 2);
+
+    // Freiraum um den Kompass: 5 cm rund um den BNO085 – kein Magnet, keine Spule, keine Leitung mit viel Strom
+    const kompass = new THREE.Group(); scene.add(kompass);
+    (function () {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(48.5, 50, 96), new THREE.MeshBasicMaterial({ color: 0x1d9e75, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(8, TOP[1] + 0.3, 0); ring.userData.noPick = true; kompass.add(ring);
+      const flaeche = new THREE.Mesh(new THREE.CircleGeometry(48.5, 96), new THREE.MeshBasicMaterial({ color: 0x1d9e75, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
+      flaeche.rotation.x = -Math.PI / 2; flaeche.position.set(8, TOP[1] + 0.25, 0); flaeche.userData.noPick = true; kompass.add(flaeche);
+    })();
+    // Unterkante von Ebene 3 (84 mm): so hoch darf nichts auf dem Deck werden
+    const decke = new THREE.Mesh(new THREE.BoxGeometry(205, 0.6, 130), new THREE.MeshStandardMaterial({ color: 0x3f6db5, transparent: true, opacity: 0.2, depthWrite: false }));
+    decke.position.set(-17.5, 84, 0); decke.visible = false; decke.userData.noPick = true; scene.add(decke);
+
+    anwenden();
+
+    // ---------- Teileliste unter dem Modell ----------
+    const listen = { 'Druckteile (selbst drucken)': [], 'Eingebaute Bauteile': [] };
+    L0.children.forEach((g) => {
+      if (!g.userData.part) return;
+      const k = g.userData.druckteil ? 'Druckteile (selbst drucken)' : 'Eingebaute Bauteile';
+      if (!listen[k].some((x) => x.userData.part.name === g.userData.part.name)) listen[k].push(g);
+    });
+    const knoepfe = [];
+    Object.entries(listen).forEach(([titel, teile]) => {
+      const box = document.createElement('div'); box.className = 'gruppe';
+      const h = document.createElement('h2'); h.textContent = titel; box.append(h);
+      const ul = document.createElement('ul');
+      teile.forEach((g) => {
+        const li = document.createElement('li'), b = document.createElement('button');
+        b.type = 'button'; b.textContent = g.userData.part.name; b.setAttribute('aria-pressed', 'false');
+        b.addEventListener('click', () => waehlen(sel === g ? null : g));
+        b._teil = g; knoepfe.push(b); li.append(b); ul.append(li);
+      });
+      box.append(ul); document.getElementById('teile').append(box);
+    });
+
+    // ---------- Auswahl ----------
+    const info = document.getElementById('info');
+    const hint = '<b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Pico, den Kompass oder einen Motortreiber.</span>';
+    const selBox = new THREE.BoxHelper(undefined, 0x1f6feb);
+    selBox.visible = false; selBox.material.depthTest = false; selBox.renderOrder = 20; scene.add(selBox);
+    function waehlen(g) {
+      sel = g;
+      knoepfe.forEach((b) => b.setAttribute('aria-pressed', String(b._teil === g || (g && b._teil.userData.part.name === g.userData.part.name))));
+      if (!g) { info.innerHTML = hint; selBox.visible = false; return; }
+      info.innerHTML = '';
+      const b = document.createElement('b'); b.textContent = g.userData.part.name;
+      const s = document.createElement('span'); s.textContent = g.userData.part.desc;
+      info.append(b, s);
+      const druck = window.rcDruckInfo && window.rcDruckInfo(g.userData.part.name);
+      if (druck) info.append(druck);
+      selBox.setFromObject(g); selBox.visible = g.visible;
+    }
+    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+    let down = null;
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      down = { x: e.clientX, y: e.clientY };
+      if (controls.autoRotate) { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); }
+    });
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+      const r = renderer.domElement.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      let found = null;
+      for (const h of ray.intersectObjects([L0], true)) {
+        let o = h.object, skip = false;
+        if (o.userData.noPick) continue;
+        let sichtbar = true; for (let q = o; q; q = q.parent) if (!q.visible) { sichtbar = false; break; }
+        if (!sichtbar) continue;
+        eachMat(o, (m) => { if (m.opacity < 0.5) skip = true; });   // durchsichtiger Ring: durch ihn hindurch tippen
+        if (skip) continue;
+        while (o && !o.userData.part) o = o.parent;
+        if (o) { found = o; break; }
+      }
+      waehlen(found);
+    });
+
+    // ---------- Bedienung ----------
+    const rot = document.getElementById('rotate');
+    rot.setAttribute('aria-pressed', String(controls.autoRotate));
+    rot.addEventListener('click', () => { controls.autoRotate = !controls.autoRotate; rot.setAttribute('aria-pressed', String(controls.autoRotate)); });
+    const ansicht = (pos, ziel) => { camera.position.copy(pos); controls.target.copy(ziel); controls.update(); };
+    document.getElementById('reset').addEventListener('click', () => ansicht(HOME.pos, HOME.target));
+    document.getElementById('bauteile').addEventListener('change', (e) => { zeigeBauteile = e.target.checked; anwenden(); if (sel) waehlen(sel); });
+    document.getElementById('glas').addEventListener('change', (e) => { glas = e.target.checked; anwenden(); });
+    document.getElementById('oben').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(-17.5, 430, 1), V(-17.5, 61, 0)); });
+    document.getElementById('unten').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(-17.5, -330, 60), V(-17.5, 60, 0)); });
+    document.getElementById('ring').addEventListener('change', (e) => { zeigeRing = e.target.checked; anwenden(); if (sel) waehlen(sel); });
+    document.getElementById('kompass').addEventListener('change', (e) => { kompass.visible = e.target.checked; });
+    document.getElementById('decke').addEventListener('change', (e) => { decke.visible = e.target.checked; });
+    document.getElementById('wanne').addEventListener('change', (e) => { wanneGrau.visible = e.target.checked; });
+
+    function applyTheme() {
+      renderer.setClearColor(new THREE.Color(tok('--scene') || '#dfe6ea'));
+      groundMat.color.set(tok('--ground') || '#c9d3d9');
+    }
+    // Von unten soll der Boden nicht im Weg sein
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(resize).observe(stage);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+    new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    applyTheme(); resize();
+    (function loop() {
+      ground.visible = camera.position.y > 0;
+      controls.update();
+      if (sel && selBox.visible) selBox.setFromObject(sel);
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+    try { start(); } catch (err) { loading.hidden = false; loading.textContent = 'Fehler beim Aufbau der 3D-Ansicht: ' + err.message; console.error(err); }
+  });
+})();
+</script>
+</body>
+</html>
