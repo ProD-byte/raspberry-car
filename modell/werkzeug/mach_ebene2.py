@@ -149,6 +149,14 @@ rahmen = r"""
 pin = next(z for z in gz if "const PIN = {" in z).strip()[len("const PIN = "):].rstrip(";")
 rahmen = rahmen.replace("__PIN__", pin)
 
+
+def schrauben_block(gz, aufruf):
+    """Funktion schraubenDerDruckteile aus dem großen Modell + Aufruf für diese Seite (siehe raspberry-car-3d.html)."""
+    a = next(i for i, z in enumerate(gz) if ">>> SCHRAUBEN" in z)
+    b = next(i for i, z in enumerate(gz) if "<<< SCHRAUBEN" in z)
+    return gz[a:b + 1] + ["    " + aufruf]
+
+
 # ---------- Ebene 2: Bauteile aus dem großen Modell ----------
 b0 = finde(gz, "(function sw() {")
 b1 = finde(gz, "wago(L1, 'W3H'")
@@ -198,6 +206,6 @@ bedienung[glas_i] = "    document.getElementById('glas').addEventListener('chang
 e0 = finde(e1, "    function applyTheme() {")
 schluss = zeilen(e1, e0, len(e1))
 
-alles = kopf + [html] + skripte + hilfe + rahmen.split("\n") + wago + teile + extra.split("\n") + bedienung + schluss
+alles = kopf + [html] + skripte + hilfe + rahmen.split("\n") + wago + teile + extra.split("\n") + schrauben_block(gz, "schraubenDerDruckteile(null, L0, null);") + bedienung + schluss
 (M / "ebene2-oben.html").write_text("\n".join(alles), encoding="utf-8")
 print("geschrieben", len(alles), "Zeilen")

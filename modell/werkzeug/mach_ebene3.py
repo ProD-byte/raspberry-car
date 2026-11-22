@@ -59,7 +59,7 @@ html = """<body>
 
   <div class="notes">
     <p><strong>Druckdateien:</strong> <code>gehaeuse/ebene3/haube_vorne.stl</code> und <code>haube_hinten.stl</code>, erzeugt von <code>gehaeuse/ebene3_gehirn.py</code> – mit dem Dach nach unten drucken, ohne Stützen. Das Skript prüft auch, dass die Haube beim Aufklappen bis 100° nirgends am Ring von Ebene 2 anstößt.</p>
-    <p><strong>Klappen:</strong> Hinten zwei Scharniere außen an der Trennfuge (Achse M3 × 16, Gewinde im äußeren Lappen). Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2. Alle Kabel von Ebene 2 in die Haube laufen hinten beim Scharnier – dort knicken sie beim Aufklappen am wenigsten.</p>
+    <p><strong>Klappen:</strong> Hinten zwei Scharniere außen an der Trennfuge (Achse M3 × 18, Gewinde im äußeren Lappen). Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2. Alle Kabel von Ebene 2 in die Haube laufen hinten beim Scharnier – dort knicken sie beim Aufklappen am wenigsten.</p>
     <p><strong>Pi 5:</strong> Der Stapel aus Pi, Active Cooler und AI HAT+ hängt an 4 Domen unter dem Dach: M2,5 × 16 von oben durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei), Köpfe bündig im Dach. Unten hält der Pi mit den beiliegenden Schrauben. Bis zu den höchsten Teilen von Ebene 2 bleiben gut 10 mm Luft. <strong>Kamera:</strong> von unten in die zwei Nuten schieben, bis sie einrastet. <strong>Display:</strong> von unten einsetzen, das Glas liegt am Dach an, 3 Schnapphaken halten die Platine.</p>
     <p><strong>Zwei Hälften:</strong> Fuge bei x = 45. Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand, beide werden mit 6 × M3 × 12 verschraubt (Kopf hinten).</p>
   </div>
@@ -125,6 +125,14 @@ __RIBBON__
     ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, n.includes('ring') ? ringFarbe2 : e2Farbe));
 """.replace("__SX__", str(SCH_X)).replace("__SY__", str(SCH_Y)).replace("__RIBBON__", "\n".join(rib))
 
+
+def schrauben_block(gz, aufruf):
+    """Funktion schraubenDerDruckteile aus dem großen Modell + Aufruf für diese Seite (siehe raspberry-car-3d.html)."""
+    a = next(i for i, z in enumerate(gz) if ">>> SCHRAUBEN" in z)
+    b = next(i for i, z in enumerate(gz) if "<<< SCHRAUBEN" in z)
+    return gz[a:b + 1] + ["    " + aufruf]
+
+
 b0 = finde(gz, "    const PI = { x: -8, y: TOP[2] + 5, z: 0 };")
 b1 = finde(gz, "// EBENE 4 – Dach") - 2
 d0 = finde(gz, "const L3 = makeLayer(3);") + 1
@@ -151,6 +159,6 @@ bedienung += [
 ]
 schluss = zeilen(e1, finde(e1, "    function applyTheme() {"), len(e1))
 
-alles = kopf + [html] + skripte + hilfe + rahmen.split("\n") + teile + bedienung + schluss
+alles = kopf + [html] + skripte + hilfe + rahmen.split("\n") + teile + schrauben_block(gz, "schraubenDerDruckteile(null, null, L0);") + bedienung + schluss
 (M / "ebene3-gehirn.html").write_text("\n".join(alles), encoding="utf-8")
 print("geschrieben", len(alles), "Zeilen")

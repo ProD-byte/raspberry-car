@@ -684,7 +684,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     }
     drv('V', 80, 'vorne'); drv('H', -80, 'hinten');
     (function mp1584() {
-      const g = part(L0, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -24, TOP[1], -62);
+      const g = part(L0, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und das Front- und Rücklicht. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -24, TOP[1], -62);
       pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
         pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
         silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
@@ -730,6 +730,51 @@ code { font-family: var(--font-mono); font-size: 13px; }
     const decke = new THREE.Mesh(new THREE.BoxGeometry(250, 0.6, 180), new THREE.MeshStandardMaterial({ color: 0x3f6db5, transparent: true, opacity: 0.2, depthWrite: false }));
     decke.position.set(0, 84, 0); decke.visible = false; decke.userData.noPick = true; scene.add(decke);
 
+    // >>> SCHRAUBEN (wird von den Werkstatt-Seiten und der Simulation übernommen)
+    // gW = Gruppe der Wanne, gE2 = Ebene 2 (Deck, Ring, Schutzbleche), gE3 = Haube; null = weglassen.
+    function schraubenDerDruckteile(gW, gE2, gE3) {
+      const anzahl = {};
+      const halter = new Map();   // je Gruppe ein Eintrag „Schrauben“ (in den Teilelisten nur einmal)
+      function sammel(p) {
+        if (!halter.has(p)) {
+          const h = new THREE.Group(); h.userData.part = { name: 'Schrauben der Druckteile', desc: 'Alle Zylinderkopfschrauben ISO 4762, die die Druckteile verbinden. Tippe auf eine einzelne Schraube für Länge und Lage.' };
+          p.add(h); halter.set(p, h);
+        }
+        return halter.get(p);
+      }
+      function schraube(p, x, y, z, d, laenge, wo, m25) {
+        if (!p) return null;
+        const s = m3Schraube(sammel(p), x, y, z, laenge, true);
+        s.quaternion.setFromUnitVectors(V(0, 1, 0), V(...d).normalize());
+        if (m25) s.scale.set(0.82, 0.85, 0.82);   // M2,5: Kopf Ø 4,5 × 2,5 mm
+        const name = `${m25 ? 'M2,5' : 'M3'} × ${laenge} (Zylinderkopf ISO 4762)`;
+        anzahl[name] = (anzahl[name] || 0) + 1;
+        s.userData.part = { name: `Schraube ${name}`, desc: `${wo} Innensechskant ${m25 ? '2' : '2,5'} mm.` };
+        return s;
+      }
+      // Ebene 1 – Fuge der Wanne (x = 6): seitlich je 2 von außen (Kopf bündig), in der Mitte 2 von innen durch den Block
+      [1, -1].forEach((s) => [27, 38].forEach((y) => schraube(gW, -3, y, s * 89.9, [0, 0, -s], 10, 'Hält die beiden Hälften der Wanne zusammen: von außen durch die verstärkte Seitenwand der hinteren Hälfte in die Lasche der vorderen.')));
+      [-6.5, 2].forEach((x) => schraube(gW, x, 26, 17.2, [0, 0, -1], 16, 'Wanne, Fuge in der Mitte: von innen durch den Block der hinteren Hälfte in die Mittellasche der vorderen.'));
+      // Ebene 2 – Fuge des Decks (x = 58): quer durch die beiden Stege, Kopf hinten
+      [-54, 64].forEach((z) => schraube(gE2, 49, 66, z, [1, 0, 0], 10, 'Verbindet die beiden Hälften des Elektronik-Decks: durch den hinteren Steg in den vorderen.'));
+      // Ebene 2 – Ring auf dem Deck: von oben durch die Hülsen in die Dome des Decks (Kopf bündig, die Haube liegt darüber)
+      [[113.5, 82.6], [113.5, -82.6], [-117.6, 23.3], [-117.6, -23.3], [-4.5, 82.6], [-4.5, -82.6], [-28.5, 82.6], [-28.5, -82.6]].forEach(([x, z]) =>
+        schraube(gE2, x, 83.9, z, [0, -1, 0], 20, 'Schraubt den Gehäuse-Ring auf das Elektronik-Deck: von oben durch die Hülse im Ring in den Dom des Decks.'));
+      // Schutzbleche (gehaeuse/schutzblech.py): je 2 von außen durch den Flansch in die Schraubsäulen des Rings
+      [80, -80].forEach((ax) => [1, -1].forEach((s) => [-27, 27].forEach((k) => schraube(gE2, ax + k, 79.2, s * 95.9, [0, 0, -s], 10, 'Hält das Schutzblech: von außen durch den Flansch (Kopf bündig) in die Schraubsäule innen am Gehäuse-Ring.'))));
+      // Ebene 3 – Fuge der Haube (x = 45): quer durch die beiden Flansche
+      [[113, 40, 'vorne'], [113, -40, 'hinten'], [95, 82.6, 'hinten'], [95, -82.6, 'hinten'], [108, 79.15, 'hinten'], [108, -79.15, 'hinten']].forEach(([y, z, kopf]) =>
+        schraube(gE3, kopf === 'hinten' ? 36.1 : 53.9, y, z, [kopf === 'hinten' ? 1 : -1, 0, 0], 12, 'Verbindet die beiden Hälften der Klapphaube: quer durch die Flansche an der Fuge (bei aufgeklappter Haube erreichbar).'));
+      // Ebene 3 – vorne zwei Schrauben durch die Vorderwand in die Laschen des Rings (Kopf bündig)
+      [46, -46].forEach((z) => schraube(gE3, 124.9, 92, z, [-1, 0, 0], 12, 'Hält die Haube vorne zu: waagerecht durch die Vorderwand in die Lasche des Gehäuse-Rings. Zum Aufklappen diese zwei lösen.'));
+      // Ebene 3 – Scharnierachsen: von innen durch den inneren Lappen der Haube und den Lappen des Rings, Gewinde im äußeren Lappen
+      [1, -1].forEach((s) => schraube(gE3, -130.5, 89, s * 20.7, [0, 0, s], 18, 'Achse des Scharniers: von innen durch den inneren Lappen der Haube und den Lappen des Rings, das Gewinde schneidet sich in den äußeren Lappen der Haube.'));
+      // Pi-Stapel: von oben durch Dach und Dom (Kopf bündig im Dach) in die Abstandshalter des AI HAT+
+      [[-27, 24.5], [-27, -24.5], [31, 24.5], [31, -24.5]].forEach(([x, z]) => schraube(gE3, x, 120.9, z, [0, -1, 0], 16, 'Hält den Pi-Stapel am Dach: von oben durch Dach und Dom in die 16-mm-Abstandshalter des AI HAT+.', true));
+      return anzahl;
+    }
+    // <<< SCHRAUBEN
+    schraubenDerDruckteile(null, L0, null);
     anwenden();
 
     // ---------- Teileliste unter dem Modell ----------

@@ -10,6 +10,13 @@ sim = (M / "fahrsimulation.html").read_text(encoding="utf-8")
 gz = (M / "raspberry-car-3d.html").read_text(encoding="utf-8").split("\n")
 
 
+def schrauben_block(gz, aufruf):
+    """Funktion schraubenDerDruckteile aus dem großen Modell + Aufruf für diese Seite (siehe raspberry-car-3d.html)."""
+    a = next(i for i, z in enumerate(gz) if ">>> SCHRAUBEN" in z)
+    b = next(i for i, z in enumerate(gz) if "<<< SCHRAUBEN" in z)
+    return gz[a:b + 1] + ["    " + aufruf]
+
+
 def finde(lst, text, ab=0):
     for i in range(ab, len(lst)):
         if text in lst[i]:
@@ -75,6 +82,7 @@ block = [ANF,
          "    });",
          ] + teile2 + teile3 + [
          "    if (sweep) sweep.visible = false;   // den Strahl des LiDAR zeigt die Simulation selbst",
+         ] + schrauben_block(gz, "schraubenDerDruckteile(L0, E2, E3);   // alle Schrauben der Druckteile") + [
          END]
 
 if ANF in sim:
