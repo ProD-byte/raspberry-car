@@ -449,6 +449,36 @@ def teilen(teil):
     return vorne, hinten
 
 
+
+# ------------------------------------------------------------------ Schraubendreher-Zugang
+DREHER_R, DREHER_L = 3.0, 60.0           # gedachter Schraubendreher: Ø 6 mm, 60 mm lang (Schaft + Anfang des Griffs)
+
+
+def dreher(x, y, z, achse, richtung):
+    """Raum, den ein Schraubendreher von einem Schraubenkopf aus braucht (Zylinder entlang der Achse, ab 0,5 mm vor dem Kopf)."""
+    a, b = 0.5 * richtung, (0.5 + DREHER_L) * richtung
+    if achse == "x":
+        return zyl_x(DREHER_R, y, z, x + a, x + b)
+    if achse == "z":
+        return zyl_z(DREHER_R, x, y, z + a, z + b)
+    return zyl_y(DREHER_R, x, z, y + a, y + b)
+
+
+def zugang_pruefen(schrauben, druckteile, bauteile):
+    """schrauben: (Name, x, y, z, Achse, Richtung nach außen); druckteile: Körper; bauteile: (Name, x0, x1, y0, y1, z0, z1)."""
+    fehler = 0
+    for (name, x, y, z, achse, richtung) in schrauben:
+        d = dreher(x, y, z, achse, richtung)
+        im_weg = [n for (n, t) in druckteile if (d & t).volume > 0.5]
+        im_weg += [n for (n, x0, x1, y0, y1, z0, z1) in bauteile if (d & quader(x0, x1, y0, y1, z0, z1)).volume > 0.5]
+        if im_weg:
+            print(f"  NICHT erreichbar: {name} – im Weg: {', '.join(im_weg)}"); fehler += 1
+        else:
+            print(f"  erreichbar: {name}")
+    print("Schraubendreher-Zugang – Probleme:", fehler)
+    return fehler
+
+
 # ------------------------------------------------------------------ Motorbügel
 def motorbuegel(mx=MOTOR_X, s=1):
     d = BUEGEL_DICKE
@@ -546,6 +576,17 @@ if __name__ == "__main__":
     # Selbstprüfung Fuge: die Hälften dürfen sich nicht durchdringen, und die Laschen müssen mit der vorderen Hälfte verbunden sein
     v = (vorne & hinten).volume
     print(f"Hälften durchdringen sich: {'nein' if v < 0.5 else f'JA ({v:.1f} mm³)'}")
+    # Schraubendreher-Zugang zu den Schrauben der Fuge: seitlich von außen, in der Mitte von innen (zwischen Akku und INA226)
+    mt = MITTE_LASCHE[0] / 2
+    xs = (LASCHE_BIS + FUGE) / 2
+    schrauben = [(f"Fuge seitlich {'links' if s > 0 else 'rechts'} y={y:.0f}", xs, y, s * B / 2, "z", s) for s in (1, -1) for y in SEITE_Y]
+    schrauben += [(f"Fuge Mitte x={x:+.1f}", x, MITTE_Y, mt + LASCHE_LUFT + MITTE_BLOCK, "z", 1) for x in MITTE_X]
+    ax, az = AKKU_MASS
+    bauteile = [(f"Akkuhalter {sz:+d}", AKKU_X - ax / 2, AKKU_X + ax / 2, BODEN_OBEN + AKKU_SOCKEL, BODEN_OBEN + AKKU_SOCKEL + 18, sz * AKKU_Z - az / 2, sz * AKKU_Z + az / 2) for sz in (1, -1)]
+    bauteile += [(f"Tasche {n}", x - ix / 2 - 2, x + ix / 2 + 2, BODEN_OBEN, BODEN_OBEN + wh + 3, z - iz / 2 - 2, z + iz / 2 + 2) for (n, x, z, ix, iz, _nh, wh, _a) in TASCHEN]
+    sx_, sz_, slx, sbz = SICHERUNG
+    bauteile.append(("Sicherungshalter", sx_ - slx / 2, sx_ + slx / 2, BODEN_OBEN, BODEN_OBEN + 25.5, sz_ - sbz / 2, sz_ + sbz / 2))
+    zugang_pruefen(schrauben, [("Wanne", vorne + hinten)], bauteile)
     for name, t in (("vordere Hälfte", vorne), ("hintere Hälfte", hinten)):
         print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
     for name, t in teile.items():

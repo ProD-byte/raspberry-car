@@ -144,7 +144,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     <label class="check"><input id="raeder" type="checkbox" checked> Räder zeigen</label>
     <label class="check"><input id="glas" type="checkbox"> Wanne durchsichtig</label>
     <label class="check"><input id="pruefstand" type="checkbox"> Auf dem Prüfstand</label>
-    <label class="check" title="Die Kabelwege werden nach dem Neubau von Ebene 2 neu gelegt"><input id="kabel" type="checkbox" disabled> Verkabelung (kommt nach Ebene 2)</label>
+    <label class="check"><input id="kabel" type="checkbox"> Verkabelung</label>
     <div class="toggles">
       <button id="rotate" type="button" aria-pressed="true">Drehen</button>
       <button id="unten" type="button">Von unten</button>
@@ -167,11 +167,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122153548"></script>
+<script src="teile/teile.js?v=20261122154826"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122153548"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122154826"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -756,14 +756,17 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // Wege von Hand so gelegt, wie man es ordentlich verlegt (Bündel, Kabelbinder, Durchbrüche im Deck)
     // =====================================================================
     const kabelGruppe = new THREE.Group(); kabelGruppe.visible = false; L0.add(kabelGruppe);
-    const VERKABELUNG_FERTIG = false;   // Kabelwege werden nach dem Neubau von Ebene 2 neu gelegt (Durchbrüche im Deck ändern sich)
-    if (VERKABELUNG_FERTIG) (function verkabelung() {
+    (function verkabelung() {
       scene.updateMatrixWorld(true);
       const A = (k) => { const a = ANCH[k]; return L0.worldToLocal(a.g.localToWorld(a.p.clone())); };
       const FARBE = { rot: 0xd23a2a, schwarz: 0x232528, gelb: 0xe8c43a, blau: 0x2f6fd6, gruen: 0x2f9e5a, weiss: 0xeeeeee, orange: 0xf08a24, violett: 0x8a4fd1 };
       const DECK = 58;                                   // Unterseite des Elektronik-Decks (Ebene 2)
-      // Durchbrüche im Deck: Mitte x, Mitte z, Länge x, Breite z
-      const SCHLITZ = { vorne: [55, 0, 28, 22], links: [-55, 40, 20, 10], hinten: [-90, 0, 28, 22], A: [20, -50, 30, 9], B: [20, 50, 30, 9], C: [-62, -52, 14, 9] };   // wie gehaeuse/ebene2_elektronik.py (C am rechten Rand, weg vom Kompass)
+      // Durchbrüche im Deck: Mitte x, Mitte z, Länge x, Breite z – wie gehaeuse/ebene2_elektronik.py (SCHLITZE)
+      const SCHLITZ = {
+        'Griffloch vorne links': [80, 30, 28, 20], 'Griffloch vorne rechts': [80, -30, 28, 20],
+        'Griffloch hinten links': [-80, 30, 28, 20], 'Griffloch hinten rechts': [-80, -30, 28, 20],
+        D: [0, 50, 20, 10], S: [-50, -76, 14, 9], B: [-70, 62, 14, 9], C: [40, -68, 14, 9],
+      };
       const kabelListe = [];
       function kabel(farbe, von, nach, punkte, zweck, dick = false) {
         const pts = punkte.map((p) => (typeof p === 'string' ? A(p) : V(...p)));
@@ -789,7 +792,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       function bodenBinder(x, z, hoehe) {
         const pts = [V(x, 15.6, z - 4.5), V(x, 19.5, z - 4.5), V(x, hoehe, z - 3.2), V(x, hoehe + 0.8, z), V(x, hoehe, z + 3.2), V(x, 19.5, z + 4.5), V(x, 15.6, z + 4.5)];
         const m = add(kabelGruppe, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, 'centripetal'), 40, 0.6, 8, false), binderMat);
-        add(kabelGruppe, new THREE.BoxGeometry(2.4, 1.2, 9.4), binderMat, x, 15.4, z);          // Steg unter dem Boden (in der Rille)
+        add(kabelGruppe, new THREE.BoxGeometry(2.4, 1.2, 9.4), binderMat, x, 15.4, z);
         const kopf = add(kabelGruppe, new THREE.BoxGeometry(2.2, 2.6, 2.8), binderMat, x, hoehe + 1.6, z + 1.5);
         m.userData.part = kopf.userData.part = { name: 'Kabelbinder durch die Bodenschlitze', desc: 'Von unten durch einen Schlitz nach oben, über das Kabel, durch den zweiten Schlitz zurück. Unten liegt er in der Rille bündig im Boden.' };
       }
@@ -798,73 +801,81 @@ code { font-family: var(--font-mono); font-size: 13px; }
       for (const [name, [x, z, lx, bz]] of Object.entries(SCHLITZ)) {
         const r = new THREE.Group(); r.position.set(x, DECK, z); kabelGruppe.add(r);
         [[lx, 0.8, 0, bz / 2], [lx, 0.8, 0, -bz / 2], [0.8, bz, lx / 2, 0], [0.8, bz, -lx / 2, 0]].forEach(([a, b, ox, oz]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a, 0.8, b), rahmenMat); m.position.set(ox, 0, oz); r.add(m); });
-        r.children.forEach((m) => (m.userData.part = { name: `Durchbruch im Deck „${name}“`, desc: 'Hier gehen die Kabel durch das Elektronik-Deck (Ebene 2) nach oben.' }));
+        r.children.forEach((m) => (m.userData.part = { name: name.startsWith('Griffloch') ? `${name} im Deck` : `Durchbruch „${name}“ im Deck`, desc: 'Hier gehen die Kabel durch das Elektronik-Deck (Ebene 2) nach oben.' }));
       }
       const oben = (s, dx = 0, dz = 0) => [SCHLITZ[s][0] + dx, DECK + 2, SCHLITZ[s][1] + dz];
 
-      // ---------- Akku → BMS (kurz an der linken Seite)
-      kabel('schwarz', 'Akku Gruppe 1 Minus', 'BMS B−', ['G1-', [-21, 37, 43.5], [-23.5, 27, 44], 'BMS_B-'], 'Minus des Akkus', true);
-      const bPlus = kabel('rot', 'Akku Gruppe 2 Plus', 'BMS B+', ['G2+', [21, 37, 43.8], [0, 36, 44.6], [-13.5, 27, 44], 'BMS_B+'], 'Plus des Akkus', true);
-      kabel('rot', 'Akku Gruppe 1 Plus', 'Akku Gruppe 2 Minus', ['G1+', [-21, 37, -43.5], [21, 37, -43.5], 'G2-'], 'Reihenverbindung der beiden Zellengruppen (rechte Seite)', true);
-      const bm = kabel('gelb', 'Akku Gruppe 2 Minus', 'BMS BM', ['G2-', [24, 38, -42], [24, 44.5, -28], [24, 44.5, 30], [8, 43, 43], [-18.5, 28, 44.4], 'BMS_BM'], 'Mittelabgriff – läuft quer über den Akku auf die linke Seite');
-      binder(bPlus, 0.45, 2.6);
+      // Hindernisse in der Wanne (für die Wege): Akkuhalter x −53 … −13, oben bei 40 mm; die Laschen der Fuge an den
+      // Seitenwänden (x −12 … 14, |z| 78 … 84, bis zum Rand) und in der Mitte (x −12 … 14, |z| < 14, bis 34 mm);
+      // Motoren |x| 67 … 93, |z| 26 … 87 mit Steckern bis ca. 52 mm; Sicherungshalter vorne rechts bis 45 mm hoch.
 
-      // ---------- BMS → Ladeboard (oben auf dem Deck) und zur Sicherung
-      kabel('schwarz', 'BMS P−', 'Ladeboard GND (Ebene 2)', ['BMS_P-', [8.5, 29, 46], [13, 45, 49], oben('B', -5, -1)], 'Ladestrom Minus – durch Durchbruch B nach oben zum Ladeboard', true);
-      kabel('rot', 'BMS P+', 'Ladeboard BAT (Ebene 2)', ['BMS_P+', [13.5, 29, 46], [17, 45, 50], oben('B', 0, 1)], 'Ladestrom Plus – durch Durchbruch B nach oben zum Ladeboard', true);
-      const zurSich = kabel('rot', 'BMS P+', 'Sicherung Eingang', ['BMS_P+', [14, 31, 44.5], [34, 44, 40], [38, 45, 0], [34, 44, -42], [24, 46, -57], [-20, 46, -57.5], [-46, 33, -52], [-47, 21.6, -51], [-42, 21.6, -51], 'FUSE_IN'], 'Plus zur Sicherung – vorne am Akku entlang und an der rechten Wand nach hinten (nicht quer über die Mitte: dort sitzt oben der Kompass), hinter der Sicherung mit Kabelbinder am Boden', true);
-      kabel('rot', 'Sicherung Ausgang', 'Hauptschalter (Ebene 2)', ['FUSE_OUT', [22, 21.6, -51], [27, 24, -51], [25, 42, -50], oben('A', 0, 0)], 'Plus zum Hauptschalter – hinter der Sicherung mit Kabelbinder am Boden, dann durch Durchbruch A nach oben', true);
-      bodenBinder(-42, -51, 22.8); bodenBinder(22, -51, 22.8);
+      // ---------- Akku → BMS (vorne links): an der linken Seite nach vorne, über den Akkuhaltern
+      const bMinus = kabel('schwarz', 'Akku Gruppe 1 Minus', 'BMS B−', ['G1-', [-33, 45, 80], [-30, 47, 76.5], [-18, 47, 75], [8, 45, 72], [14.5, 34, 58], [14.5, 25, 51], 'BMS_B-'], 'Minus des Akkus – an der linken Seite nach vorne, innen an der Lasche der Fuge vorbei', true);
+      const bPlus = kabel('rot', 'Akku Gruppe 2 Plus', 'BMS B+', ['G2+', [-31, 42, 3], [-24, 46, 30], [0, 46, 44], [22, 36, 54], [24.5, 25, 51], 'BMS_B+'], 'Plus des Akkus – aus der Mitte über den linken Halter nach vorne zum BMS', true);
+      kabel('rot', 'Akku Gruppe 1 Plus', 'Akku Gruppe 2 Minus', ['G1+', [-33, 45, -1], [-36, 47, -8], [-40, 47, -40], [-36, 47, -74], [-33, 45, -80], 'G2-'], 'Reihenverbindung der beiden Zellengruppen (über den rechten Halter)', true);
+      const bm = kabel('gelb', 'Akku Gruppe 2 Minus', 'BMS BM', ['G2-', [-28, 44, -77], [-28, 47.5, -30], [-26, 47.5, 30], [-2, 47, 46], [18, 36, 53], [19.5, 25, 51], 'BMS_BM'], 'Mittelabgriff – vom rechten Halter quer über den Akku zum BMS');
+      binder(bPlus, 0.45, 2.6); binder(bm, 0.62, 2.2);
 
-      // ---------- Hauptschalter → INA226 → Verteiler, Masse in den Verteiler (Bündel im Kanal hinter den WAGO-Klemmen)
-      kabel('rot', 'Hauptschalter (Ebene 2)', 'INA226 VIN+', [oben('links', -2, 2), [-57, 42, 48], [-56, 27, 53.5], 'INA_VIN+'], 'Geschaltetes Plus vom Schalter zurück nach unten in den Strommesser', true);
-      kabel('rot', 'INA226 VBS', 'INA226 VIN−', ['INA_VBS', [-40, 25, 58], [-52, 25, 50], 'INA_VIN-'], 'Spannungsmessung des INA226 (kurze Brücke)');
-      const vinMinus = kabel('rot', 'INA226 VIN−', 'Verteiler Plus Platz 1', ['INA_VIN-', [-57, 26, 46], [-67, 26, 40], [-69.5, 24, 30], [-66, 22.5, 25.2], 'WP1'], 'Plus in den Verteiler – von hinten in die Klemme', true);
-      const pMinus = kabel('schwarz', 'BMS P−', 'Verteiler Minus Platz 1', ['BMS_P-', [8.5, 30, 46.5], [-20, 34, 46.5], [-60, 34, 44], [-71.5, 27, 32], [-71.5, 24, 0], [-67, 22.5, -8.8], 'WM1'], 'Masse in den Verteiler – an der linken Seite nach hinten, dann im Kanal hinter den Klemmen', true);
-      binder(pMinus, 0.62, 3.2); binder(vinMinus, 0.62, 2.4);
-      // Abgänge der Verteiler: alle durch Durchbruch C nach oben
+      // ---------- BMS → Ladeboard (Ebene 2, hinten links) durch Durchbruch B
+      const lMinus = kabel('schwarz', 'BMS P−', 'Ladeboard GND (Ebene 2)', ['BMS_P-', [46.5, 30, 56], [38, 49, 66], [0, 51, 70], [-50, 52, 67], [-66, 55, 62.6], oben('B', -2, 0.8)], 'Ladestrom Minus – an der linken Seite nach hinten, durch Durchbruch B nach oben zum Ladeboard', true);
+      kabel('rot', 'BMS P+', 'Ladeboard BAT (Ebene 2)', ['BMS_P+', [51.5, 30, 56], [42, 49, 68.5], [0, 51, 72.5], [-50, 52, 69.5], [-66, 55, 64.6], oben('B', 2, 0.8)], 'Ladestrom Plus – neben dem Minus nach hinten, durch Durchbruch B nach oben zum Ladeboard', true);
+      binder(lMinus, 0.4, 3.2); binder(lMinus, 0.62, 3.2);
+
+      // ---------- BMS → Sicherung: an der Fuge entlang nach rechts, hinter der Sicherung mit Kabelbinder am Boden
+      const zurSich = kabel('rot', 'BMS P+', 'Sicherung Eingang', ['BMS_P+', [52, 33, 45], [36, 38, 39], [4, 39, 18], [-6, 38, -12], [-8, 30, -40], [-8, 23, -52], [-8, 22.8, -58], [-1, 23, -58], 'FUSE_IN'], 'Plus zur Sicherung – über INA226 und die Mitte nach rechts, hinter der Sicherung mit Kabelbinder am Boden', true);
+      bodenBinder(-8, -58, 22.8);
+      // ---------- Sicherung → Hauptschalter (Ebene 2, hinten rechts) durch Durchbruch S
+      const zumSchalter = kabel('rot', 'Sicherung Ausgang', 'Hauptschalter (Ebene 2)', ['FUSE_OUT', [65, 26, -59], [64, 42, -70], [10, 47, -72.5], [-36, 51, -74], [-48, 55, -76], oben('S', 1, 0)], 'Plus zum Hauptschalter – an der rechten Seite nach hinten, durch Durchbruch S nach oben', true);
+      // ---------- Hauptschalter → INA226 VIN+ (geschaltetes Plus) zurück nach unten
+      const vomSchalter = kabel('rot', 'Hauptschalter (Ebene 2)', 'INA226 VIN+', [oben('S', -2, 1), [-46, 52, -71], [-30, 48, -40], [-22, 48, 8], [-4, 41, 20], [5, 27, 28.5], 'INA_VIN+'], 'Geschaltetes Plus vom Schalter zurück nach unten, über den Akku nach vorne in den Strommesser', true);
+      binder(zumSchalter, 0.55, 2.4);
+      kabel('rot', 'INA226 VBS', 'INA226 VIN−', ['INA_VBS', [27, 24, 34], [18, 26, 36], [7, 25, 26], 'INA_VIN-'], 'Spannungsmessung des INA226 (kurze Brücke)');
+      const vinMinus = kabel('rot', 'INA226 VIN−', 'Verteiler Plus Platz 1', ['INA_VIN-', [6, 25, 21], [14, 29, 14], [32, 26, 24.5], 'WP1'], 'Plus in den Verteiler – von hinten in die Klemme', true);
+      const pMinus = kabel('schwarz', 'BMS P−', 'Verteiler Minus Platz 1', ['BMS_P-', [46, 32, 45], [33, 35, 34], [31, 34, 2], [32, 25, -8.8], 'WM1'], 'Masse in den Verteiler – über die Plus-Klemme hinweg, von hinten in die Minus-Klemme', true);
+      binder(pMinus, 0.55, 2.6);
+
+      // ---------- Abgänge der Verteiler: paarweise nach rechts und durch Durchbruch C nach oben
       const zielP = ['DRV8833 vorne VCC (Ebene 2)', 'DRV8833 hinten VCC (Ebene 2)', 'MP1584 IN+ (Ebene 2)', 'Pololu VIN (Ebene 3)'];
       const zielM = ['DRV8833 vorne GND (Ebene 2)', 'DRV8833 hinten GND (Ebene 2)', 'MP1584 IN− (Ebene 2)', 'Pololu GND (Ebene 3)'];
       const abgang = [];
       [2, 3, 4, 5].forEach((n, i) => {
-        const zp = A('WP' + n).z, zm = A('WM' + n).z;
-        abgang.push(kabel('rot', `Verteiler Plus Platz ${n}`, zielP[i], ['WP' + n, [-65, 22.5, zp], [-70.5, 32, zp * 0.75], [-71, 44, -30], [-62 - 4.5 + i * 3, 50, -49], oben('C', -4.5 + i * 3, 1.6)], 'Plus-Abgang – neben seinem Minus am rechten Rand durch Durchbruch C nach oben (weit weg vom Kompass)'));
-        abgang.push(kabel('schwarz', `Verteiler Minus Platz ${n}`, zielM[i], ['WM' + n, [-65, 22.5, zm], [-70.5, 32, zm * 0.75], [-71, 44, -33], [-62 - 4.5 + i * 3, 50, -52], oben('C', -4.5 + i * 3, -1.6)], 'Masse-Abgang – neben seinem Plus am rechten Rand durch Durchbruch C nach oben'));
+        const zp = A('WP' + n).z, zm = A('WM' + n).z, d = i * 1.3;
+        abgang.push(kabel('rot', `Verteiler Plus Platz ${n}`, zielP[i], ['WP' + n, [34, 22.5, zp], [30, 31 + d, zp * 0.6], [30, 42 + d * 0.3, -36], [36 + i * 2.2, 52, -56], oben('C', -3.3 + i * 2.2, 1.6)], 'Plus-Abgang – neben seinem Minus zum Durchbruch C (vorne rechts) und nach oben'));
+        abgang.push(kabel('schwarz', `Verteiler Minus Platz ${n}`, zielM[i], ['WM' + n, [34, 22.5, zm], [28, 31 + d, zm * 0.6], [28, 42 + d * 0.3, -39], [36 + i * 2.2, 52, -59], oben('C', -3.3 + i * 2.2, -1.6)], 'Masse-Abgang – neben seinem Plus zum Durchbruch C und nach oben'));
       });
-      binder(abgang[0], 0.7, 4.5); binder(abgang[1], 0.7, 4.5);
+      binder(abgang[0], 0.55, 4.5); binder(abgang[1], 0.55, 4.5);
 
-      // ---------- INA226: Daten nach oben zum Pico, und Bus zu den Nahsensoren (hinten, dann vorne)
+      // ---------- INA226: Daten nach oben zum Pico (Durchbruch D), und Bus zu den Nahsensoren (hinten, dann vorne)
       const daten = [['VCC', 'orange', '3,3 V'], ['GND', 'schwarz', 'Masse'], ['SDA', 'blau', 'I²C SDA'], ['SCL', 'gelb', 'I²C SCL']];
       daten.forEach(([p, farbe, was], i) => {
         const z = A('INA_' + p).z;
-        kabel(farbe, 'INA226 ' + p, `${p === 'VCC' ? '3,3-V-Verteiler hinten' : p === 'GND' ? 'Pico GND' : 'BNO085 ' + p} (Ebene 2)`, ['INA_' + p, [-38, 27, z], [-48, 46, 41 + i * 0.4], oben('links', 4 - i * 2.2, -2 + i * 1.2)], `${was} vom Pico/Verteiler – durch den Durchbruch links hinten nach oben`);
+        kabel(farbe, 'INA226 ' + p, `${p === 'VCC' ? '3,3-V-Verteiler hinten' : p === 'GND' ? 'Pico GND' : 'BNO085 ' + p} (Ebene 2)`, ['INA_' + p, [28, 25, z], [16, 40, 44 + i * 0.8], oben('D', 4 - i * 2.4, -2 + i * 1.2)], `${was} – vom INA226 durch Durchbruch D nach oben zum Pico bzw. Verteiler`);
       });
       const busH = [], busV = [];
       daten.forEach(([p, farbe, was], i) => {
         const pin = p === 'VCC' ? 'VIN' : p, z = A('INA_' + p).z, d = i * 1.15;
-        busH.push(kabel(farbe, 'INA226 ' + p, 'VL53L1X hinten ' + pin, ['INA_' + p, [-39, 30, z], [-46, 53 + d * 0.3, 52 + d], [-100, 53 + d * 0.3, 50 + d], [-109, 52.5, 22 + d], [-111, 51, A('TH_' + pin).z], 'TH_' + pin], `${was} zum hinteren Nahsensor (angelötet) – über die Hinterrad-Motoren`));
-        busV.push(kabel(farbe, 'VL53L1X hinten ' + pin, 'VL53L1X vorne ' + pin, ['TH_' + pin, [-111, 53, A('TH_' + pin).z], [-104, 55, 46 + d], [-60, 55, 56 + d], [30, 55, 56 + d], [64, 55, 52 + d], [66, 54, 22], [75, 51.5, A('TV_' + pin).z], 'TV_' + pin], `${was} weiter zum vorderen Nahsensor (angelötet) – oben an der linken Wand entlang`));
+        busH.push(kabel(farbe, 'INA226 ' + p, 'VL53L1X hinten ' + pin, ['INA_' + p, [29, 27, z], [20, 46 + d * 0.3, 40 + d], [-10, 52, 44 + d], [-60, 52, 44 + d], [-100, 52, 30 + d], [-112, 51, A('TH_' + pin).z], 'TH_' + pin], `${was} zum hinteren Nahsensor (angelötet) – über den Akku nach hinten`));
+        busV.push(kabel(farbe, 'VL53L1X hinten ' + pin, 'VL53L1X vorne ' + pin, ['TH_' + pin, [-112, 54, A('TH_' + pin).z], [-104, 55, 16 + d], [-60, 55, 16 + d], [-14, 55, 18 + d], [40, 55, 18 + d], [60, 55, 16 + d], [100, 54, 12 + d], [112, 52, A('TV_' + pin).z], 'TV_' + pin], `${was} weiter zum vorderen Nahsensor (angelötet) – längs durch die Mitte, knapp unter dem Deck`));
       });
-      [0.3, 0.55].forEach((tt) => binder(busH[1], tt, 3));
-      [0.25, 0.42, 0.6, 0.78].forEach((tt) => binder(busV[1], tt, 3));
-      kabel('violett', 'VL53L1X vorne XSHUT', 'Pico GP13 (Ebene 2)', ['TV_X', [77, 52, 6.4], oben('vorne', 1, 6)], 'XSHUT vorne – durch den vorderen Durchbruch nach oben');
-      kabel('violett', 'VL53L1X hinten XSHUT', 'Pico GP12 (Ebene 2)', ['TH_X', [-110, 52, -6.4], oben('hinten', 2, -6)], 'XSHUT hinten – durch den hinteren Durchbruch nach oben');
+      [0.3, 0.6].forEach((tt) => binder(busH[1], tt, 3));
+      [0.2, 0.4, 0.6, 0.8].forEach((tt) => binder(busV[1], tt, 3));
+      kabel('violett', 'VL53L1X vorne XSHUT', 'Pico GP13 (Ebene 2)', ['TV_X', [112, 52, 7], [94, 55, 22], oben('Griffloch vorne links', 10, -7)], 'XSHUT vorne – durch das Griffloch vorne links nach oben');
+      kabel('violett', 'VL53L1X hinten XSHUT', 'Pico GP12 (Ebene 2)', ['TH_X', [-112, 52, -7], [-94, 55, -22], oben('Griffloch hinten rechts', -10, 7)], 'XSHUT hinten – durch das Griffloch hinten rechts nach oben');
 
-      // ---------- Motoren: je 6 Adern vom Encoder-Stecker gerade nach oben (vorne → Durchbruch vorne, hinten → Durchbruch hinten)
+      // ---------- Motoren: je 6 Adern vom Encoder-Stecker gerade nach oben durch das Griffloch darüber
       const ADERN = [['M1', 'rot', 'Motorstrom'], ['M2', 'weiss', 'Motorstrom'], ['GND', 'schwarz', 'Encoder Masse'], ['VCC', 'blau', 'Encoder 3,3 V'], ['A', 'gelb', 'Encoder Kanal A'], ['B', 'gruen', 'Encoder Kanal B']];
-      const MOT = { VL: ['vorne links', 'vorne', 1], VR: ['vorne rechts', 'vorne', -1], HL: ['hinten links', 'hinten', 1], HR: ['hinten rechts', 'hinten', -1] };
-      for (const [key, [name, schlitz, s]] of Object.entries(MOT)) {
+      const MOT = { VL: ['vorne links', 'Griffloch vorne links', 'vorne'], VR: ['vorne rechts', 'Griffloch vorne rechts', 'vorne'], HL: ['hinten links', 'Griffloch hinten links', 'hinten'], HR: ['hinten rechts', 'Griffloch hinten rechts', 'hinten'] };
+      for (const [key, [name, loch, achse]] of Object.entries(MOT)) {
         let erstes = null;
         ADERN.forEach(([ader, farbe, was], i) => {
           const p = A(`M${key}_${ader}`);
-          const [sx, , sz] = oben(schlitz);
-          const zz = schlitz === 'vorne' ? s * (4 + i * 1.4) : sz + s * (1.5 + i * 0.5);
-          const k = kabel(farbe, `Motor ${name} ${ader}`, (ader.startsWith('M') ? 'DRV8833 ' + schlitz : ader === 'VCC' ? '3,3-V-Verteiler ' + schlitz : 'Pico') + ' (Ebene 2)',
-            [[p.x, p.y, p.z], [p.x, p.y + 3.5, p.z], [(p.x + sx) / 2, 55, (p.z + zz) / 2], [sx + (schlitz === 'vorne' ? -3 + i * 0.4 : (i - 2.5) * 1.2), DECK + 2, zz]],
-            `${was} – vom Stecker am Motor gerade nach oben durch das Griffloch „${schlitz}“ im Deck (dort von oben ein- und ausstecken)`);
+          const [sx, , sz] = oben(loch);
+          const k = kabel(farbe, `Motor ${name} ${ader}`, (ader.startsWith('M') ? 'DRV8833 ' + achse : ader === 'VCC' ? '3,3-V-Verteiler ' + achse : 'Pico') + ' (Ebene 2)',
+            [[p.x, p.y, p.z], [p.x, p.y + 3, p.z], [sx + (i - 2.5) * 1.4, DECK - 2, sz], [sx + (i - 2.5) * 1.4, DECK + 2, sz]],
+            `${was} – vom Stecker am Motor gerade nach oben durch das ${loch} im Deck (dort von oben ein- und ausstecken)`);
           if (i === 2) erstes = k;
         });
-        binder(erstes, 0.55, 4.2);
+        binder(erstes, 0.6, 4.2);
       }
     })();
     document.getElementById('kabel').addEventListener('change', (e) => { kabelGruppe.visible = e.target.checked; if (sel) waehlen(sel); });

@@ -99,7 +99,9 @@ LUEFTUNG_Y = (UNTEN + 3.0, SENKRECHT_BIS + 12.0)
 FUGE = 45.0
 FUGE_SPALT = 0.1
 FLANSCH_D, FLANSCH_TIEFE = 5.9, 10.0     # Dicke (x) je Hälfte, Breite nach innen
-FLANSCH_SCHRAUBEN = [("Dach", 40.0), ("Dach", -40.0), ("Seite", 95.0), ("Seite", 108.0)]   # Dach: z; Seite: y (je links und rechts)
+FLANSCH_SCHRAUBEN = [("Dach", 40.0, "vorne"), ("Dach", -40.0, "hinten"), ("Seite", 95.0, "hinten"), ("Seite", 108.0, "hinten")]
+# Dach: z; Seite: y (je links und rechts). „vorne“/„hinten“ = Seite, auf der der Kopf sitzt: dort muss der Schraubendreher
+# frei herankommen (Haube aufgeklappt). Dach links von vorne, weil hinten das 4G-Modul davor liegt.
 
 AUS = Path(__file__).resolve().parent / "ebene3"
 
@@ -321,16 +323,50 @@ def teilen(teil):
     hinten += fl_h & aussen()
     # Schrauben quer durch beide Flansche (Kopf hinten, Gewinde vorne)
     pos = []
-    for (art, w) in FLANSCH_SCHRAUBEN:
+    for (art, w, kopf) in FLANSCH_SCHRAUBEN:
         if art == "Dach":
-            pos.append((DACH_UNTEN - FLANSCH_TIEFE / 2, w))
+            pos.append((DACH_UNTEN - FLANSCH_TIEFE / 2, w, kopf))
         else:
             for s in (1, -1):
-                pos.append((w, s * (halbbreite(w, WAND) - FLANSCH_TIEFE / 2)))
-    for (y, z) in pos:
-        hinten -= zyl_x(DURCH / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
-        vorne -= zyl_x(PILOT / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
+                pos.append((w, s * (halbbreite(w, WAND) - FLANSCH_TIEFE / 2), kopf))
+    for (y, z, kopf) in pos:
+        if kopf == "hinten":     # Kopf am hinteren Flansch, Gewinde im vorderen
+            hinten -= zyl_x(DURCH / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
+            vorne -= zyl_x(PILOT / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
+        else:
+            vorne -= zyl_x(DURCH / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
+            hinten -= zyl_x(PILOT / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
     return vorne, hinten, pos
+
+
+
+# ------------------------------------------------------------------ Schraubendreher-Zugang
+DREHER_R, DREHER_L = 3.0, 60.0           # gedachter Schraubendreher: Ø 6 mm, 60 mm lang (Schaft + Anfang des Griffs)
+
+
+def dreher(x, y, z, achse, richtung):
+    """Raum, den ein Schraubendreher von einem Schraubenkopf aus braucht (Zylinder entlang der Achse, ab 0,5 mm vor dem Kopf)."""
+    a, b = 0.5 * richtung, (0.5 + DREHER_L) * richtung
+    if achse == "x":
+        return zyl_x(DREHER_R, y, z, x + a, x + b)
+    if achse == "z":
+        return zyl_z(DREHER_R, x, y, z + a, z + b)
+    return zyl_y(DREHER_R, x, z, y + a, y + b)
+
+
+def zugang_pruefen(schrauben, druckteile, bauteile):
+    """schrauben: (Name, x, y, z, Achse, Richtung nach außen); druckteile: Körper; bauteile: (Name, x0, x1, y0, y1, z0, z1)."""
+    fehler = 0
+    for (name, x, y, z, achse, richtung) in schrauben:
+        d = dreher(x, y, z, achse, richtung)
+        im_weg = [n for (n, t) in druckteile if (d & t).volume > 0.5]
+        im_weg += [n for (n, x0, x1, y0, y1, z0, z1) in bauteile if (d & quader(x0, x1, y0, y1, z0, z1)).volume > 0.5]
+        if im_weg:
+            print(f"  NICHT erreichbar: {name} – im Weg: {', '.join(im_weg)}"); fehler += 1
+        else:
+            print(f"  erreichbar: {name}")
+    print("Schraubendreher-Zugang – Probleme:", fehler)
+    return fehler
 
 
 # ------------------------------------------------------------------ Prüfungen
@@ -394,6 +430,17 @@ if __name__ == "__main__":
     for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten)):
         print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
     print("Hälften durchdringen sich:", "nein" if (vorne & hinten).volume < 0.5 else "JA")
+    # Schraubendreher-Zugang zu den Schrauben an der Fuge (Haube aufgeklappt – alles, was am Dach hängt, ist mit im Weg)
+    schr = [(f"Fuge y={y:.0f} z={z:+.0f} (Kopf {kopf})", FUGE - FLANSCH_D if kopf == "hinten" else FUGE + FLANSCH_D, y, z, "x", -1 if kopf == "hinten" else 1)
+            for (y, z, kopf) in schrauben]
+    bauteile = [("Pi 5 + AI HAT+", PI_X - 45.5, PI_X + 42.5, PI_UNTEN - 1.5, HAT_OBEN + 2, -28, 28),
+                ("4G-Modul (Tasche)", -18.85 - 43, -18.85 + 43, DACH_UNTEN - 7.2, DACH_UNTEN, 56.1 - 22, 56.1 + 22),
+                ("4G-USB-Stecker", LTE_USB_X, -18.85 - 41, DACH_UNTEN - 9, DACH_UNTEN - 2, 46, 66),
+                ("Pololu", 68 - 15, 68 + 15, DACH_UNTEN - 10, DACH_UNTEN, -45 - 15, -45 + 15),
+                ("GPS-Antenne", -80 - 14, -80 + 14, DACH_UNTEN - 7, DACH_UNTEN, -55 - 14, -55 + 14),
+                ("Kamera", KAM_X - KAM_T - 4, X_VORNE - WAND, KAM_UNTEN - 3, DACH_UNTEN, -17, 17),
+                ("Display", DISPLAY[0] - 26, DISPLAY[0] + 26, DISPLAY_PCB_UNTEN - 3, DACH_UNTEN, -26, 26)]
+    zugang_pruefen(schr, [("Haube", vorne + hinten)], bauteile)
     for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten)):
         export_stl(t, str(AUS / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
         export_step(t, str(AUS / f"{name}.step"))

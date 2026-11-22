@@ -86,7 +86,7 @@ TASCHEN = [
     # Steuerung: Kompass hinter dem Freenove-Board, um 90° gedreht (STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist frei)
     ("BNO085",        -35.0,   0.0, 22.9, 25.4, 1.6, 3.2, None),
     # Strom und Laden
-    ("MP1584",         20.0, -62.0, 22.1, 16.8, 1.6, 3.2, None),   # vorne rechts neben Durchbruch C (Strom von den Verteilern), weit weg vom Kompass
+    ("MP1584",        -24.0, -62.0, 22.1, 16.8, 1.6, 3.2, None),   # rechts hinter dem Freenove-Board (nicht vor der Schraube an der Fuge), ca. 6 cm vom Kompass
     ("Ladeboard",  X_HINTEN + 20.3, 60.0, 38.4, 18.0, 1.6, 3.2, "-x"),  # hinten links: Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt in der Wand (1 mm hinter der Außenseite)
 ]
 WAND = 1.6
@@ -102,15 +102,16 @@ SCHLITZE = [
     (0, 50, 20, 10),                         # D: Daten vom INA226 (Wanne vorne links) zum Pico
     (-50, -76, 14, 9),                       # S: Leitungen zum Hauptschalter (hinten rechts)
     (-70, 62, 14, 9),                        # B: BMS → Ladeboard (hinten links)
-    (40, -62, 14, 9),                        # C: Plus/Minus von den Verteilern – über ihnen, vorne rechts, weit weg vom Kompass
+    (40, -68, 14, 9),                        # C: Plus/Minus von den Verteilern – über ihnen, vorne rechts, weit weg vom Kompass
 ]
 # Teilung des Decks: zwei aufrechte Stege an der Fuge, quer (in x) verschraubt
 DECK_FUGE = 58.0                          # zwischen Freenove-Board und vorderer Motorzone
 DECK_SPALT = 0.1
 STEG_H = 10.0                             # Stege 10 mm hoch über dem Deck
 STEG_VORNE, STEG_HINTEN = 5.0, 6.0        # Dicke (x) des vorderen (Gewinde) und hinteren Stegs (Kopf)
-STEG_Z = [(-80.0, -48.0), (48.0, 80.0)]   # zwei Stücke außen (innen sind die Grifflöcher und das Freenove-Board)
-STEG_SCHRAUBEN = [-64.0, 64.0]            # z der Schrauben M3 × 10 (Kopf hinten, Gewinde im vorderen Steg)
+STEG_Z = [(-80.0, -49.0), (48.0, 80.0)]   # zwei Stücke außen (innen sind die Grifflöcher und das Freenove-Board)
+STEG_SCHRAUBEN = [-54.0, 64.0]            # z der Schrauben M3 × 10 (Kopf hinten, Gewinde im vorderen Steg). Hinter jedem Kopf
+                                          # ist 60 mm Platz für den Schraubendreher (rechts zwischen Durchbruch C und dem Freenove-Board)
 STEG_SCHRAUBE_Y = 5.0                     # Höhe der Schrauben über dem Deck
 GRIFFLOCH_RAND = (1.6, 2.0)              # Rand um die beiden Grifflöcher: Breite, Höhe – sieht sauber aus, Kabel scheuern nicht
 
@@ -347,6 +348,36 @@ def ring_oben():
     return wand
 
 
+
+# ------------------------------------------------------------------ Schraubendreher-Zugang
+DREHER_R, DREHER_L = 3.0, 60.0           # gedachter Schraubendreher: Ø 6 mm, 60 mm lang (Schaft + Anfang des Griffs)
+
+
+def dreher(x, y, z, achse, richtung):
+    """Raum, den ein Schraubendreher von einem Schraubenkopf aus braucht (Zylinder entlang der Achse, ab 0,5 mm vor dem Kopf)."""
+    a, b = 0.5 * richtung, (0.5 + DREHER_L) * richtung
+    if achse == "x":
+        return zyl_x(DREHER_R, y, z, x + a, x + b)
+    if achse == "z":
+        return zyl_z(DREHER_R, x, y, z + a, z + b)
+    return zyl_y(DREHER_R, x, z, y + a, y + b)
+
+
+def zugang_pruefen(schrauben, druckteile, bauteile):
+    """schrauben: (Name, x, y, z, Achse, Richtung nach außen); druckteile: Körper; bauteile: (Name, x0, x1, y0, y1, z0, z1)."""
+    fehler = 0
+    for (name, x, y, z, achse, richtung) in schrauben:
+        d = dreher(x, y, z, achse, richtung)
+        im_weg = [n for (n, t) in druckteile if (d & t).volume > 0.5]
+        im_weg += [n for (n, x0, x1, y0, y1, z0, z1) in bauteile if (d & quader(x0, x1, y0, y1, z0, z1)).volume > 0.5]
+        if im_weg:
+            print(f"  NICHT erreichbar: {name} – im Weg: {', '.join(im_weg)}"); fehler += 1
+        else:
+            print(f"  erreichbar: {name}")
+    print("Schraubendreher-Zugang – Probleme:", fehler)
+    return fehler
+
+
 # ------------------------------------------------------------------ Teilung in zwei Hälften
 def teilen_deck(teil):
     """Deck → (vordere, hintere Hälfte). An der Fuge auf jeder Seite ein aufrechter Steg, beide quer verschraubt:
@@ -410,7 +441,7 @@ def ueberlappungen():
     # Abstand des Kompasses zu allem, was ein Magnetfeld macht (Motoren: Mitte der Motoren in der Wanne)
     bx, bz = next((x, z) for (n, x, z, *_r) in TASCHEN if n == "BNO085")
     mx, mz = next((x, z) for (n, x, z, *_r) in TASCHEN if n == "MP1584")
-    cx, cz = next((x, z) for (x, z, lx, bz) in SCHLITZE if (x, z) == (40, -62))
+    cx, cz = next((x, z) for (x, z, lx, bz) in SCHLITZE if (x, z) == (40, -68))
     for (name, x, z) in [("Motor vorne", 80, 30), ("Motor hinten", -80, 30), ("MP1584 (Spule)", mx, mz), ("Durchbruch C (Strom)", cx, cz),
                          ("Verteiler in der Wanne (Strom)", 47, 17), ("Akku in der Wanne", -33, 12)]:
         print(f"  Kompass – {name}: {((x - bx) ** 2 + (z - bz) ** 2) ** 0.5:.0f} mm")
@@ -511,6 +542,11 @@ if __name__ == "__main__":
     for name, t in teile.items():
         print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
     print("Deck-Hälften durchdringen sich:", "nein" if (dv & dh).volume < 0.5 else "JA")
+    # Schraubendreher-Zugang zu den Schrauben an der Fuge des Decks (Deckel von Ebene 3 offen): Kopf hinten, Dreher von hinten
+    schrauben = [(f"Deck-Fuge z={z:+.0f}", DECK_FUGE - STEG_HINTEN, OBEN + STEG_SCHRAUBE_Y, z, "x", -1) for z in STEG_SCHRAUBEN]
+    bauteile = [(n, x0, x1, OBEN, OBEN + hh, z0, z1) for (n, x0, x1, z0, z1, hh) in hindernisse() if not n.startswith(("Röhre", "Steg", "Dom"))]
+    bauteile += [(f"Kabel aus Durchbruch {x},{z}", x - lx / 2, x + lx / 2, UNTEN, EBENE3_UNTEN, z - bz / 2, z + bz / 2) for (x, z, lx, bz) in SCHLITZE[GRIFFLOECHER:]]
+    zugang_pruefen(schrauben, [("Deck", dv + dh), ("Ring", rv + rh)], bauteile)
     # Selbstprüfung: jede Röhre im Ring muss auf ganzer Höhe mit der Außenwand verbunden sein (CAD-Rechenfehler finden)
     from build123d import Vector
     r, luecken = ring_ganz, []

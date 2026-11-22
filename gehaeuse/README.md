@@ -33,6 +33,8 @@ In der Wanne liegt alles, was schwer ist oder mit dem Akku zu tun hat: 4 Motoren
 
 **Druckeinstellungen:** PETG empfohlen (verträgt die Wärme von Motoren und Akku besser), PLA geht auch. **4 Wände/Perimeter** (damit die Schrauben gut greifen), 25 % Füllung, 0,2 mm Schichthöhe. Die Empfehlung für jedes einzelne Druckteil (Filament, Temperaturen, Wände, Füllung, Druckrichtung, Download) steht auch in den 3D-Ansichten: Druckteil antippen.
 
+**Schrauben erreichbar – geprüft:** Jedes Ebenen-Skript prüft, ob man die Schrauben an den Fugen mit einem Schraubendreher erreicht (gedachter Schraubendreher Ø 6 × 60 mm ab dem Kopf, er darf weder Druckteile noch Bauteile treffen). Wanne: seitlich von außen, in der Mitte von innen durch die Gasse zwischen Akku und INA226. Ausgabe „Schraubendreher-Zugang – Probleme: 0“.
+
 **Druckbar ohne Stützen – geprüft:** `python werkzeug/ueberhang.py` prüft alle Druckteile in ihrer Druckrichtung. Erlaubt sind nur Flächen, die mindestens 45° steil sind, kurze Brücken (waagerecht, an zwei Seiten aufliegend, höchstens 15 mm – z. B. die Decke eines Schlitzes) und die Oberseite kleiner runder Löcher in senkrechten Wänden bis Ø 10 mm (Wellenlöcher, Schraub-Langlöcher, Schalterloch) – die schafft jeder Drucker. Ergebnis: alle Teile „ohne Stützen druckbar“. Nach jeder Änderung an einem Druckteil neu laufen lassen.
 
 **Was wo ist** (von oben gesehen, vorne = Kamera)
@@ -90,7 +92,7 @@ Das Deck ist der **Deckel der Wanne** (liegt auf dem Wannenrand bei 58 mm). Dar�
 | `ebene2/ring_vorne.stl` | 1 | 141 × 180 × 36 mm | **aufrecht** (Unterkante aufs Bett) | Ohne Stützen. Vorne die zwei Laschen für die Schrauben des Klappdeckels (unten 45°-Schräge). |
 | `ebene2/ring_hinten.stl` | 1 | 119 × 180 × 33 mm | **aufrecht** | Ohne Stützen. Scharnier-Lappen hinten (unten 45°-Schräge), USB-C-Ausschnitt und Loch für den Hauptschalter. |
 
-**Zwei Hälften:** Das **Deck** ist bei x = +58 geteilt (zwischen Freenove-Board und vorderer Motorzone). An der Fuge steht auf jeder Hälfte ein 10 mm hoher Steg (außen, zwischen den Grifflöchern frei); die Stege werden mit **2 × M3 × 10** quer verschraubt (Kopf hinten, Gewinde im vorderen Steg). Der **Ring** ist bei x = −16,5 geteilt, also weit weg von der Fuge des Decks. Jede Ring-Hälfte hat eigene Hülsen und ist mit eigenen **M3 × 20** von oben auf das Deck geschraubt (vorne in den Ecken, hinten an der Rückwand und je zwei an der Fuge des Rings). So überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings. Die Fuge der Wanne liegt wieder woanders (x = +6).
+**Zwei Hälften:** Das **Deck** ist bei x = +58 geteilt (zwischen Freenove-Board und vorderer Motorzone). An der Fuge steht auf jeder Hälfte ein 10 mm hoher Steg (außen, zwischen den Grifflöchern frei); die Stege werden mit **2 × M3 × 10** quer verschraubt (Kopf hinten, Gewinde im vorderen Steg; bei z = −54 und +64, dahinter ist für den Schraubendreher frei). Der **Ring** ist bei x = −16,5 geteilt, also weit weg von der Fuge des Decks. Jede Ring-Hälfte hat eigene Hülsen und ist mit eigenen **M3 × 20** von oben auf das Deck geschraubt (vorne in den Ecken, hinten an der Rückwand und je zwei an der Fuge des Rings). So überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings. Die Fuge der Wanne liegt wieder woanders (x = +6).
 
 **Aufteilung in Zonen** – alles gut erreichbar, nichts liegt kreuz und quer:
 
@@ -113,7 +115,7 @@ Das Deck ist der **Deckel der Wanne** (liegt auf dem Wannenrand bei 58 mm). Dar�
 | rund um jedes Griffloch (Finger) | 4 mm + Rand | 6 mm Höhe |
 | unter dem Hauptschalter (ragt 25 mm nach innen) | ganze Länge | 6,5 mm Höhe |
 
-Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Stegen). Module mit Lötanschlüssen (DRV8833, MP1584, Ladeboard) klickt man zum Löten heraus – ihre Kabel bekommen dafür ein paar Zentimeter Reserve.
+Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Stegen), und dass man die Schrauben an der Fuge mit einem Schraubendreher erreicht. Module mit Lötanschlüssen (DRV8833, MP1584, Ladeboard) klickt man zum Löten heraus – ihre Kabel bekommen dafür ein paar Zentimeter Reserve.
 
 **Was darauf sitzt**
 - **Freenove-Board mit Pico 2 W** vorne in der Mitte (x = 20) auf 4 gedruckten Domen (4 mm hoch), 4 × **M3 × 8**. Die Klemmen-Reihen zeigen zu den Seiten.
@@ -122,8 +124,8 @@ Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Steg
 - **DRV8833** je Achse mittig zwischen den beiden Grifflöchern. OUT1/OUT2 = linker Motor, OUT3/OUT4 = rechter Motor dieser Achse.
 - **WAGO-Taschen (3,3 V)** rechts außen, die **Kabelseite ist offen und zeigt nach außen**, die Rückwand ist nur 4 mm hoch (Hebel klappen frei auf).
 - **BNO085 (Kompass)** hinten in der Mitte (x = −35): ca. 12 cm von Durchbruch C und von den Verteilern in der Wanne, ca. 5 cm vom hinteren Motor. Darunter liegt in der Wanne (4 cm tiefer) der Akku – ob sein Strom stört, zeigt erst ein Test mit dem echten Auto (BNO085 kalibrieren und beim Fahren beobachten).
-- **MP1584** vorne rechts direkt am Strom-Durchbruch C, ca. 8 cm vom Kompass.
-- **Kabelwege nach unten in die Wanne:** die vier Grifflöcher (Motorkabel, XSHUT der Nahsensoren), **D** links vor dem Pico (Daten vom INA226), **S** hinten rechts (Leitungen zum Hauptschalter), **B** hinten links (BMS → Ladeboard), **C** vorne rechts (Plus und Minus von den Verteilern – immer paarweise nebeneinander).
+- **MP1584** rechts hinter dem Freenove-Board (x = −24), ca. 6 cm vom Kompass. Er sitzt bewusst nicht vor der rechten Schraube an der Deck-Fuge, damit dort der Schraubendreher Platz hat.
+- **Kabelwege nach unten in die Wanne:** die vier Grifflöcher (Motorkabel, XSHUT der Nahsensoren), **D** links vor dem Pico (Daten vom INA226), **S** hinten rechts (Leitungen zum Hauptschalter), **B** hinten links (BMS → Ladeboard), **C** vorne rechts (x = 40, z = −68: Plus und Minus von den Verteilern – immer paarweise nebeneinander).
 - **Ladeboard DDTCCRUB 2S** hinten links (z = 60): Die Platine liegt **bündig an der Innenseite der Rückwand**, die USB-C-Buchse steckt im Ausschnitt der Wand (13,5 × 8 mm, außen angefast) und sitzt nur 1 mm hinter der Außenseite. Die innere Ecke des Rings ist dort enger gerundet.
 - **Rückwand des Gehäuse-Rings:** in Fahrtrichtung rechts der **Hauptschalter** (runder Taster Ø 12 mm, Loch Ø 12,2 mm, z = −55), links die **USB-C-Buchse** des Ladeboards (z = +60). Reihenfolge beim Zusammenbau: erst das Ladeboard einklicken, dann den Ring aufsetzen.
 - Die Kabellängen vom Motorstecker werden nach dem Neubau neu ausgemessen.
@@ -159,7 +161,7 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
 - **Vorne zwei M3 × 12** waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2.
 - **Kabel:** Die Haube ist unten offen – alle Kabel von Ebene 2 laufen hinten beim Scharnier nach oben, dort knicken sie beim Aufklappen am wenigsten.
 - **Luft:** senkrechte Lüftungsschlitze in beiden Seitenwänden (der AI HAT+ braucht Luft). Unter Pi und Kamera bleiben bis Ebene 2 gut 10 mm frei.
-- **Zwei Hälften:** Fuge bei x = +45 (wieder an einer anderen Stelle als Wanne, Deck und Ring). Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand; beide werden mit **6 × M3 × 12** verschraubt (Kopf hinten, Gewinde vorne).
+- **Zwei Hälften:** Fuge bei x = +45 (wieder an einer anderen Stelle als Wanne, Deck und Ring). Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand; beide werden mit **6 × M3 × 12** verschraubt (bei aufgeklappter Haube). Fünf Köpfe sitzen hinten, die Schraube links am Dach von vorne – hinter ihr liegt das 4G-Modul.
 
 Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufklappen).
 
