@@ -204,11 +204,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122160853"></script>
+<script src="teile/teile.js?v=20261122163847"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122160853"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122163847"></script>
 <script>
 (function () {
   const stage = document.getElementById('stage');
@@ -262,7 +262,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
     const groundMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 1 });
     const ground = new THREE.Mesh(new THREE.CircleGeometry(320, 72), groundMat);
-    ground.rotation.x = -Math.PI / 2;
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -8.7;   // Räder Ø 85 mm: der Boden liegt 8,7 mm unter der alten Höhe (Achse bei 33,8 bleibt)
     ground.receiveShadow = true;
     ground.userData.noPick = true;
     scene.add(ground);
@@ -490,7 +490,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     }
     // Schilder „VORNE“ / „HINTEN“: hinten ist die Seite mit Ladebuchse und Hauptschalter, vorne die mit Nahsensor und Kamera
     function richtungsSchilder(parent, y = 14) {
-      [['VORNE', 128, '#2f7d3b'], ['HINTEN', -163, '#a8432a']].forEach(([text, x, farbe]) => {
+      [['VORNE', 168, '#2f7d3b'], ['HINTEN', -168, '#a8432a']].forEach(([text, x, farbe]) => {
         const cv = document.createElement('canvas'); cv.width = 256; cv.height = 72;
         const c = cv.getContext('2d');
         c.fillStyle = farbe; c.beginPath(); if (c.roundRect) c.roundRect(2, 2, 252, 68, 18); else c.rect(2, 2, 252, 68); c.fill();
@@ -638,7 +638,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen auf gelber Kunststofffelge, Ø 67,6 × 24,3 mm (die übliche „65-mm“-Form). Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
+      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 32 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. Im Modell ist das 65-mm-Rad vergrößert gezeichnet. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
+      g.scale.set(85 / 67.6, 85 / 67.6, 32 / 24.3); g.position.z += s * 3.85;   // 85-mm-Rad (ca. 32 mm breit): 65-mm-Modell vergrößert, Innenseite bleibt
       const ersatz = new THREE.Group(); g.add(ersatz);
       cadTeil('rad', g, ersatz, (m) => {
         // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen

@@ -36,12 +36,12 @@ TEMPO_MIN = 0.12
 BEFEHL_TIMEOUT_MS = 500
 
 # --- Rad und Encoder (für Strecke und Geschwindigkeit) ---
-RAD_DURCHMESSER_MM = 65
+RAD_DURCHMESSER_MM = 85
 # Zählimpulse je Radumdrehung (gezählt wird jede steigende Flanke von Kanal A).
-# JGA25-370: 11 Impulse je Motorumdrehung × Getriebe. Bei 280 U/min ist das Getriebe meist
-# 1:21,3 → ca. 234. Mit test_encoder.py nachmessen: Rad genau 10-mal von Hand drehen,
+# JGA25-370 mit 130 U/min: 11 Impulse je Motorumdrehung × Getriebe 1:46,8 → ca. 515.
+# Mit test_encoder.py nachmessen: Rad genau 10-mal von Hand drehen,
 # die Zahl durch 10 teilen und hier eintragen.
-IMPULSE_PRO_UMDREHUNG = 234
+IMPULSE_PRO_UMDREHUNG = 515
 
 # --- Nahsensoren und Hindernis-Stopp ---
 # Die Laser-Nahsensoren VL53L1X vorne und hinten bremsen das Auto, bevor es anstößt.

@@ -27,18 +27,18 @@ from build123d import (Box, Plane, Polygon, Rectangle, RectangleRounded, Text, P
                        extrude, chamfer, Axis, export_stl, export_step)
 
 # ------------------------------------------------------------------ Maße der Wanne (aus ebene1_fahrwerk.py)
-BODEN_UNTEN = 16.0                     # Wannenboden über dem Boden, wenn das Auto auf den Rädern steht
+BODEN_UNTEN = 24.7                     # Wannenboden über dem Boden, wenn das Auto auf den Rädern steht (Räder Ø 85 mm)
 PRUEF_HX, PRUEF_HZ = 36.5, 40.0       # wie in ebene1_fahrwerk.py (PRUEF_HX, PRUEF_HZ) – bei Änderung beide gleich halten
 PRUEF_MITTE = 3.5                      # Mitte der Kerben in der Wanne (x)
 PRUEF_PUNKTE = [(sx * PRUEF_HX, sz * PRUEF_HZ) for sx in (1, -1) for sz in (1, -1)]
 KERBE = (8.0, 6.0, 3.0)                # Länge (x) × Breite (z) × Tiefe der Kerben in der Wanne
-RAD_INNEN = 95.85                      # Innenseite der Räder (z)
+RAD_INNEN = 95.85                      # Innenseite der Räder (z) – bleibt beim 85-mm-Rad gleich (es wird nach außen breiter)
 RAD_X = (80.0 - PRUEF_MITTE, -80.0 - PRUEF_MITTE)   # Radachsen, vom Prüfstand aus gesehen
-RAD_R = 32.5
+RAD_R = 42.5
 
 # ------------------------------------------------------------------ Prüfstand
 HUB = 19.0                             # so weit hängen die Räder über dem Tisch
-AUFLAGE = BODEN_UNTEN + HUB            # Oberkante der Stempel = Wannenboden (35 mm)
+AUFLAGE = BODEN_UNTEN + HUB            # Oberkante der Stempel = Wannenboden (43,7 mm)
 LUFT = 0.3                             # Luft zwischen Zapfen und Kerbe (je Seite)
 ZAPFEN_H = KERBE[2] - 0.5              # Zapfen 0,5 mm kürzer als die Kerbe tief ist
 ZAPFEN_FASE = 0.8

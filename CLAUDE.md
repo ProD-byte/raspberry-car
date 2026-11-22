@@ -17,12 +17,12 @@ aspberry-car" /E /R:10 /W:5 /XD __pycache__` (nichts auf H: löschen ohne Rückf
 Siehe `docs/entscheidungen.md`. Kurz:
 - **Keine Jumperkabel, keine Steckbretter.** Verbindungen über Schraubklemmen (mit Aderendhülsen), Lötstellen, WAGO-Hebelklemmen oder verriegelnde Stecker (STEMMA QT, JST).
 - **Nur Standardmodule**, keine eigene Platine – damit es nachbaubar bleibt.
-- **Motoren 6 V** (JGA25-370 mit Encoder, Räder 65 mm), Auto möglichst klein.
+- **Motoren 6 V: JGA25-370 mit Encoder, 130 U/min** (Getriebe 1:46,8), **Räder 85 mm** (seit 22.11.2026 – vorher 280 U/min mit 65 mm: für das 1,9 kg schwere, breite Auto zu schwach zum Drehen auf Teppich). Später für den Garten 100-mm-Geländeräder auf dieselben Motoren.
 - **Akku: 2S2P aus 4× Samsung INR18650-35E** (kein LiPo), mit **BMS 2S 20 A Balance** und **Ladeboard DDTCCRUB 2S** (Lötbrücken 2S und 1A).
 - **Motoren und Pi haben getrennte Stromwege** (DRV8833 direkt am Akku, Pi über eigenen Pololu-Wandler), damit Motorspitzen den Pi nicht zum Absturz bringen. Deshalb **kein** Waveshare UPS HAT.
 - **Pico 2 W** (auf Freenove Breakout Board) = Echtzeit: Motoren, Encoder, Sensoren, Not-Stopp. **Pi 5** = Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App, KI.
 - **Vorne/hinten:** Hinten = Seite mit Ladebuchse (USB-C) und Hauptschalter, vorne = Nahsensor und Kamera. In allen Skripten zeigt x nach vorne.
-- **Aufbau als Sandwich in 3 Ebenen** (gedruckte Ebenen **250 × 180 mm**, Radstand 160 mm, Räder 65 mm außen; Wanne unten mit der kompletten Stromversorgung, Ebene 2 Antrieb, Ebene 3 Gehirn mit Dach als Klappdeckel; Säulen mitgedruckt, nur M3-Zylinderkopfschrauben ISO 4762). Möglichst flach bauen – kein Turm. **Jede Ebene aus zwei Druckteilen** (vordere / hintere Hälfte, quer geteilt, überlappende Laschen + M3), Fugen je Ebene versetzt. Drucker: Bambu A1 (256 × 256 mm).
+- **Aufbau als Sandwich in 3 Ebenen** (gedruckte Ebenen **250 × 180 mm**, Radstand 160 mm, Räder 85 mm außen; Wanne unten mit der kompletten Stromversorgung, Ebene 2 Antrieb, Ebene 3 Gehirn mit Dach als Klappdeckel; Säulen mitgedruckt, nur M3-Zylinderkopfschrauben ISO 4762). Möglichst flach bauen – kein Turm. **Jede Ebene aus zwei Druckteilen** (vordere / hintere Hälfte, quer geteilt, überlappende Laschen + M3), Fugen je Ebene versetzt. Drucker: Bambu A1 (256 × 256 mm).
 - **Umbau auf 250 × 180 (22.11.2026) fertig:** Ebene 1–3, großes 3D-Modell, Werkstatt-Ansichten (mit Kabelwegen) und Fahrsimulation sind auf dem neuen Stand.
 - **Schrauben müssen erreichbar sein:** Jedes Ebenen-Skript prüft „Schraubendreher-Zugang“ (gedachter Schraubendreher Ø 6 × 60 mm ab jedem Kopf der Fugen-Schrauben darf weder Druckteile noch Bauteile treffen). Neue Schrauben dort mit eintragen; Ergebnis muss „Probleme: 0“ sein.
 
