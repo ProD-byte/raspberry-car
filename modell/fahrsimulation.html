@@ -153,7 +153,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html">Werkstatt Ebene 3</a><a href="fahrsimulation.html" aria-current="page">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
     <div class="eyebrow">Raspberry Car · Fahrsimulation</div>
     <h1>So fährt das Auto im Gelände</h1>
-    <p class="lead">Das ganze Auto (250 × 180 mm: Wanne, Elektronik-Deck und Klapphaube) auf verschiedenem Untergrund – Ebene 2 und 3 lassen sich ausblenden. Fahren mit den Pfeiltasten, W A S D oder den Knöpfen. Links/rechts ohne Gas = <strong>auf der Stelle drehen</strong> wie ein Panzer. Rechts oben stehen Geschwindigkeit, Neigung, Schlupf und der geschätzte Motorstrom.</p>
+    <p class="lead">Das ganze Auto (250 × 180 mm: Wanne, Elektronik-Deck und Klapphaube) auf verschiedenem Untergrund – Ebene 2 und 3 lassen sich ausblenden, die Haube lässt sich durchsichtig schalten. Fahren mit den Pfeiltasten, W A S D oder den Knöpfen. Links/rechts ohne Gas = <strong>auf der Stelle drehen</strong> wie ein Panzer. Rechts oben stehen Geschwindigkeit, Neigung, Schlupf und der geschätzte Motorstrom.</p>
   </header>
 
   <div class="stage" id="stage">
@@ -182,7 +182,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
         </div>
       </div>
       <div class="controls">
-        <label class="check"><input id="ebene2" type="checkbox" checked> Ebene 2 und 3 zeigen</label>
+        <label class="check"><input id="ebene2" type="checkbox" checked> Ebene 2</label>
+        <label class="check"><input id="ebene3" type="checkbox" checked> Ebene 3</label>
+        <label class="check"><input id="glas3" type="checkbox" checked> Haube durchsichtig</label>
         <label class="range" for="tempo">Höchstgeschwindigkeit <input id="tempo" type="range" min="0.1" max="0.7" step="0.05" value="0.4"> <span id="tempo-wert" style="font-family:var(--font-mono);font-size:13px">0,40 m/s</span></label>
       </div>
       <div class="reihe">
@@ -225,9 +227,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122154826"></script>
+<script src="teile/teile.js?v=20261122160853"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122154826"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122160853"></script>
 <script>
 // Fahrsimulation: Fahrwerk (Ebene 1) auf Gelände. Einfache, gut nachvollziehbare Physik (keine Physik-Bibliothek):
 // Panzerlenkung mit Schlupf, Auflage auf 3 oder 4 Rädern, Bodenfreiheit, Stufen, Steigung, Kippen, Stromschätzung.
@@ -714,26 +716,38 @@ code { font-family: var(--font-mono); font-size: 13px; }
     });
 
     // >>> EBENE 2 (automatisch eingefügt, sim_ebene2.py)
-    // Ebene 2 (Elektronik-Deck mit Ring und Bauteilen) – dieselben Bauteile wie in raspberry-car-3d.html.
-    // Ändert sich dort etwas an Ebene 2, dieses Skript neu laufen lassen (siehe CLAUDE.md).
+    // Ebene 2 (Elektronik-Deck mit Ring) und Ebene 3 (Klapphaube mit Dach) – dieselben Bauteile wie in raspberry-car-3d.html.
+    // Ändert sich dort etwas an Ebene 2 oder 3, sim_ebene2.py neu laufen lassen (siehe CLAUDE.md).
     const E2 = new THREE.Group(); auto.add(E2);
-    const TOP = [0, 61];
+    const E3 = new THREE.Group(); auto.add(E3);
+    const LEVEL = [50.25, 58, 84, 118];   // wie im großen Modell: [3] = Unterseite des Dachs der Haube
+    const TOP = [0, 61, 87, 121];
     const PIN = { 1: 'GP0', 2: 'GP1', 3: 'GND', 4: 'GP2', 5: 'GP3', 6: 'GP4', 7: 'GP5', 8: 'GND', 9: 'GP6', 10: 'GP7', 11: 'GP8', 12: 'GP9', 13: 'GND', 14: 'GP10', 15: 'GP11', 16: 'GP12', 17: 'GP13', 18: 'GND', 19: 'GP14', 20: 'GP15', 21: 'GP16', 22: 'GP17', 23: 'GND', 24: 'GP18', 25: 'GP19', 26: 'GP20', 27: 'GP21', 28: 'GND', 29: 'GP22', 30: 'RUN', 31: 'GP26', 32: 'GP27', 33: 'GND', 34: 'GP28', 35: 'VREF', 36: '3V3', 37: '3V3_EN', 38: 'GND', 39: 'VSYS', 40: 'VBUS' };
+    function ribbon(p, pts, width, color) {
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      const sh = new THREE.Shape();
+      sh.moveTo(-0.15, -width / 2); sh.lineTo(0.15, -width / 2); sh.lineTo(0.15, width / 2); sh.lineTo(-0.15, width / 2); sh.lineTo(-0.15, -width / 2);
+      const geo = new THREE.ExtrudeGeometry(sh, { steps: 60, bevelEnabled: false, extrudePath: curve });
+      return add(p, geo, std(color, { rough: 0.5 }));
+    }
     const deckFarbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
-    (function () {
-      [['e2_platte_vorne', 'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)', 'deck'], ['e2_platte_hinten', 'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)', 'deck'],
-       ['e2_ring_vorne', 'Gehäuse-Ring oben, vordere Hälfte (Druckteil)', 'ring'], ['e2_ring_hinten', 'Gehäuse-Ring oben, hintere Hälfte (Druckteil)', 'ring']].forEach(([datei, name, art]) => {
-        const d = part(E2, name, 'Teil von Ebene 2 (Elektronik-Deck mit Ring). Einzelheiten: Werkstatt Ebene 2.', 0, 0, 0);
-        d.userData.druckteil = art; cadTeil(datei, d, new THREE.Group(), (m) => m, deckFarbe);
-      });
-      // Ebene 3: die Klapphaube (nur die Druckteile, zur Form und zum Gewicht)
-      const E3 = new THREE.Group(); auto.add(E3); window.__E3 = E3;
-      const haubeFarbe = (mat) => { mat.color.set(0x5a7fbf).convertSRGBToLinear(); mat.roughness = 0.8; };
-      [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)'], ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)']].forEach(([datei, name]) => {
-        const h = part(E3, name, 'Teil von Ebene 3 (Klapphaube mit Dach). Einzelheiten: Werkstatt Ebene 3.', 0, 0, 0);
-        h.userData.druckteil = 'haube'; cadTeil(datei, h, new THREE.Group(), (m) => m, haubeFarbe);
-      });
-    })();
+    const haubeFarbe = (mat) => { mat.color.set(0x5a7fbf).convertSRGBToLinear(); mat.roughness = 0.8; };
+    [['e2_platte_vorne', 'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)', 'deck'], ['e2_platte_hinten', 'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)', 'deck'],
+     ['e2_ring_vorne', 'Gehäuse-Ring oben, vordere Hälfte (Druckteil)', 'ring'], ['e2_ring_hinten', 'Gehäuse-Ring oben, hintere Hälfte (Druckteil)', 'ring']].forEach(([datei, name, art]) => {
+      const d = part(E2, name, 'Teil von Ebene 2 (Elektronik-Deck mit Ring). Einzelheiten: Werkstatt Ebene 2.', 0, 0, 0);
+      d.userData.druckteil = art; cadTeil(datei, d, new THREE.Group(), (m) => m, deckFarbe);
+    });
+    // Haube: eigene Gruppe, damit sie sich durchsichtig schalten lässt (die Bauteile am Dach bleiben normal)
+    const haube = new THREE.Group(); E3.add(haube);
+    let haubeDurchsichtig = true;
+    function haubeGlas() {   // nach dem Laden jedes Teils und beim Umschalten
+      setTimeout(() => haube.traverse((o) => { if (!o.isMesh) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+        m.transparent = haubeDurchsichtig; m.opacity = haubeDurchsichtig ? 0.22 : 1; m.depthWrite = !haubeDurchsichtig; m.needsUpdate = true; }); }), 0);
+    }
+    [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)'], ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)']].forEach(([datei, name]) => {
+      const h = part(haube, name, 'Teil von Ebene 3 (Klapphaube mit Dach). Einzelheiten: Werkstatt Ebene 3.', 0, 0, 0);
+      h.userData.druckteil = 'haube'; cadTeil(datei, h, new THREE.Group(), (m) => { haubeGlas(); return m; }, haubeFarbe);
+    });
     (function sw() {
       // Hauptschalter: runder 12-mm-Taster (GrabCAD „Push button 12mm“, MATOX_3D – nur lokal, siehe teile/QUELLEN.md).
       // Einbauloch Ø 12 mm in der Rückwand des Gehäuse-Rings (Außenseite x = −120). Frontring Ø 13,9 liegt außen auf,
@@ -943,11 +957,224 @@ code { font-family: var(--font-mono); font-size: 13px; }
     })();
     wago(E2, 'W3V', '3,3-V-Verteiler vorne (WAGO 221-415)', 'Verteilt 3,3 V vom Pico an die Encoder der beiden Vordermotoren und weiter zum Verteiler hinten. Sitzt in der Motorzone vorne neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', 80, TOP[1], -60, Math.PI / 2);
     wago(E2, 'W3H', '3,3-V-Verteiler hinten (WAGO 221-415)', 'Verteilt 3,3 V an die Encoder der beiden Hintermotoren, den BNO085 und den INA226. Sitzt in der Motorzone hinten neben dem Griffloch, Kabelseite nach außen (dort ist Platz für die Kabel).', -80, TOP[1], -60, Math.PI / 2);
+    const PI = { x: -8, y: TOP[2] + 5, z: 0 };
+    let piFan = null;
+    // Raspberry Pi 5: echtes CAD-Modell von Raspberry Pi (rpi-5b_no_graphics.step, MIT), siehe teile/QUELLEN.md.
+    // Lage im Auto: USB/Ethernet nach hinten (−x), GPIO-Leiste zur linken Seite (+z), USB-C und Micro-HDMI rechts (−z).
+    // Positionen der Buchsen aus der CAD-Datei: USB 2.0 bei z = +19, USB 3.0 (blau) bei z = +1, Ethernet bei z = −17,8,
+    // USB-C bei x = +31,3, Micro-HDMI bei x = +16,7 und +3,3. Löcher: 58 × 49 mm (x = −19 / +39, z = ±24,5).
+    (function pi5() {
+      const g = part(E3, 'Raspberry Pi 5 (8 GB)', 'Das Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App. Strom über USB-C vom Pololu, USB-Geräte hinten. 85 × 56 mm, 4 Löcher für M2,5 im Abstand 58 × 49 mm. 3D-Form aus der offiziellen CAD-Datei von Raspberry Pi.', PI.x, PI.y, PI.z);
+      [[-19, -24.5], [39, -24.5], [-19, 24.5], [39, 24.5]].forEach(([x, z]) => (cylY(g, 2.2, 5, x, -5, z, 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 6 }).userData.nurImAuto = true));
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cadTeil('pi5', g, ersatz, (m) => {
+        // CAD: x 0…85 (USB-Ende bei +x), z −56…0 (GPIO bei −56), Unterseite y = 0 → 180° drehen und mittig setzen
+        m.rotation.y = Math.PI; m.position.set(42.5, 0, -28); return m;
+      });
+      // Einfaches Ersatzmodell (wenn teile.js fehlt)
+      pcb(ersatz, 85, 56, '#2b7a3d', 0, 0, 0, (c, w, h) => {
+        [[23.5, 3.5], [81.5, 3.5], [23.5, 52.5], [81.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
+        silk(c, 'Raspberry Pi 5', 60, 12, 2.6, { align: 'center' });
+      });
+      const usb = (z, blue) => {
+        rbox(ersatz, 17.2, 15.6, 14.5, -37, 1.3, z, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+        [4.8, 11.6].forEach((yy) => box(ersatz, 0.7, 1.8, 10, -45.6, 1.3 + yy - 1.2, z, blue ? 0x2a5fd0 : 0x161616));
+      };
+      usb(19, false); usb(1.05, true);
+      rbox(ersatz, 21.5, 13.3, 15.9, -34.6, 1.3, -17.75, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 0.6 });
+      [[31.3, 9, 3.3], [16.7, 7.2, 3.5], [3.3, 7.2, 3.5]].forEach(([x, w, hh]) => box(ersatz, w, hh, 7.5, x, 1.3, -25.5, 0xc5c9cd, { metal: 0.9, rough: 0.25 }));
+      pins(ersatz, 20, 2, 10, 1.3, 24.5, { pinH: 6 });
+      chip(ersatz, 17, 17, 1.6, 9.4, 1.3, -5.3, 'BCM2712');
+      // Active Cooler (offizieller Kühler, sitzt über dem Prozessor) – gehört zum Auto, nicht zum Pi selbst
+      const ac = new THREE.Group(); ac.position.set(9.4, 2.9, -5.3); ac.userData.nurImAuto = true; g.add(ac);
+      box(ac, 38, 1.6, 42, 0, 0, 0, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
+      for (let i = 0; i < 9; i++) box(ac, 0.9, 7, 18, -16 + i * 2.5, 1.6, -10, 0xb7bdc2, { metal: 0.8, rough: 0.35 });
+      rbox(ac, 20, 8.6, 22, 7, 0, 8, 0x1d1f21, { rough: 0.6, r: 1.5 });
+      cylY(ac, 9.5, 0.4, 7, 8.6, 8, 0x0f1011, { seg: 40 });
+      piFan = new THREE.Group(); piFan.position.set(7, 9.0, 8); ac.add(piFan);
+      for (let i = 0; i < 9; i++) { const bl = box(piFan, 7.5, 0.4, 2.2, 0, 0, 0, 0x2a2c2f); bl.position.set(Math.cos(i * 0.698) * 5.5, 0.2, Math.sin(i * 0.698) * 5.5); bl.rotation.y = -i * 0.698 + 0.5; }
+      cylY(ac, 4.5, 0.9, 7, 8.6, 8, 0xd6d9dc, { seg: 32 });
+      einpassen('cooler', ac);   // Active Cooler (GrabCAD)
+      // Stapel-Buchsenleiste für den AI HAT+ (auf der GPIO-Leiste)
+      const stapel = new THREE.Group(); stapel.userData.nurImAuto = true; g.add(stapel);
+      pins(stapel, 20, 2, 10, 1.3 + 8.5, 24.5, { female: true, h: 16 - 8.5 });   // reicht bis unter den AI HAT+ (16-mm-Abstandshalter)
+      // Stecker der Kabel
+      const kabel = new THREE.Group(); kabel.userData.nurImAuto = true; g.add(kabel);
+      const plug = (x, y, z) => { rbox(kabel, 13, 7, 14, x, y - 3.5, z, 0x2a2c2f, { r: 1.5 }); };
+      plug(-52, 5.6, 19); plug(-52, 13.0, 19); plug(-52, 5.6, 1.05); plug(-52, 13.0, 1.05);
+      rbox(kabel, 11, 6, 13, 31.3, -0.55, -36.2, 0x2a2c2f, { r: 1.5 });
+      anchor('PI_U2L', g, -58.7, 5.6, 19, [-1, 0, 0], 'Pi 5 USB 2.0 unten');
+      anchor('PI_U2H', g, -58.7, 13.0, 19, [-1, 0, 0], 'Pi 5 USB 2.0 oben');
+      anchor('PI_U3L', g, -58.7, 5.6, 1.05, [-1, 0, 0], 'Pi 5 USB 3.0 unten');
+      anchor('PI_U3H', g, -58.7, 13.0, 1.05, [-1, 0, 0], 'Pi 5 USB 3.0 oben');
+      anchor('PI_USBC', g, 31.3, 2.5, -43.2, [0, 0, -1], 'Pi 5 USB-C (Strom)');
+    })();
+    // Raspberry Pi AI HAT+ – Maße nach der offiziellen Zeichnung (Raspberry Pi Produktdatenblatt RP-008133-DS-1, Seite 4):
+    // Platine 65 × 56,5 mm, Löcher 58 × 49 mm, KI-Chip 17 × 17 mm, Aussparung 10 × 16 mm, Flachbandstecker links.
+    // 3D-Modell: GrabCAD, Nick Williamson (stimmt mit der Zeichnung überein, mit 16-mm-Abstandshaltern) – nur lokal.
+    const HAT_Y = PI.y + 1.3 + 16;                 // 16-mm-Abstandshalter aus dem Lieferumfang (Platz für den Active Cooler)
+    (function aiHat() {
+      const g = part(E3, 'Raspberry Pi AI HAT+ (13 TOPS, Hailo-8L)', 'KI-Beschleuniger: erkennt Personen und Hindernisse im Kamerabild in Echtzeit. Über das kurze Flachbandkabel per PCIe mit dem Pi verbunden. Sitzt auf 4 Abstandshaltern 16 mm (liegen bei) über dem Active Cooler, die GPIO-Leiste geht über die Stapel-Buchsenleiste durch. 65 × 56,5 mm.', PI.x + 10, HAT_Y, 0, Math.PI);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      // Ersatzmodell nach der offiziellen Zeichnung (dx/dy wie in der Zeichnung: von links / von der GPIO-Kante)
+      const X = (dx) => dx - 32.5, Z = (dy) => dy - 28.25;
+      pcb(ersatz, 65, 56.5, '#1f6b30', 0, 0, 0, (c, w, h) => {
+        [[3.5, 3.5], [61.5, 3.5], [3.5, 52.5], [61.5, 52.5]].forEach(([x, y]) => hole(c, x, y, 1.4));
+        for (let i = 0; i < 20; i++) [2.23, 4.77].forEach((y) => hole(c, 8.37 + i * 2.54, y, 0.5));
+        c.fillStyle = '#d9dee2'; c.fillRect(47.5, 40.5, 10, 16);   // Aussparung (im CAD ausgeschnitten)
+        silk(c, 'Raspberry Pi AI HAT+', 26, h - 8, 2.4, { align: 'center' });
+        silk(c, '13 TOPS', 26, h - 4.6, 1.8, { align: 'center', weight: 400 });
+      });
+      chip(ersatz, 17, 17, 1.9, X(31), 1.6, Z(29.5), 'HAILO-8L');
+      box(ersatz, 5, 2.0, 18, X(7.9), 1.6, Z(26.5), 0xf2efe6);                // Flachbandstecker PCIe
+      smd(ersatz, 50, 40, 26, 1.6, X(32), Z(30));
+      cadTeil('aihat', g, ersatz, (m) => {
+        // CAD: Platine in x/y (lange Seite y), Bauteile zeigen nach −z, Abstandshalter nach +z, Mitte 0
+        // → lange Seite entlang x, GPIO-Kante nach −z, Bauteile nach oben (x' = −y, y' = −z, z' = x)
+        m.applyMatrix4(new THREE.Matrix4().set(0, -1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
+    })();
+    ribbon(E3, [V(PI.x + 37.5, HAT_Y + 3.2, 1.75), V(PI.x + 47, HAT_Y + 3, 1.75), V(PI.x + 47, PI.y + 8, 1.75), V(PI.x + 41.8, PI.y + 3.6, 1.75)], 16, 0xb8752b)
+      .userData.part = { name: 'PCIe-Flachbandkabel: AI HAT+ → Pi 5 PCIe', desc: 'Liegt dem AI HAT+ bei. Verbindet den KI-Chip mit dem schnellen PCIe-Anschluss des Pi 5.' };
+    (function camera() {
+      // Kamera Modul 3 Wide: Platine 25 × 23,9 mm senkrecht in den zwei Nuten des Klappdeckels (Vorderseite bei x = 73,6,
+      // Unterkante 4 mm über dem Boden), Objektiv 14,4 mm über der Unterkante – schaut durch das Fenster in der Vorderwand.
+      const g = part(E3, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera (120°) mit Autofokus für das Live-Video. Wird von oben in zwei Nuten an der Vorderwand des Klappdeckels geschoben, ohne Schrauben; das Objektiv schaut durch ein großes, außen angefastes Fenster. Das Flachbandkabel (22 auf 15 Pin) geht unten heraus zum Anschluss CAM/DISP 0 am Pi 5.', 112.6, 92 + 11.95, 0);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      const ct = canvasTex(25, 23.9, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, 'Camera Module 3', w / 2, h - 3, 1.8, { align: 'center' }); });
+      const cs = std(0x23663a);
+      add(ersatz, new THREE.BoxGeometry(1, 23.9, 25), [std(0xffffff, { map: ct }), cs, cs, cs, cs, cs], 0.5, 0, 0);
+      rbox(ersatz, 4.5, 8.5, 8.5, 3.2, 2.47 - 4.25, 0, 0x151617, { rough: 0.5, r: 0.8 });
+      cylX(ersatz, 5.0, 5.4, 11.35, 2.47, 0, 0x151617, { rough: 0.4 });
+      cadTeil('kamera3', g, ersatz, (m) => {
+        // CAD: Tiefe x (Rückseite 0, Objektiv +x), Breite y (±12,5), Höhe z (±11,95, Objektiv bei +2,47)
+        m.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
+    })();
+    ribbon(E3, [V(112.2, 92.5, 0), V(100, 90.5, 2), V(70, 92, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
+      .userData.part = { name: 'Kamerakabel: Camera Module 3 → Pi 5 CAM/DISP 0', desc: 'Flachbandkabel 22 auf 15 Pin (beim Pi 5 nötig). Kontakte zeigen zur Platine.' };
+    (function pololu() {
+      const g = part(E3, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1 (Kabel hinten am Scharnier hoch), VOUT/GND über einen kurzen USB-C-Stecker in den Pi. Sitzt vorne rechts im Klappdeckel in einer Einklick-Tasche, nah an der USB-C-Buchse des Pi.', 68, LEVEL[3], -45); g.rotation.x = Math.PI;   // hängt unter dem Dach
+      const names = ['EN', 'VIN', 'GND', 'GND', 'VOUT', 'PG'];
+      pcb(g, 25.4, 20.3, '#1f5f8a', 0, 0, 0, (c, w, h) => {
+        silk(c, 'POLOLU 5V 5.5A', w / 2, h - 2.6, 1.6, { align: 'center' });
+        names.forEach((n, i) => { pad(c, 3 + i * 3.9, 2, 1.8, 1.8); silk(c, n, 3 + i * 3.9, 5.2, 1.0, { align: 'center', rot: -Math.PI / 2 }); });
+      });
+      rbox(g, 10, 5, 10, -4, 1.6, 2, 0x6f7377, { rough: 0.55, r: 1 });
+      chip(g, 4, 4, 1, 7, 1.6, 3, '');
+      smd(g, 20, 12, 8, 1.6, 3, 3);
+      anchor('PO_VIN', g, -9.7 + 3.9, 1.9, -8.15, [0, 1, 0], 'Pololu VIN');
+      anchor('PO_GNDA', g, -9.7 + 7.8, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
+      anchor('PO_GNDB', g, -9.7 + 11.7, 1.9, -8.15, [0, 1, 0], 'Pololu GND');
+      anchor('PO_VOUT', g, -9.7 + 15.6, 1.9, -8.15, [0, 1, 0], 'Pololu VOUT');
+      einpassen('pololu', g);   // offizielles STEP von Pololu
+    })();
+    (function lte() {
+      // Waveshare SIM7600G-H 4G DONGLE, Platine ohne Kunststoffhülle (82,3 × 40,2 mm, keine Befestigungslöcher).
+      // Liegt flach links neben dem Pi in einer Tasche unter dem Dach der Haube (gehaeuse/ebene3_gehirn.py: TASCHEN).
+      // Ursprung = hinteres Platinen-Ende, Unterkante, Bauteilseite; Bauteile zeigen zum Pi (−z).
+      const g0 = part(E3, '4G/LTE- und GPS-Modul Waveshare SIM7600G-H 4G DONGLE', 'Mobilfunk für die Steuerung von überall und GPS für die Position draußen. Gekauft wird der „Waveshare SIM7600G-H 4G DONGLE“ (z. B. Amazon ASIN B08BZKTZDJ); eingebaut wird nur die Platine – die Kunststoffhülle ist zu groß und wird abgezogen. Die Platine (82,3 × 40,2 mm, ohne Löcher) wird von oben in zwei Nut-Säulen im Deckel geschoben. USB-A-Stecker nach hinten, kurzes USB-Kabel zum Pi. Hauptantenne (MAIN) an der SMA-Buchse vorne, AUX und GNSS an den zwei u.FL-Buchsen daneben (Beschriftung auf der Platine prüfen). 3D-Form aus dem offiziellen 3D-Modell von Waveshare.', -60, LEVEL[3] - 4 - 1.6, 76.2);
+      const g = new THREE.Group(); g.rotation.x = -Math.PI / 2; g0.add(g);   // liegt flach unter dem Dach, Bauteilseite nach unten
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      box(ersatz, 82.3, 40.2, 1.6, 41.15, 0, 0.8, 0x1d4f8f, { rough: 0.6 });
+      box(ersatz, 30, 30, 3, 54, 5.9, -1.5, 0x2a2c2f, { rough: 0.5 });
+      box(ersatz, 22, 12, 4.5, -4.3, 14, -0.7, 0xc5c9cd, { metal: 0.9, rough: 0.25 });
+      cylX(ersatz, 3.1, 82.3, 91.8, 20.1, -0.45, 0xd4b058, { metal: 0.9 });
+      [9.8, 30.4].forEach((y) => box(ersatz, 3, 3, 1.2, 79.4, y - 1.5, -0.6, 0xd4b058, { metal: 0.9 }));
+      cadTeil('sim7600', g, ersatz, (m) => {
+        // CAD (Waveshare): Länge x (USB-Stecker bei x < 0, SMA bei x > 82,3), Breite z (0 … −40,2), Bauteilseite +y
+        m.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 40.2, 0, -1, 0, 0, 0, 0, 0, 1));
+        return m;
+      });
+      anchor('LTE_USB', g, -15.3, 20.0, -0.7, [-1, 0, 0], '4G-Modul USB');
+      anchor('LTE_MAIN', g, 91.8, 20.1, -0.45, [1, 0, 0], '4G-Modul MAIN (SMA)');
+      anchor('LTE_GNSS', g, 79.4, 30.4, -1.2, [0, 0, -1], '4G-Modul GNSS (u.FL)');
+      anchor('LTE_AUX', g, 79.4, 9.8, -1.2, [0, 0, -1], '4G-Modul AUX (u.FL)');
+    })();
+
+    let lidarHead = null, sweep = null;
+    (function lidar() {
+      const g = part(E3, '360°-LiDAR LDROBOT LD19', 'Ein Laser dreht sich und misst ringsum bis 12 m. Daraus entstehen Karte und Grundriss. 4-poliges Kabel zum USB-Adapter.', 70, TOP[3], 0);
+      rbox(g, 46, 13, 54, 0, 0, 0, 0x1b1d20, { rough: 0.45, r: 3 });
+      box(g, 44, 0.6, 52, 0, 13, 0, 0x2b2e32, { rough: 0.4 });
+      box(g, 1.5, 3, 6, -23.4, 3.5, 12, 0xf2efe6);
+      lidarHead = new THREE.Group(); lidarHead.position.y = 13.6; g.add(lidarHead);
+      cylY(lidarHead, 19, 4, 0, 0, 0, 0x1b1d20, { seg: 48 });
+      add(lidarHead, new THREE.CylinderGeometry(18.4, 18.4, 9, 48), std(0x5a1414, { metal: 0.5, rough: 0.08 }), 0, 8.5, 0);
+      cylY(lidarHead, 19, 7.4, 0, 13, 0, 0x1b1d20, { seg: 48, rough: 0.4 });
+      cylY(lidarHead, 6, 0.4, 0, 20.4, 0, 0x34383c, { seg: 32 });
+      sweep = new THREE.Group(); sweep.userData.noPick = true; lidarHead.add(sweep);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 240, 6), new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.85 }));
+      beam.rotation.z = Math.PI / 2; beam.position.set(140, 8.5, 0); beam.userData.fx = true; sweep.add(beam);
+      const fan = new THREE.Mesh(new THREE.CircleGeometry(260, 32, -0.35, 0.35), new THREE.MeshBasicMaterial({ color: 0xff3b3b, transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false }));
+      fan.rotation.x = -Math.PI / 2; fan.position.y = 8.5; fan.userData.fx = true; sweep.add(fan);
+      anchor('LID_CON', g, -24.4, 5, 12, [-1, 0, 0], 'LiDAR-Anschluss');
+      // GrabCAD-Modell; der Drehkopf mit dem Laserstrahl bleibt (nur seine Ersatz-Teile werden ausgeblendet)
+      einpassen('ld19', g, { behalten: (c) => c === lidarHead, danach: () => lidarHead.children.forEach((c) => { if (c !== sweep) c.visible = false; }) });
+    })();
+    (function lidarAdapter() {
+      const g = part(E3, 'USB-Adapter für den LiDAR', 'Liegt dem LD19 bei. Wandelt das Signal des LiDAR auf USB um.', 40, LEVEL[3] - 6, 30);
+      pcb(g, 18, 14, '#1f5f8a', 0, 0, 0, (c, w, h) => silk(c, 'LD19 USB', w / 2, h / 2, 1.8, { align: 'center' }));
+      box(g, 3, 3, 6, 7, 1.6, 0, 0xf2efe6);
+      rbox(g, 8, 5, 8, -11, 0.6, 0, 0x2a2c2f, { r: 1 });
+      anchor('LAD_IN', g, 8.8, 3.1, 0, [1, 0, 0], 'LiDAR-Adapter Eingang');
+      anchor('LAD_USB', g, -15.2, 3.1, 0, [-1, 0, 0], 'LiDAR-Adapter USB');
+    })();
+    (function gps() {
+      const g = part(E3, 'GPS-Keramikantenne', 'Braucht freie Sicht zum Himmel, deshalb auf dem Dach. Kabel zum GNSS-Anschluss des 4G-Moduls.', -80, LEVEL[3] - 6.7, -55);
+      box(g, 26, 2.4, 26, 0, 0, 0, 0x1b1d20);
+      box(g, 25, 4, 25, 0, 2.4, 0, 0xd9cbb0, { rough: 0.8 });
+      box(g, 16, 0.3, 16, 0, 6.4, 0, 0xcfd3d6, { metal: 0.9, rough: 0.25 });
+      anchor('GPS', g, -13.4, 1.2, -6, [-1, 0, 0], 'GPS-Antenne');
+    })();
+    [[45, 'L', 'links'], [-45, 'R', 'rechts']].forEach(([z, k, nm]) => {
+      const g = part(E3, `LTE-Flachantenne ${nm}`, 'Klebeantenne für den Mobilfunk. Flach, damit sie den LiDAR nicht verdeckt.', -30, 100, z * 1.9); g.rotation.x = z > 0 ? -Math.PI / 2 : Math.PI / 2;   // klebt innen an der Seitenwand
+      box(g, 42, 0.8, 10, 0, 0, 0, 0x111214, { rough: 0.5 });
+      box(g, 30, 0.2, 2, 2, 0.8, 0, 0x6d6f72, { metal: 0.7 });
+      anchor(`ANT_${k}`, g, -21.4, 0.5, 0, [-1, 0, 0], `LTE-Antenne ${nm}`);
+    });
+    (function leds() {
+      const g = part(E3, 'Status-LEDs (WS2812, 4 Stück)', 'Zeigen an, ob das Auto bereit ist, fährt, lädt oder ein Problem hat. 5 V, GND und Daten vom Pico (GP28).', 101, LEVEL[3] - 2.6, 0);
+      box(g, 6, 1, 34, 0, 0, 0, 0x111214);
+      [-12, -4, 4, 12].forEach((z, k) => box(g, 5, 1.6, 5, 0, 1, z, 0xf4f4f4, { emissive: [0x2fe070, 0x2fe070, 0x2a9cff, 0x2fe070][k], ei: 0.9 }));
+      [['5V', -16.2], ['DIN', -14.2], ['GND', -12.2]].forEach(([n, z]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${n}`); });
+    })();
+
+    // Rundes Touch-Display mit Mikrofonen und Lautsprecher: Waveshare ESP32-S3-Touch-AMOLED-1.75 (Platine ohne Gehäuse).
+    // Maße nach der Zeichnung von Waveshare (docs.waveshare.com/ESP32-S3-Touch-AMOLED-1.75): Glas Ø 48,96, sichtbar Ø 43,76,
+    // Platine Ø 46, gesamt 10,4 dick, 3 Gewinde-Abstandshalter M2 × 3,5 auf der Rückseite, USB-C am Rand.
+    // Liegt flach hinten auf dem Dach (Blick von oben, wenn das Auto am Boden steht) und bleibt unter der Messebene
+    // des LiDAR (ca. 22 mm über dem Dach). Ursprung = Mitte Unterseite, Bildschirm nach oben, USB-C nach +x.
+    (function statusDisplay() {
+      const g = part(E3, 'Status-Display ESP32-S3 AMOLED 1,75" (rund, Touch, Mikrofon, Lautsprecher)', 'Zeigt den Zustand des Autos (Akku, Abstände, Verbindung, Fehler) und nimmt Touch-Eingaben an. Zwei Mikrofone hören auf Sprachbefehle, der Lautsprecher antwortet. Die Spracherkennung macht der Pi 5 (Deutsch, offline); das Display ist Ein- und Ausgabe. Ein USB-C-Kabel zum Pi bringt Strom und Daten. Gekauft wird das Waveshare ESP32-S3-Touch-AMOLED-1.75 als einfache Platine ohne Gehäuse (Lautsprecher 8 Ω / 2 W liegt laut Händlern bei, MX1.25-Stecker). Rund, 466 × 466 Pixel, Glas Ø 49 mm, 10,4 mm dick. Befestigung: 3 × M2 in die Abstandshalter auf der Rückseite.', -92, LEVEL[3] - 10.42, 0);   // Glas liegt von innen am Dach an
+      [0, 2.094, 4.189].forEach((a) => cylY(g, 1.6, 3.5, 17 * Math.cos(a + 1.571), 0, 17 * Math.sin(a + 1.571), 0xc9a24a, { metal: 0.85, rough: 0.35, seg: 12 }));
+      cylY(g, 23, 1.6, 0, 3.5, 0, 0x1d3f8f, { rough: 0.6, seg: 64 });
+      rbox(g, 7.4, 3.2, 9, 20.5, 1.2, 0, 0xc5c9cd, { metal: 0.9, rough: 0.25, r: 1.2 });
+      cylY(g, 23, 3.25, 0, 5.1, 0, 0x111214, { rough: 0.4, seg: 64 });
+      cylY(g, 24.48, 2.05, 0, 8.35, 0, 0x050607, { rough: 0.08, metal: 0.2, seg: 72 });
+      const bild = canvasTex(44, 44, 12, (c, w, h) => {
+        c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
+        c.strokeStyle = '#2fe070'; c.lineWidth = 2.2; c.beginPath(); c.arc(w / 2, h / 2, 19, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * 0.78); c.stroke();
+        c.strokeStyle = '#1e2a22'; c.beginPath(); c.arc(w / 2, h / 2, 19, Math.PI * 0.75 + Math.PI * 1.5 * 0.78, Math.PI * 2.25); c.stroke();
+        c.fillStyle = '#eef1f3'; c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('78 %', w / 2, h / 2 + 1);
+        c.fillStyle = '#9aa4ab'; c.font = '3px system-ui, sans-serif'; c.fillText('Akku', w / 2, h / 2 - 7); c.fillText('vorne frei · hinten 62 cm', w / 2, h / 2 + 7);
+        c.fillStyle = '#3f8cff'; c.beginPath(); c.arc(w / 2, h / 2 + 13, 2.2, 0, Math.PI * 2); c.fill();
+      });
+      const schirm = std(0x000000, { emissive: 0xffffff, ei: 1, rough: 0.15 }); schirm.emissiveMap = bild;   // leuchtet selbst
+      add(g, new THREE.CircleGeometry(21.88, 72), schirm, 0, 10.42, 0, [-Math.PI / 2, 0, Math.PI / 2]);
+      anchor('DISP_USB', g, 24.4, 1.6, 0, [1, 0, 0], 'Status-Display USB-C');
+    })();
+
+    if (sweep) sweep.visible = false;   // den Strahl des LiDAR zeigt die Simulation selbst
     // <<< EBENE 2
 
 
 
-    document.getElementById('ebene2').addEventListener('change', (e) => { E2.visible = e.target.checked; if (window.__E3) window.__E3.visible = e.target.checked; });
+    document.getElementById('ebene2').addEventListener('change', (e) => { E2.visible = e.target.checked; });
+    document.getElementById('ebene3').addEventListener('change', (e) => { E3.visible = e.target.checked; });
+    document.getElementById('glas3').addEventListener('change', (e) => { haubeDurchsichtig = e.target.checked; haubeGlas(); });
 
     // ===================================================================
     // FAHRZEUG-DATEN (mm, kg, s)
