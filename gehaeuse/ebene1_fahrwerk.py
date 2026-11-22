@@ -6,20 +6,23 @@ und STEP (für jedes CAD-Programm) im Ordner gehaeuse/ebene1/.
 Aufruf (einmalig: pip install build123d):
     python ebene1_fahrwerk.py
 
-Koordinaten wie im 3D-Modell: Mitte zwischen den Achsen = 0, x nach vorne,
+Koordinaten wie im 3D-Modell: Mitte zwischen den Achsen = 0 = Mitte der Wanne, x nach vorne,
 z nach links, y nach oben. Im CAD (Z oben): X = x, Y = −z (rechts), Z = y.
 
 Aufbau:
-  * Wanne 205 × 130 mm: vorne bis x = +85, hinten bis x = −120. Darin liegen
+  * Wanne 250 × 180 mm (vorne bis x = +125, hinten bis x = −125), aus ZWEI Druckteilen:
+    vordere und hintere Hälfte, Fuge quer bei x = FUGE. Die vordere Hälfte hat drei Laschen, die in die
+    hintere greifen (innen an beiden Seitenwänden und in der Mitte); sie stehen beim Druck auf dem Bett.
+    Verschraubt mit 6 × M3: an jeder Seite 2 waagerecht von außen (Kopf bündig, die Wand der hinteren
+    Hälfte ist dort innen auf 6 mm verstärkt), in der Mitte 2 von innen durch einen Block.
+    Darin liegen
     - die 4 Motoren (JGA25-370): Getriebe-Stirnseite mit 2 × M3 an die Seitenwand
       (waagerechte Langlöcher 15,4–17 mm), Encoder-Stecker oben, Sättel + Motorbügel,
-    - der Akku (2 × Keystone 1047) in der Mitte,
-    - die Stromversorgung: BMS und INA226 (ohne Stiftleiste, Leitungen direkt
-      angelötet) links neben dem Akku, Sicherungshalter rechts, die Verteiler
-      Plus/Minus (WAGO 221-415) quer zwischen Akku und Hinterachse (Kabelseite nach
-      hinten, Hebel nach oben). Das Ladeboard sitzt oben auf dem Elektronik-Deck.
-  * Räder mittig unter dem Auto: Achsen bei x = +55 und x = −90 (Radstand 145 mm),
-    vorne und hinten je 30 mm Überhang.
+    - der Akku (2 × Keystone 1047, hintereinander quer im Auto) in der hinteren Hälfte,
+    - die Stromversorgung in der vorderen Hälfte: BMS links, Sicherungshalter rechts, dazwischen
+      INA226 (ohne Stiftleiste, Leitungen direkt angelötet) und die Verteiler Plus/Minus
+      (WAGO 221-415, Kabelseite nach hinten, Hebel nach oben). Das Ladeboard sitzt oben auf dem Elektronik-Deck.
+  * Räder außen an den Seiten: Achsen bei x = ±80 (Radstand 160 mm), vorne und hinten je 45 mm Überhang.
   * Boden vorne und hinten gleich schräg hochgezogen („Kufen“): je 45° auf den letzten 8,5 mm, Übergang gerundet.
     So gleitet die Wanne über Steine und Kanten zwischen den Rädern, statt hängen zu bleiben.
   * 2 Nahsensoren VL53L1X (Modul 25 × 10,7 mm, z. B. Happysnow) innen hinter Fenstern in der
@@ -40,10 +43,10 @@ from build123d import (Box, Cylinder, Rot, Rectangle, RectangleRounded, RegularP
                        Pos, extrude, chamfer, fillet, Axis, export_stl, export_step, Compound)
 
 # ------------------------------------------------------------------ Parameter
-X_VORNE, X_HINTEN = 85.0, -120.0        # Außenkante vorne / hinten (je 30 mm vor bzw. hinter der Achse)
-L = X_VORNE - X_HINTEN                  # 205 mm
-XM = (X_VORNE + X_HINTEN) / 2           # Mitte der Wanne (−17,5)
-B, R_ECKE = 130.0, 10.0
+X_VORNE, X_HINTEN = 125.0, -125.0       # Außenkante vorne / hinten (je 45 mm vor bzw. hinter der Achse)
+L = X_VORNE - X_HINTEN                  # 250 mm
+XM = (X_VORNE + X_HINTEN) / 2           # Mitte der Wanne (0)
+B, R_ECKE = 180.0, 12.0
 BODEN_UNTEN = 16.0                      # Bodenfreiheit
 BODEN = 3.0
 BODEN_OBEN = BODEN_UNTEN + BODEN
@@ -52,9 +55,10 @@ RAND = 58.0                             # Oberkante Wanne = Unterkante Elektroni
 FASE = 3.0
 
 ACHSE = 33.8                            # Radachse (Rad Ø 67,6 mm)
-MOTOREN_X = (55.0, -90.0)               # Achse vorne / hinten: Radstand 145 mm, Mitte = Wannenmitte (−17,5)
+MOTOREN_X = (80.0, -80.0)               # Achse vorne / hinten: Radstand 160 mm
 MOTOR_X = MOTOREN_X[0]                  # für das Einzelteil Motorbügel
-STIRN = 62.0                            # Getriebe-Stirnseite an der Wand-Innenseite bei |z| = 62
+STIRN = B / 2 - 3.0                     # Getriebe-Stirnseite an der Wand-Innenseite bei |z| = 87
+MOTOR_LANG = 52.0                       # Getriebe + Motor ab der Stirnseite (Encoder-Stecker liegt innen davor)
 MOTOR_R = 12.5
 LOCH_MIN, LOCH_MAX = 7.7, 8.5           # M3-Gewinde im Getriebe ±7,7 … ±8,5 (waagerecht)
 LAGER_D = 8.0
@@ -64,25 +68,30 @@ DURCH = 3.4
 KOPF_D, KOPF_H = 6.5, 3.1               # Senkung: Kopf bündig
 DOM_D = PILOT + 2 * 3.7                 # 10 mm
 
-BUEGEL_Z = 50.0
+BUEGEL_Z = STIRN - 12.0                 # Motorbügel 12 mm innen von der Stirnseite
+SATTEL_Z = STIRN - 37.0                 # zweiter Sattel unter dem Motor
 BUEGEL_DICKE = 10.0
 BUEGEL_LOCH = 20.0
 BUEGEL_FUSS = 25.5
 
-AKKU_HX = 21.0
+# Akku: 2 × Keystone 1047 (77,1 × 39,8 mm, Löcher 55,2 mm längs), hintereinander quer im Auto in der hinteren Hälfte
+AKKU_X = -33.0                          # Mitte der Halter (x)
+AKKU_Z = 40.0                           # Mitte je Halter bei z = ±40 (Halter liegen längs in z)
 AKKU_LOCH = 27.6
 AKKU_SOCKEL = 3.0
+AKKU_MASS = (39.8, 77.1)                # Halter: Breite (x) × Länge (z)
 
 # Aufnahmepunkte für den Prüfstand (wie bei einer Hebebühne): 4 Kerben unten im Boden, unter dem Akku.
 # Innen ist der Boden dort 2,5 mm dicker (unter den Akkuhaltern ist 3 mm Luft), über der Kerbe bleiben 2,5 mm.
-PRUEF_PUNKTE = [(sx * 32.0, sz * 35.0) for sx in (1, -1) for sz in (1, -1)]
+PRUEF_MITTE, PRUEF_HX, PRUEF_HZ = 3.5, 36.5, 40.0   # hinten unter dem Akku, vorne unter der Stromversorgung
+PRUEF_PUNKTE = [(PRUEF_MITTE + sx * PRUEF_HX, sz * PRUEF_HZ) for sx in (1, -1) for sz in (1, -1)]
 PRUEF_KERBE = (8.0, 6.0, 3.0)          # Länge (x) × Breite (z) × Tiefe
 PRUEF_VERSTAERKUNG = 2.5
 
 # Säulen für das Elektronik-Deck (Schraube von unten, Kopf bündig im Boden)
 # Kufen: Boden vorne/hinten schräg hochgezogen (Unterkante steigt ab KUFE_x zum Ende hin)
-KUFE_VORNE = (76.5, 45.0)              # 8,5 mm vor dem Ende, 45°
-KUFE_HINTEN = (-111.5, 45.0)          # genau wie vorne: 8,5 mm vor dem Ende, 45° (gleiche Schrauben vorne und hinten)
+KUFE_VORNE = (X_VORNE - 8.5, 45.0)     # 8,5 mm vor dem Ende, 45°
+KUFE_HINTEN = (X_HINTEN + 8.5, 45.0)   # genau wie vorne (gleiche Schrauben vorne und hinten)
 
 
 KUFE_RADIUS = 0.0                      # Übergang flacher Boden → Schräge: scharfer 45°-Knick. Eine Rundung würde flach am Druckbett
@@ -138,13 +147,13 @@ def tof_lage(s):
     return wand, vorn, hinten
 
 
-SAEULEN = [(77.5, 35), (77.5, -35), (-112.5, 35), (-112.5, -35)]   # gehen vorne/hinten in die Wand über, dazu eine Rippe (bricht nicht ab)
+SAEULEN = [(X_VORNE - 7.5, 35), (X_VORNE - 7.5, -35), (X_HINTEN + 7.5, 35), (X_HINTEN + 7.5, -35)]   # gehen vorne/hinten in die Wand über, dazu eine Rippe (bricht nicht ab)
 RIPPE = DOM_D - 0.1                      # Säule in voller Breite mit der Stirnwand verbunden (0,05 mm schmaler als die Säule:
                                          # Kanten genau auf der Säulenoberfläche bringen die CAD-Berechnung durcheinander)
 # Kabelbinder-Schlitze im Boden: je 2 Schlitze quer zum Kabel, der Kabelbinder wird von UNTEN eingefädelt
 # (Wanne ist zum Arbeiten ohnehin abgeschraubt und umgedreht). Unten eine flache Rille, damit er bündig liegt.
 # (x, z) = Mitte zwischen den beiden Schlitzen; die Kabel laufen dort in x-Richtung.
-KABELBINDER = [(-42, -51), (22, -51)]      # links/rechts vom Sicherungshalter: seine beiden Kabel
+KABELBINDER = [(-8, -58)]                  # hinter dem Sicherungshalter (vorne ist bis zum Motor kein Platz)
                                            # (Motorkabel brauchen keine: sie gehen auf kurzem Weg nach oben ins Deck)
 BINDER_SCHLITZ = (4.6, 2.2)                # Schlitz: Länge in Kabelrichtung × Breite (für Kabelbinder bis 3,6 mm)
 BINDER_ABSTAND = 9.0                       # Mitte zu Mitte der beiden Schlitze (Kabelbündel bis ca. 6 mm dazwischen)
@@ -156,16 +165,31 @@ BINDER_RILLE = 1.3                         # Tiefe der Rille unten (Kabelbinder 
 #   Art "+x"/"−x": diese Seite offen (WAGO-Kabelseite)
 LUFT, TWAND, NASE = 0.3, 1.6, 0.6
 TASCHEN = [
-    ("BMS",            -5.0,   50.0, 48.0, 20.0, 1.6, 3.2, "enden"),
-    ("INA226",        -46.0,   50.5, 19.0, 21.0, 1.6, 3.2, "enden"),   # ohne Stiftleiste; VIN+/VIN− zeigen nach hinten
-    ("WAGO Minus",    -52.5,  -17.0, 18.4, 29.7, 8.1, 8.8, "-x"),    # Kabelseite nach hinten, 15 mm frei bis zum Motor
-    ("WAGO Plus",     -52.5,   17.0, 18.4, 29.7, 8.1, 8.8, "-x"),
+    ("BMS",             33.0,   58.0, 48.0, 20.0, 1.6, 3.2, "enden"),
+    ("INA226",          18.0,   26.0, 19.0, 21.0, 1.6, 3.2, "enden"),   # ohne Stiftleiste; VIN+/VIN− zeigen nach hinten
+    ("WAGO Minus",      47.0,  -17.0, 18.4, 29.7, 8.1, 8.8, "-x"),    # Kabelseite nach hinten, Hebel nach oben
+    ("WAGO Plus",       47.0,   17.0, 18.4, 29.7, 8.1, 8.8, "-x"),
 ]
-SICHERUNG = (-10.0, -51.0, 54.2, 12.5)   # Inline-Sicherungshalter für Standard-Flachsicherung, stehend (25,5 mm hoch, Deckel oben), mit Kabelansätzen
+SICHERUNG = (34.0, -58.0, 54.2, 12.5)   # Inline-Sicherungshalter für Standard-Flachsicherung, stehend (25,5 mm hoch, Deckel oben), mit Kabelansätzen
 
 # Durchbrüche in der Rückwand (x = −120): (Name, z, y-Mitte, Breite, Höhe, rund?)
 # Leer: Schalter und USB-C (Ladeboard) sitzen im Gehäuse-Ring von Ebene 2 (gehaeuse/ebene2_elektronik.py).
 RUECKWAND = []
+
+# Teilung in zwei Druckteile (vordere / hintere Hälfte)
+FUGE = 6.0                               # Stoßstelle quer bei x = 6 (Akku ganz hinten, Stromversorgung ganz vorne)
+FUGE_SPALT = 0.1                         # je Seite: 0,2 mm Spalt in der Fuge
+LASCHE_BIS = FUGE - 18.0                 # die Laschen der vorderen Hälfte greifen 18 mm in die hintere (bis x = −12)
+LASCHE_VOR = FUGE + 8.0                  # … und sind 8 mm weit in der vorderen Hälfte verankert
+LASCHE_D = 6.0                           # Seitenlaschen 6 mm dick (Gewinde greift 6 mm)
+VERSTAERKUNG = 3.0                       # hintere Hälfte: Seitenwand an der Fuge innen +3 mm (6 mm Wand für die Senkung)
+SEITE_Z0 = STIRN - VERSTAERKUNG          # Seitenlasche liegt innen davor: |z| = 78 … 84
+SEITE_Y = (27.0, 38.0)                   # Höhen der beiden seitlichen Schrauben (unter den Zierrillen)
+MITTE_LASCHE = (8.0, 34.0)               # Mittellasche: Dicke (z) und Oberkante (y)
+MITTE_BLOCK = 10.0                       # Block der hinteren Hälfte daneben (z), Schrauben von innen
+MITTE_X = (-6.5, 2.0)                    # x der beiden mittleren Schrauben
+MITTE_Y = 26.0                           # Höhe der mittleren Schrauben
+LASCHE_LUFT = 0.2                        # Luft rund um die Laschen in der hinteren Hälfte
 
 AUS = Path(__file__).resolve().parent / "ebene1"
 
@@ -270,8 +294,8 @@ def wanne():
         for s in (1, -1):
             zb = s * BUEGEL_Z
             teil += quader(mx - BUEGEL_FUSS, mx + BUEGEL_FUSS, BODEN_OBEN, ACHSE, zb - BUEGEL_DICKE / 2, zb + BUEGEL_DICKE / 2)
-            teil += quader(mx - 14, mx + 14, BODEN_OBEN, ACHSE, s * 25 - 2, s * 25 + 2)
-            teil -= zyl_z(MOTOR_R + 0.2, mx, ACHSE, s * 10, s * 62)
+            teil += quader(mx - 14, mx + 14, BODEN_OBEN, ACHSE, s * SATTEL_Z - 2, s * SATTEL_Z + 2)
+            teil -= zyl_z(MOTOR_R + 0.2, mx, ACHSE, s * (STIRN - MOTOR_LANG), s * STIRN)
             for k in (-BUEGEL_LOCH, BUEGEL_LOCH):
                 teil -= zyl_y(PILOT / 2, mx + k, zb, ACHSE - 10, ACHSE + 0.1)
             teil -= zyl_z(LAGER_D / 2, mx, ACHSE, s * (STIRN - 1), s * (STIRN + WAND + 1))
@@ -288,7 +312,7 @@ def wanne():
         teil -= zyl_y(DURCH / 2, x, z, BODEN_UNTEN - 1, RAND + 1)
 
     # Akkuhalter: Sockel + Senkung von unten
-    akku_loecher = [(sx * AKKU_HX, k * AKKU_LOCH) for sx in (1, -1) for k in (1, -1)]
+    akku_loecher = [(AKKU_X, sz * AKKU_Z + k * AKKU_LOCH) for sz in (1, -1) for k in (1, -1)]
     for (x, z) in akku_loecher:
         teil += zyl_y(5.5, x, z, BODEN_OBEN - 0.1, BODEN_OBEN + AKKU_SOCKEL)
         teil -= zyl_y(DURCH / 2, x, z, BODEN_UNTEN - 1, BODEN_OBEN + AKKU_SOCKEL + 1)
@@ -315,11 +339,11 @@ def wanne():
         teil -= P(x, BODEN_UNTEN - 1, z) * extrude(RectangleRounded(sl + 0.6, lang, (sl + 0.6) / 2 - 0.01), 1 + BINDER_RILLE)
 
     # Lüftungsgitter unter dem Akku
-    for i in range(-4, 5):
-        for j in range(-3, 4):
-            x = i * 8.6
+    for i in range(-2, 3):
+        for j in range(-8, 9):
+            x = AKKU_X + i * 8.6
             z = j * 9.9 + (4.95 if i % 2 else 0)
-            if abs(x) > 36 or abs(z) > 30:
+            if abs(x - AKKU_X) > 16 or abs(z) > 74:
                 continue
             if any(abs(x - ax) < 7 and abs(z - az) < 7 for (ax, az) in akku_loecher):
                 continue
@@ -379,8 +403,50 @@ def wanne():
             # Querschnitt: unten waagerecht, oben 45° schräg – kein Überhang
             zi, za = s * (B / 2 - 0.8), s * (B / 2 + 1)
             prof = Plane.YZ * Polygon((-za, y), (-zi, y), (-zi, y + 0.8), (-za, y + 1.6 + (za - s * B / 2) * s), align=None)
-            teil -= Pos(XM, 0, 0) * extrude(prof.face(), 32, both=True)
+            teil -= Pos(XM, 0, 0) * extrude(prof.face(), 40, both=True)
     return teil
+
+
+# ------------------------------------------------------------------ Teilung in zwei Hälften
+def teilen(teil):
+    """Ganze Wanne → (vordere Hälfte, hintere Hälfte) mit Laschen, Verstärkung und Schraubenlöchern."""
+    gross = 400.0
+    vorne = teil & quader(FUGE + FUGE_SPALT, gross, -gross, gross, -gross, gross)
+    hinten = teil & quader(-gross, FUGE - FUGE_SPALT, -gross, gross, -gross, gross)
+    aussen_form = Pos(XM, 0, BODEN_UNTEN - 1) * extrude(RectangleRounded(L, B, R_ECKE), RAND - BODEN_UNTEN + 1)
+    mt, my = MITTE_LASCHE
+
+    # --- Laschen der vorderen Hälfte: stehen auf dem Bett (Unterkante = Wannenboden unten), daher ohne Stützen
+    laschen = None
+    for s in (1, -1):
+        za, zb = s * (SEITE_Z0 - LASCHE_D), s * SEITE_Z0
+        l = quader(LASCHE_BIS, LASCHE_VOR, BODEN_UNTEN, RAND, za, zb)
+        l += quader(FUGE + FUGE_SPALT, LASCHE_VOR, BODEN_UNTEN, RAND, zb, s * (STIRN + 0.5))   # in der vorderen Hälfte bis an die Wand
+        laschen = l if laschen is None else laschen + l
+    laschen += quader(LASCHE_BIS, LASCHE_VOR, BODEN_UNTEN, my, -mt / 2, mt / 2)
+    vorne = vorne + (laschen & aussen_form)
+
+    # --- hintere Hälfte: Platz für die Laschen (auch durch den Boden), Seitenwand innen verstärkt, Block in der Mitte
+    for s in (1, -1):
+        hinten += quader(LASCHE_BIS - 4, FUGE - FUGE_SPALT, BODEN_OBEN - 0.1, RAND, s * SEITE_Z0, s * (STIRN + 0.5))
+        za, zb = s * (SEITE_Z0 - LASCHE_D - LASCHE_LUFT), s * (SEITE_Z0 + 0.01)
+        hinten -= quader(LASCHE_BIS - LASCHE_LUFT, FUGE + 1, BODEN_UNTEN - 1, RAND + 1, za, zb)
+    hinten += quader(LASCHE_BIS - 2, FUGE - FUGE_SPALT, BODEN_OBEN - 0.1, my, mt / 2 + LASCHE_LUFT, mt / 2 + LASCHE_LUFT + MITTE_BLOCK)
+    hinten -= quader(LASCHE_BIS - LASCHE_LUFT, FUGE + 1, BODEN_UNTEN - 1, my + 1, -mt / 2 - LASCHE_LUFT, mt / 2 + LASCHE_LUFT)
+    hinten = hinten & aussen_form
+
+    # --- Schrauben: Seiten von außen (Senkung in der verstärkten Wand), Mitte von innen durch den Block
+    xs = (LASCHE_BIS + FUGE) / 2
+    for s in (1, -1):
+        for y in SEITE_Y:
+            hinten -= zyl_z(DURCH / 2, xs, y, s * (SEITE_Z0 - 1), s * (B / 2 + 1))
+            hinten -= zyl_z(KOPF_D / 2, xs, y, s * (B / 2 - KOPF_H), s * (B / 2 + 1))
+            vorne -= zyl_z(PILOT / 2, xs, y, s * (SEITE_Z0 - LASCHE_D - 1), s * (SEITE_Z0 + 1))
+    zb = mt / 2 + LASCHE_LUFT + MITTE_BLOCK
+    for x in MITTE_X:
+        hinten -= zyl_z(DURCH / 2, x, MITTE_Y, 0, zb + 1)
+        vorne -= zyl_z(PILOT / 2, x, MITTE_Y, -mt / 2 - 1, mt / 2 + 1)
+    return vorne, hinten
 
 
 # ------------------------------------------------------------------ Motorbügel
@@ -404,9 +470,22 @@ def ueberlappungen():
     for mx in MOTOREN_X:
         for s in (1, -1):
             sx = 1 if mx > 0 else -1
-            belegt.append((f"Motor {sx},{s}", mx - 12.6, mx + 12.6, min(s * 1, s * 62), max(s * 1, s * 62)))
+            z_a, z_b = s * (STIRN - MOTOR_LANG - 9), s * STIRN     # mit Encoder-Stecker innen
+            belegt.append((f"Motor {sx},{s}", mx - 12.6, mx + 12.6, min(z_a, z_b), max(z_a, z_b)))
             belegt.append((f"Sattel/Bügel {sx},{s}", mx - BUEGEL_FUSS, mx + BUEGEL_FUSS, s * BUEGEL_Z - 5, s * BUEGEL_Z + 5))
-    belegt.append(("Akku", -40.9, 40.9, -38.6, 38.6))
+    ax, az = AKKU_MASS
+    for sz in (1, -1):
+        belegt.append((f"Akkuhalter {sz}", AKKU_X - ax / 2 - 0.5, AKKU_X + ax / 2 + 0.5, sz * AKKU_Z - az / 2, sz * AKKU_Z + az / 2))
+    kl, kb, _kt = PRUEF_KERBE
+    for (x, z) in PRUEF_PUNKTE:
+        if x > FUGE:      # hinten liegen die Kerben unter dem Akku (darüber 3 mm Luft) – vorne muss der Boden frei sein
+            belegt.append((f"Prüfstand-Kerbe {x},{z}", x - kl / 2 - 1, x + kl / 2 + 1, z - kb / 2 - 1, z + kb / 2 + 1))
+    # Fuge: Laschen der vorderen Hälfte und Block der hinteren Hälfte
+    for s in (1, -1):
+        za, zb = s * (SEITE_Z0 - LASCHE_D), s * STIRN
+        belegt.append((f"Seitenlasche {s}", LASCHE_BIS, LASCHE_VOR, min(za, zb), max(za, zb)))
+    mt = MITTE_LASCHE[0] / 2
+    belegt.append(("Mittellasche + Block", LASCHE_BIS, LASCHE_VOR, -mt, mt + MITTE_BLOCK))
     for (x, z) in SAEULEN:
         belegt.append((f"Säule {x},{z}", x - 5, x + 5, z - 5, z + 5))
     for (x, z) in KABELBINDER:   # oben muss über den Schlitzen Platz für das Kabel und den Kabelbinder sein
@@ -440,6 +519,12 @@ def ueberlappungen():
         if x0 < X_HINTEN + WAND - 0.01 or x1 > X_VORNE - WAND + 0.01 or z0 < -B / 2 + WAND - 0.01 or z1 > B / 2 - WAND + 0.01:
             if not name.startswith(("Motor", "Säule")):   # Motoren sitzen an der Wand, hintere Säulen gehen gewollt in die Wand über
                 print("  ragt in die Wand:", name); fehler += 1
+    # Jede Tasche, jeder Halter liegt ganz in EINER Hälfte (nicht über der Fuge)
+    for (name, x0, x1, z0, z1) in belegt:
+        if name.startswith(("Seitenlasche", "Mittellasche", "Motor", "Sattel")):
+            continue
+        if x0 < FUGE + FUGE_SPALT + 0.5 and x1 > FUGE - FUGE_SPALT - 0.5:
+            print("  liegt über der Fuge:", name); fehler += 1
     print("Überschneidungen:", fehler)
 
 
@@ -450,13 +535,19 @@ if __name__ == "__main__":
         sitz = max(unterkante(x + d / 10) for d in range(-33, 34)) + KOPF_H
         laenge = 45 if sitz + 45 <= 68.5 else 40          # Kernloch im Deck reicht von 58 bis 68
         print(f"Säule {x:+6.1f}/{z:+5.1f}: Kopfauflage bei y = {sitz:5.2f} mm → M3 × {laenge}, greift {sitz + laenge - 58:4.1f} mm im Deck")
-    teile = {"wanne": wanne(), "motorbuegel": motorbuegel()}
+    w = wanne()
+    vorne, hinten = teilen(w)
+    teile = {"wanne_vorne": vorne, "wanne_hinten": hinten, "motorbuegel": motorbuegel()}   # die ganze Wanne wird nicht mehr als Datei ausgegeben
     # Selbstprüfung: jede Säule muss auf ganzer Höhe und Breite mit der Stirnwand verbunden sein (CAD-Rechenfehler finden)
     from build123d import Vector
-    w = teile["wanne"]
     luecken = [(x, z, y) for (x, z) in SAEULEN for dz in (-4.5, 4.5) for y in (25, 35, 45, 55)
                if not w.is_inside(Vector(x + (4.0 if x > XM else -4.0), -(z + dz), y))]
     print("Säulen mit der Stirnwand verbunden:", "ja" if not luecken else f"NEIN – Lücke bei {luecken}")
+    # Selbstprüfung Fuge: die Hälften dürfen sich nicht durchdringen, und die Laschen müssen mit der vorderen Hälfte verbunden sein
+    v = (vorne & hinten).volume
+    print(f"Hälften durchdringen sich: {'nein' if v < 0.5 else f'JA ({v:.1f} mm³)'}")
+    for name, t in (("vordere Hälfte", vorne), ("hintere Hälfte", hinten)):
+        print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
     for name, t in teile.items():
         export_stl(t, str(AUS / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
         export_step(t, str(AUS / f"{name}.step"))

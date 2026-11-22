@@ -15,7 +15,7 @@ Status: 📦 da · ✅ bestellt · 🔎 ausgesucht · ⬜ offen
 | ⬜ | Aufbewahrungsbox | innen mind. 30 × 22 × 14 cm, Klickdeckel | Action | 5 € |
 | ✔ vorhanden | Litze 0,25–0,5 mm², Aderendhülsen + Crimpzange, Schrumpfschlauch, Lötkolben | | | |
 
-Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico über USB.
+Ohne Akku läuft nur der Pico (über USB): Joystick-Seite und Encoder lassen sich schon testen, die Motoren drehen erst mit dem Akku aus Stufe 2.
 
 ## Stufe 2 – Akku
 
@@ -43,6 +43,8 @@ Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico übe
 | ⬜ | USB-C-Stecker zum Anlöten | Pololu → Pi 5 | 2 € |
 | ⬜ | Camera Module 3 Wide | + Kabel **22 auf 15 Pin** (Pi 5) | 40 € |
 | ⬜ | 2× USB-Kabel kurz (A auf Micro-USB) | Pico und LiDAR-Adapter | 5 € |
+| 🔎 | Status-Display **Waveshare ESP32-S3-Touch-AMOLED-1.75** (rund, Touch, 2 Mikrofone, Lautsprecher) | Die **einfache Platine ohne Gehäuse** nehmen (nicht „-B“ mit Gehäuse, nicht „-G“ mit GPS), z. B. [Amazon B0F99V6FGF](https://www.amazon.de/dp/B0F99V6FGF). Lautsprecher 8 Ω / 2 W liegt laut Händlern bei – beim Kauf prüfen. Befestigung mit 3 × M2 (Abstandshalter sind auf der Platine) | 40 € |
+| ⬜ | USB-Kabel kurz, USB-C auf USB-A (gewinkelt) | Status-Display → Pi 5 USB 3.0 oben | 5 € |
 
 ## Stufe 4 – Orientierung und Karte
 
@@ -50,7 +52,7 @@ Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico übe
 |---|---|---|---|
 | ⬜ | LiDAR LDROBOT LD19 (oder RPLIDAR C1) | mit USB-Adapter | 60–90 € |
 | ⬜ | BNO085 mit STEMMA QT (z. B. Adafruit) | | 25 € |
-| ⬜ | 2× VL53L1X-Modul 25 × 10,7 mm („VL53L1XV2“, z. B. Happysnow, [Amazon B0CNGP7LCR](https://www.amazon.de/dp/B0CNGP7LCR)) | **Wirklich VL53L1X (4 m), nicht VL53L0X (2 m)** – viele günstige Sets sind L0X. Pins VIN, GND, SCL, SDA, GPIO1, XSHUT; Kabel werden angelötet. Sitzen innen hinter Fenstern vorne und hinten in der Wanne | 2 × 11 € |
+| ✅ | 2× VL53L1X-Modul 25 × 10,7 mm („VL53L1XV2“, z. B. Happysnow, [Amazon B0CNGP7LCR](https://www.amazon.de/dp/B0CNGP7LCR)) | **Wirklich VL53L1X (4 m), nicht VL53L0X (2 m)** – viele günstige Sets sind L0X. Pins VIN, GND, SCL, SDA, GPIO1, XSHUT; Kabel werden angelötet. Sitzen innen hinter Fenstern vorne und hinten in der Wanne | 2 × 11 € |
 
 ## Stufe 5 – KI
 
@@ -69,14 +71,19 @@ Zum Testen vor dem Akku: Batteriehalter 4× AA (6 V) für die Motoren, Pico übe
 
 ## Druckteile
 
-Alle Ebenen in derselben Außenform 205 × 130 mm, Räder an den Ecken (Radstand 145 mm). Druckhinweise und Zusammenbau: `gehaeuse/README.md`.
+Alle Ebenen in derselben Außenform 250 × 180 mm, jede aus zwei Hälften, Räder außen (Radstand 160 mm). Druckhinweise und Zusammenbau: `gehaeuse/README.md`. Alle drei Ebenen sind neu (seit 22.11.2026).
 
 | Status | Teil | Datei | Anzahl | Hinweis |
 |---|---|---|---|---|
-| ⬜ | Wanne (Ebene 1) | `gehaeuse/ebene1/wanne.stl` | 1 | 205 × 130 × 42 mm, mit Halter für die 2 Nahsensoren und Kabelbinder-Schlitzen |
+| ⬜ | Wanne vordere Hälfte (Ebene 1) | `gehaeuse/ebene1/wanne_vorne.stl` | 1 | 137 × 180 × 42 mm, Stromversorgung, Nahsensor vorne, 3 Laschen zur hinteren Hälfte |
+| ⬜ | Wanne hintere Hälfte (Ebene 1) | `gehaeuse/ebene1/wanne_hinten.stl` | 1 | 131 × 180 × 42 mm, Akku, Nahsensor hinten |
 | ⬜ | Motorbügel (Ebene 1) | `gehaeuse/ebene1/motorbuegel.stl` | 4 | |
-| ⬜ | Elektronik-Deck (Ebene 2) | `gehaeuse/ebene2/platte.stl` | 1 | zugleich Deckel der Wanne |
-| ⬜ | Gehäuse-Ring oben (Ebene 2) | `gehaeuse/ebene2/ring_oben.stl` | 1 | mit Loch für den Druckschalter und Ausschnitt für USB-C |
+| ⬜ | Elektronik-Deck vordere Hälfte (Ebene 2) | `gehaeuse/ebene2/platte_vorne.stl` | 1 | Motorzone vorne, Steg zur hinteren Hälfte |
+| ⬜ | Elektronik-Deck hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/platte_hinten.stl` | 1 | zugleich Deckel der Wanne: Pico, Kompass, Motorzone hinten, Ladeboard |
+| ⬜ | Gehäuse-Ring vordere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_vorne.stl` | 1 | mit den Laschen für die Schrauben der Klapphaube |
+| ⬜ | Gehäuse-Ring hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_hinten.stl` | 1 | Scharnier, Loch für den Hauptschalter, Ausschnitt für USB-C |
+| ⬜ | Klapphaube vordere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_vorne.stl` | 1 | Kamera, LEDs, Pololu, oben der LiDAR |
+| ⬜ | Klapphaube hintere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_hinten.stl` | 1 | Pi 5 mit AI HAT+, 4G, GPS, rundes Display, Scharnier |
 | ⬜ | **Prüfstand** (Werkzeug, kommt nicht ins Auto) | `gehaeuse/pruefstand/pruefstand.stl` | 1 | 112 × 112 mm, ein Teil, ohne Schrauben, ca. 98 cm³. Wie eine Hebebühne: 4 Zapfen rasten in die 4 Kerben unten in der Wanne. Räder hängen frei, zum Testen von Motoren und Software |
 
 Kamerahalter und Ebene 3/4 folgen.

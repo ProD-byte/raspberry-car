@@ -12,7 +12,9 @@ Koordinaten in mm, Mitte des Autos = 0, x nach vorne, z nach links, y nach oben 
 ## Bauweise
 
 - **Ebene für Ebene:** Ebene 1 ist eine Wanne, das Elektronik-Deck (Ebene 2) ist zugleich ihr Deckel. Darüber kommt ein Gehäuse-Ring, dann Ebene 3 usw.
-- **Außenform aller Ebenen gleich:** 205 × 130 mm, vorne bis x = +85, hinten bis x = −120. Die **Räder sitzen an den Ecken** (Achsen bei x = +55 und −90, Radstand 145 mm), vorne und hinten je 30 mm Überhang.
+- **Außenform aller Ebenen gleich:** 250 × 180 mm, vorne bis x = +125, hinten bis x = −125. Die **Räder sitzen außen an den Seiten** (Achsen bei x = ±80, Radstand 160 mm), vorne und hinten je 45 mm Überhang.
+- **Jede Ebene aus zwei Hälften** (vorne / hinten), quer geteilt: passt locker auf ein 256er-Druckbett (Bambu A1), druckt schneller und verzieht sich weniger. Die vordere Hälfte greift mit Laschen in die hintere, verschraubt mit M3. Die Fugen der Ebenen liegen versetzt.
+- **Umbau fertig:** Alle drei Ebenen sind 250 × 180. Offen sind nur noch die Fahrsimulation und die Kabelwege in der Werkstatt-Ansicht Ebene 1.
 - **Nur M3-Zylinderkopfschrauben (ISO 4762).** In Kunststoff schneiden sie ihr Gewinde selbst: Kernloch **2,6 mm**, Dom Ø 10 mm, mindestens 10 mm tief. Durch ein Teil hindurch: **3,4 mm**.
 - **Von außen sichtbare Köpfe liegen bündig** in einer Senkung Ø 6,5 × 3,1 mm (Kopf Ø 5,5 × 3 mm). Innen dürfen die Köpfe aufliegen. Ausnahme: die Motorschrauben in der Seitenwand – die Wand ist dort nur 3 mm dick, die Köpfe sitzen hinter dem Rad. Wer sie bündig will: M3 mit flachem Kopf (DIN 7984, 2 mm hoch).
 - **Material um jedes Kernloch mindestens 3,5 mm** – sonst kann der Kunststoff beim Eindrehen reißen. Alle Druckteile haben überall **3,7 mm** (nachgemessen am fertigen STL mit Messstrahlen von jeder Lochachse aus: `werkzeug/fleisch.py`, braucht `pip install trimesh rtree`).
@@ -25,7 +27,8 @@ In der Wanne liegt alles, was schwer ist oder mit dem Akku zu tun hat: 4 Motoren
 
 | Datei | Anzahl | Maße | Druckrichtung | Hinweise |
 |---|---|---|---|---|
-| `ebene1/wanne.stl` | 1 | 205 × 130 × 42 mm | Boden unten | Ohne Stützen (geprüft): Kufen mit scharfem 45°-Knick, Sensorfenster mit 45°-Ecken, Senkungen im Boden mit Brücken-Trick, Rastnasen als Keil. Passt auf ein 220er-Druckbett. |
+| `ebene1/wanne_vorne.stl` | 1 | 137 × 180 × 42 mm | Boden unten | Ohne Stützen (geprüft): Kufen mit scharfem 45°-Knick, Sensorfenster mit 45°-Ecken, Senkungen im Boden mit Brücken-Trick, Rastnasen als Keil. Die drei Laschen an der Fuge stehen auf dem Bett. |
+| `ebene1/wanne_hinten.stl` | 1 | 131 × 180 × 42 mm | Boden unten | Ohne Stützen (geprüft). Innen an der Fuge die verstärkten Seitenwände und der Block für die mittleren Schrauben. |
 | `ebene1/motorbuegel.stl` | **4** | 51 × 16 × 10 mm | flach auf die große Seite | Ohne Stützen. |
 
 **Druckeinstellungen:** PETG empfohlen (verträgt die Wärme von Motoren und Akku besser), PLA geht auch. **4 Wände/Perimeter** (damit die Schrauben gut greifen), 25 % Füllung, 0,2 mm Schichthöhe. Die Empfehlung für jedes einzelne Druckteil (Filament, Temperaturen, Wände, Füllung, Druckrichtung, Download) steht auch in den 3D-Ansichten: Druckteil antippen.
@@ -34,8 +37,9 @@ In der Wanne liegt alles, was schwer ist oder mit dem Akku zu tun hat: 4 Motoren
 
 **Was wo ist** (von oben gesehen, vorne = Kamera)
 - **Motoren** liegen in 2 Sätteln, die Getriebe-Stirnseite innen an der Seitenwand. **Encoder-Stecker zeigen nach oben** – zwischen Stecker und Deck bleiben ca. 9 mm.
-- **Akku** (2 × Keystone 1047) in der Mitte auf 4 Sockeln.
-- **4 Aufnahmekerben für den Prüfstand** unten im Boden unter dem Akku (wie bei einer Hebebühne). Innen ist der Boden dort 2,5 mm dicker – der Platz unter den Akkuhaltern ist sowieso frei.
+- **Fuge** quer bei x = +6: Die vordere Hälfte hat drei Laschen, die 18 mm in die hintere greifen – innen an beiden Seitenwänden (6 mm dick) und in der Mitte (8 mm dick, 18 mm hoch). In der hinteren Hälfte gehen die Laschen durch Schlitze im Boden, deshalb ist der Boden unten bündig. Schrauben: an jeder Seite **2 × M3 × 8** waagerecht von außen (Kopf bündig in der innen auf 6 mm verstärkten Wand), in der Mitte **2 × M3 × 16** von innen durch einen Block. Erst die beiden Hälften verschrauben, dann Motoren und Akku einbauen.
+- **Akku** (2 × Keystone 1047) in der hinteren Hälfte: beide Halter hintereinander quer im Auto (z = ±40) auf 4 Sockeln, zwischen Hinterachse und Fuge.
+- **4 Aufnahmekerben für den Prüfstand** unten im Boden (wie bei einer Hebebühne): zwei hinten unter dem Akku, zwei vorne unter der Stromversorgung (Mitte bei x = 3,5, Abstand 73 × 80 mm). Innen ist der Boden dort 2,5 mm dicker.
 - **Links neben dem Akku:** BMS, dahinter der INA226 – beide in Einklick-Taschen (Rahmen nur an den Enden, damit die Lötpunkte frei bleiben). Der **INA226 wird ohne Stiftleiste eingebaut**: Stiftleiste nicht einlöten (oder ablöten), alle Leitungen direkt in die Lötaugen löten. So liegt er flach in der Tasche. VIN+/VIN− zeigen nach hinten (Platz bis zum Motor), die Reihe VBS…ALE nach vorne zum BMS.
 - **Rechts neben dem Akku:** der Inline-Sicherungshalter für eine Standard-Flachsicherung (ca. 25 × 25,5 × 12,5 mm, mit Kabelansätzen 54 mm lang). Er steht aufrecht, der Klappdeckel zeigt nach oben – so lässt sich die Sicherung wechseln, ohne etwas auszubauen. Seine beiden Kabel werden links und rechts davon mit Kabelbindern am Boden festgebunden.
 - **Zwischen Akku und Hinterachse:** 2 × WAGO 221-415 (Verteiler Plus und Minus) quer nebeneinander. Die **Kabelseite zeigt nach hinten** und ist offen, bis zum Motor sind 15 mm frei für die Leitungen; die Hebel klappen nach oben frei auf.
@@ -81,89 +85,85 @@ Das Deck ist der **Deckel der Wanne** (liegt auf dem Wannenrand bei 58 mm). Dar�
 
 | Datei | Anzahl | Maße | Druckrichtung | Hinweise |
 |---|---|---|---|---|
-| `ebene2/platte.stl` | 1 | 205 × 130 × 12 mm (mit Taschen und Domen) | Unterseite aufs Bett | **Ohne Stützen** – alles sitzt auf der Oberseite. Die 4 Kernlöcher für die Wanne kommen von unten. |
-| `ebene2/ring_oben.stl` | 1 | 205 × 130 × 23 mm | **umgedreht** (Oberkante aufs Bett) | Ohne Stützen – so stehen die Röhren auf dem Bett. Seitenwand zwischen Elektronik-Deck und Ebene 3, hinten mit Loch für den Hauptschalter und Ausschnitt für die USB-C-Buchse. |
+| `ebene2/platte_vorne.stl` | 1 | 67 × 180 × 13 mm | Unterseite aufs Bett | Ohne Stützen. Motorzone vorne, an der Fuge der Steg mit den Gewindelöchern. |
+| `ebene2/platte_hinten.stl` | 1 | 183 × 180 × 13 mm | Unterseite aufs Bett | Ohne Stützen. Pico, Kompass, MP1584, Motorzone hinten, Ladeboard. |
+| `ebene2/ring_vorne.stl` | 1 | 141 × 180 × 36 mm | **aufrecht** (Unterkante aufs Bett) | Ohne Stützen. Vorne die zwei Laschen für die Schrauben des Klappdeckels (unten 45°-Schräge). |
+| `ebene2/ring_hinten.stl` | 1 | 119 × 180 × 33 mm | **aufrecht** | Ohne Stützen. Scharnier-Lappen hinten (unten 45°-Schräge), USB-C-Ausschnitt und Loch für den Hauptschalter. |
+
+**Zwei Hälften:** Das **Deck** ist bei x = +58 geteilt (zwischen Freenove-Board und vorderer Motorzone). An der Fuge steht auf jeder Hälfte ein 10 mm hoher Steg (außen, zwischen den Grifflöchern frei); die Stege werden mit **2 × M3 × 10** quer verschraubt (Kopf hinten, Gewinde im vorderen Steg). Der **Ring** ist bei x = −16,5 geteilt, also weit weg von der Fuge des Decks. Jede Ring-Hälfte hat eigene Hülsen und ist mit eigenen **M3 × 20** von oben auf das Deck geschraubt (vorne in den Ecken, hinten an der Rückwand und je zwei an der Fuge des Rings). So überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings. Die Fuge der Wanne liegt wieder woanders (x = +6).
 
 **Aufteilung in Zonen** – alles gut erreichbar, nichts liegt kreuz und quer:
 
 | Zone | Wo | Was |
 |---|---|---|
-| Motorzone vorne | über der Vorderachse | Griffloch über den beiden Motorsteckern, **DRV8833 vorne** (treibt beide Vordermotoren), **3,3-V-Verteiler vorne** (Encoder der Vordermotoren) |
-| Motorzone hinten | über der Hinterachse | genauso: Griffloch, **DRV8833 hinten**, **3,3-V-Verteiler hinten** (Encoder der Hintermotoren, BNO085, INA226) |
-| Steuerung | Mitte | **Pico 2 W auf dem Freenove-Board** (Klemmen-Reihen zeigen zu den Seiten) und davor der **Kompass BNO085** (um 90° gedreht) |
-| Strom und Laden | Rand | hinten links das **Ladeboard**, rechts neben dem Pico der **MP1584** und der Strom-Durchbruch **C** |
+| Motorzone vorne | über der Vorderachse (x = 80) | **zwei Grifflöcher**, je eines über einem Motorstecker; dazwischen der **DRV8833 vorne** (treibt beide Vordermotoren), rechts außen der **3,3-V-Verteiler vorne** (Encoder der Vordermotoren) |
+| Motorzone hinten | über der Hinterachse (x = −80) | genauso: zwei Grifflöcher, **DRV8833 hinten**, **3,3-V-Verteiler hinten** (Encoder der Hintermotoren, BNO085, INA226) |
+| Steuerung | Mitte | vorne der **Pico 2 W auf dem Freenove-Board** (Klemmen-Reihen zeigen zu den Seiten), dahinter der **Kompass BNO085** (um 90° gedreht) |
+| Strom und Laden | Rand | vorne rechts der **MP1584** am Strom-Durchbruch **C** (über den Verteilern in der Wanne), hinten links das **Ladeboard**, hinten rechts der **Hauptschalter** |
 
-**Gut erreichbar – Ebene 3 als Klappdeckel:** Die beiden hinteren Dome (x = −112,6, z = ±24) tragen das Scharnier von Ebene 3 (M3-Schraube als Achse), vorne hält eine Schraube. Schraube lösen, Deckel hochklappen – dann liegen alle Klemmen und Stecker von Ebene 2 offen. (Ebene 3 selbst wird noch entworfen.)
+**Gut erreichbar – Ebene 3 als Klappdeckel:** Hinten am Ring sitzen die Scharnier-Lappen, vorne zwei Laschen für die Schrauben des Deckels. Schrauben lösen, Deckel hochklappen – dann liegen alle Klemmen offen, und durch die vier Grifflöcher steckt man die Motorstecker direkt am Motor ein und aus.
 
 **Erreichbarkeit – vom Skript geprüft:** `ebene2_elektronik.py` prüft bei jedem Lauf nicht nur, ob sich etwas überschneidet, sondern auch, ob man herankommt (Ausgabe „Erreichbarkeit – Probleme: 0“):
 
 | Was | verlangt frei | Hindernis zählt ab |
 |---|---|---|
-| vor jeder Freenove-Klemmen-Reihe (Kabel mit Aderendhülse) | 13 mm | 6 mm Höhe (die Kabel gehen ca. 9 mm über dem Deck hinein) |
+| vor jeder Freenove-Klemmen-Reihe (Kabel mit Aderendhülse) | 13 mm | 6 mm Höhe |
 | vor der Kabelseite jedes WAGO | 15 mm | 2 mm Höhe |
 | vor jeder STEMMA-QT-Buchse des Kompasses | 12 mm | 2 mm Höhe |
 | rund um jedes Griffloch (Finger) | 4 mm + Rand | 6 mm Höhe |
 | unter dem Hauptschalter (ragt 25 mm nach innen) | ganze Länge | 6,5 mm Höhe |
 
-Module mit Lötanschlüssen (DRV8833, MP1584, Ladeboard) klickt man zum Löten heraus – ihre Kabel bekommen dafür ein paar Zentimeter Reserve.
+Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Stegen). Module mit Lötanschlüssen (DRV8833, MP1584, Ladeboard) klickt man zum Löten heraus – ihre Kabel bekommen dafür ein paar Zentimeter Reserve.
 
 **Was darauf sitzt**
-- **Freenove-Board mit Pico 2 W** in der Mitte, die Klemmen-Reihen zeigen zu den Seiten (dort sind mindestens 23 mm frei für Kabel mit Aderendhülse), auf 4 gedruckten Domen (4 mm hoch, Platz für die Lötstellen), 4 × **M3 × 8** durch die Löcher des Boards – schneiden sich das Gewinde selbst (greifen 6,4 mm).
-- **Einklick-Taschen** für alle Module ohne Löcher: 2 × DRV8833, MP1584, BNO085, 2 × WAGO 221-415 (3,3-V-Verteiler vorne/hinten) und das Ladeboard. Passgenauer Rahmen (0,3 mm Luft), je 2 Rastnasen (0,6 mm), eine Kerbe zum Heraushebeln mit einem kleinen Schraubendreher.
-- **Grifflöcher** (28 × 22 mm, mit 2 mm hohem Rand eingefasst, rundum mindestens 6 mm nichts Hohes – Platz für zwei Finger) genau über den beiden Motorsteckern jeder Achse: Deckel auf, durchgreifen, Stecker **direkt am Motor** einstecken oder abziehen – keine Zwischenstecker. Das Motorkabel geht durch dasselbe Loch gerade nach oben. **Wanne abnehmen:** Deckel auf, die 4 Motorstecker abziehen, 4 × M3 × 45 unten lösen.
-- **DRV8833** je Achse direkt neben dem Griffloch, die Motor-Reihe (OUT1–OUT4) zeigt zum Loch. OUT1/OUT2 = linker Motor, OUT3/OUT4 = rechter Motor dieser Achse.
-- **WAGO-Taschen (3,3 V):** auf der anderen Seite des Grifflochs, die **Kabelseite ist offen und zeigt nach außen** (davor mindestens 19 mm frei), die Rückwand ist nur 4 mm hoch (Hebel klappen frei auf), die Rastnasen sitzen an den kurzen Enden.
-- **BNO085 (Kompass)** vor dem Pico, um 90° gedreht – die STEMMA-QT-Buchsen zeigen zu den Seiten, davor sind mindestens 18 mm frei (ca. 5 cm zum vorderen, 10 cm zum hinteren Motor). Motormagnete, Spulen und Leitungen mit viel Strom stören den Kompass – deshalb ist rund um ihn alles frei, und am Sensor keine Stahlschrauben (er wird nur eingeklickt). Die Tasche hat an beiden kurzen Seiten eine 16 mm breite Aussparung für die STEMMA-QT-Stecker.
-- **MP1584** rechts neben dem Freenove-Board, direkt am Strom-Durchbruch C (ca. 7 cm vom Kompass – seine Spule macht ein Magnetfeld). Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.
-
-  **Kabellängen vom Motorstecker** (gerechnet aus dem 3D-Modell, mit Reserve) – alles kurz, die üblichen 20-cm-Motorkabel reichen:
-
-  | Ader | vorne links | vorne rechts | hinten links | hinten rechts |
-  |---|---|---|---|---|
-  | M1, M2 → DRV8833 der Achse | 6 cm | 7 cm | 6 cm | 7 cm |
-  | VCC → 3,3-V-Verteiler der Achse | 7 cm | 6 cm | 7 cm | 6 cm |
-  | GND, A, B → Freenove-Klemmen | 12 cm | 18 cm | 13 cm | 7 cm |
-
-  Längere Kabel ordentlich aufrollen und mit einem Kabelbinder sichern. Nach der Lieferung nachmessen.
-- **Kabelwege nach unten in die Wanne:** die beiden Grifflöcher (Motorkabel, XSHUT der Nahsensoren), hinten links und rechts je ein Schlitz (Daten vom INA226, Schalter-Rückleitung), seitlich A/B, **C am rechten Rand** (Plus und Minus von den Verteilern – immer paarweise nebeneinander, dann heben sich ihre Magnetfelder auf). Leitungen mit viel Strom laufen am Rand, nie quer durch die Mitte.
-- **Ladeboard DDTCCRUB 2S** hinten links: Die Platine liegt **bündig an der Innenseite der Rückwand**, die USB-C-Buchse steckt im Ausschnitt der Wand und sitzt nur 1 mm hinter der Außenseite – der Stecker ist gut zu erreichen und rastet voll ein. Dafür ist die innere Ecke des Rings hinten links enger gerundet (R 4 statt 7,6; die Wand ist dort an der dünnsten Stelle 0,9 mm). Der Ausschnitt ist 13,5 × 8 mm (außen angefast), im Deck darunter eine flache Mulde. Die Seitenwände der Tasche stehen nur im vorderen Teil, hinten sitzen der Dom der Wannenschraube und die Ecke des Rings. BAT und GND gehen durch Durchbruch B hinunter zum BMS.
-- **Rückwand des Gehäuse-Rings:** links (von hinten gesehen) der **Hauptschalter** – runder Taster, rastend, **Ø 12 mm** (Loch Ø 12,2 mm, Frontring Ø 13,9 mm liegt außen auf, Mutter innen; ragt 19 mm nach innen, darunter bleibt frei) –, rechts die **USB-C-Buchse** des Ladeboards. Beide sitzen außen, nicht über den Grifflöchern. Die Wand ist 2,4 mm dick, das passt für die Mutter. Reihenfolge beim Zusammenbau: erst das Ladeboard einklicken, dann den Ring aufsetzen.
+- **Freenove-Board mit Pico 2 W** vorne in der Mitte (x = 20) auf 4 gedruckten Domen (4 mm hoch), 4 × **M3 × 8**. Die Klemmen-Reihen zeigen zu den Seiten.
+- **Einklick-Taschen** für alle Module ohne Löcher: 2 × DRV8833, MP1584, BNO085, 2 × WAGO 221-415 (3,3 V) und das Ladeboard. Passgenauer Rahmen (0,3 mm Luft), Rastnasen als Keil, eine Kerbe zum Heraushebeln.
+- **Grifflöcher** (28 × 20 mm, mit 2 mm hohem Rand) genau über jedem Motorstecker – bei der breiten Wanne liegen die beiden Stecker einer Achse 60 mm auseinander, deshalb vier Grifflöcher.
+- **DRV8833** je Achse mittig zwischen den beiden Grifflöchern. OUT1/OUT2 = linker Motor, OUT3/OUT4 = rechter Motor dieser Achse.
+- **WAGO-Taschen (3,3 V)** rechts außen, die **Kabelseite ist offen und zeigt nach außen**, die Rückwand ist nur 4 mm hoch (Hebel klappen frei auf).
+- **BNO085 (Kompass)** hinten in der Mitte (x = −35): ca. 12 cm von Durchbruch C und von den Verteilern in der Wanne, ca. 5 cm vom hinteren Motor. Darunter liegt in der Wanne (4 cm tiefer) der Akku – ob sein Strom stört, zeigt erst ein Test mit dem echten Auto (BNO085 kalibrieren und beim Fahren beobachten).
+- **MP1584** vorne rechts direkt am Strom-Durchbruch C, ca. 8 cm vom Kompass.
+- **Kabelwege nach unten in die Wanne:** die vier Grifflöcher (Motorkabel, XSHUT der Nahsensoren), **D** links vor dem Pico (Daten vom INA226), **S** hinten rechts (Leitungen zum Hauptschalter), **B** hinten links (BMS → Ladeboard), **C** vorne rechts (Plus und Minus von den Verteilern – immer paarweise nebeneinander).
+- **Ladeboard DDTCCRUB 2S** hinten links (z = 60): Die Platine liegt **bündig an der Innenseite der Rückwand**, die USB-C-Buchse steckt im Ausschnitt der Wand (13,5 × 8 mm, außen angefast) und sitzt nur 1 mm hinter der Außenseite. Die innere Ecke des Rings ist dort enger gerundet.
+- **Rückwand des Gehäuse-Rings:** in Fahrtrichtung rechts der **Hauptschalter** (runder Taster Ø 12 mm, Loch Ø 12,2 mm, z = −55), links die **USB-C-Buchse** des Ladeboards (z = +60). Reihenfolge beim Zusammenbau: erst das Ladeboard einklicken, dann den Ring aufsetzen.
+- Die Kabellängen vom Motorstecker werden nach dem Neubau neu ausgemessen.
 
 - Im 3D-Modell: `modell/ebene2-oben.html` (Werkstatt-Ansicht nur für Ebene 2).
 
 **Befestigung**
-- Unten: 4 Dome (Kernloch von unten, 10 mm tief) über den Säulen der Wanne – dort greifen die 4 × M3 × 45 der Wanne von unten (Kernloch 11 mm tief, oben geschlossen).
-- Oben: der **Gehäuse-Ring** schließt die Seiten bis Ebene 3. Seine Röhren sind **Hülsen** (Ø 13 mm) über 4 Domen des Decks (8 mm hoch, Kernloch 11 mm tief) bei x = 73,5 / z = ±57,6 (vorne, in der Ecke an Seiten- und Vorderwand) und x = −112,6 / z = ±23,3 (hinten an der Rückwand = Scharnier des Klappdeckels Ebene 3). Jede Hülse geht von unten bis oben, umschließt den Dom ganz (0,3 mm Luft) und ist in voller Breite mit der Außenwand verbunden – von außen eine durchgehende Säule ohne Fuge, und der Ring sitzt formschlüssig auf dem Deck.
+- Unten: 4 Dome (Kernloch von unten, 11 mm tief) über den Säulen der Wanne – dort greifen die 4 × M3 × 45 der Wanne von unten.
+- Oben: der **Gehäuse-Ring** schließt die Seiten bis Ebene 3. Seine Röhren sind **Hülsen** (Ø 13 mm) über 8 Domen des Decks (8 mm hoch, Kernloch 11 mm tief): vorne in den Ecken (x = 113,5 / z = ±82,6), hinten an der Rückwand (x = −117,6 / z = ±23,3, beim Scharnier) und an den Seiten bei der Fuge des Rings (x = −4,5 und −28,5 / z = ±82,6). Jede Hülse geht von unten bis oben und ist mit der Außenwand verbunden.
 
-Alle Kernlöcher haben **3,7 mm Material** rundum (nachgemessen mit `werkzeug/fleisch.py`). Die Lage aller Taschen, Dome und Durchbrüche prüfen beide Skripte selbst auf Überschneidungen (Ausgabe „Überschneidungen: 0“).
+Alle Kernlöcher haben mindestens **3,5 mm Material** rundum. Die Lage aller Taschen, Dome und Durchbrüche prüft das Skript selbst auf Überschneidungen (Ausgabe „Überschneidungen: 0“).
 
-**Schrauben für Ebene 2:** 4 × M3 × 8 (Freenove-Board). Die Schrauben zur Wanne zählen bei Ebene 1.
+**Schrauben für Ebene 2:** 4 × M3 × 8 (Freenove-Board), 2 × M3 × 10 (Stege an der Fuge des Decks), 8 × M3 × 20 (Ring aufs Deck). Die Schrauben zur Wanne zählen bei Ebene 1.
 
-## Ebene 3 – Gehirn, Klappdeckel (`ebene3_gehirn.py` → `ebene3/`)
+## Ebene 3 – Gehirn mit Dach, Klapphaube (`ebene3_gehirn.py` → `ebene3/`)
 
-Ein Druckteil: **Boden von Ebene 3 und Seitenwände bis Ebene 4 in einem Stück** (215,5 × 130 × 48 mm mit Scharnier-Lappen). Der ganze obere Teil klappt nach hinten auf wie eine Motorhaube – dann liegt Ebene 2 offen.
+Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten offen**. Eine eigene vierte Ebene gibt es nicht mehr – das Dach der Haube trägt oben den LiDAR. Die Haube klappt hinten nach oben auf, dann liegt Ebene 2 offen.
 
-- **Scharniere hinten:** zwei Scharniere außen an der Trennfuge. Die Achse liegt 5,5 mm hinter der Rückwand und 5 mm über der Fuge. Je Scharnier sitzen zwei Lappen am Deckel und einer am Ring von Ebene 2. Die Achse ist eine **M3 × 16**, ihr Gewinde schneidet sich in den äußeren Lappen. Das Skript prüft in 10°-Schritten bis 100°, dass beim Aufklappen nichts anstößt.
-- **Vorne zwei M3 × 12** waagerecht durch die Vorderwand, die Köpfe sitzen bündig. Sie greifen in zwei Laschen, die vom Ring von Ebene 2 durch Schlitze im Boden nach oben ragen. Schrauben raus, Deckel hoch.
-- **Raspberry Pi 5** mit Active Cooler und AI HAT+: 4 Dome (5 mm hoch).
-  - **M2,5** von unten durch Boden, Dom und Pi in die 16-mm-Abstandshalter des AI HAT+ (liegen bei).
-  - Ausnahme von „nur M3“, weil die Löcher des Pi nur 2,7 mm groß sind.
-  - Die Köpfe sind unten versenkt, mit Brücken-Trick.
-  - USB und Ethernet zeigen nach hinten.
-- **Pololu D36V50F5** vorne rechts in einer Einklick-Tasche, nah an der USB-C-Buchse des Pi.
-- **4G-Modul Waveshare SIM7600G-H 4G DONGLE:** Es wird nur die Platine eingebaut (82,3 × 40,2 mm, ohne Löcher), die Kunststoffhülle ist zu groß.
-  - Die Platine steht **senkrecht links neben dem Pi**. Sie wird von oben in zwei Säulen mit Nut an ihren Enden geschoben und steht auf dem Boden.
-  - Der USB-A-Stecker zeigt nach hinten. Ein kurzes Winkel-Kabel führt zum Pi.
-  - Die SMA-Buchse (MAIN) zeigt nach vorne, die zwei u.FL-Buchsen (AUX, GNSS) liegen daneben.
-- **Kamera Modul 3 Wide** vorne: von oben in zwei Nuten geschoben. Das Objektiv schaut durch ein rundes Fenster mit flacher Oberkante, außen angefast.
-- **Lüftung:** senkrechte Schlitze in beiden Seitenwänden. Der AI HAT+ darf nicht ohne Luft eingebaut werden.
-- **Ebene 4:** 4 Röhren in den Ecken, Kernloch von oben (11 mm tief, 3,7 mm Material rundum).
-- **Kabel nach unten:** Durchbruch hinten Mitte, nah am Scharnier. Dort laufen USB Pico → Pi und Akku-Plus/Minus zum Pololu. So knicken die Kabel beim Aufklappen kaum.
-- **Ring von Ebene 2:** wird **aufrecht** gedruckt (Scharnier-Lappen und Laschen mit 45°-Schrägen). Er ist mit **4 × M3 × 20 von oben** am Deck verschraubt; die Köpfe liegen unter dem Deckel.
+| Datei | Anzahl | Maße | Druckrichtung | Hinweise |
+|---|---|---|---|---|
+| `ebene3/haube_vorne.stl` | 1 | 80 × 180 × 37 mm | **Dach nach unten** (aufs Bett) | Ohne Stützen. Kamera, Status-LEDs, Pololu, Schraubpolster vorne. |
+| `ebene3/haube_hinten.stl` | 1 | 180 × 180 × 37 mm (mit Scharnier-Lappen) | **Dach nach unten** | Ohne Stützen. Pi-Dome, 4G- und GPS-Tasche, Display, Scharnier-Lappen (mit 45°-Keil). |
+
+- **Form:** Vorder- und Rückwand senkrecht (vorne das Kamerafenster, hinten das Scharnier). Die Seiten sind unten 12 mm senkrecht und laufen dann schräg nach innen (oben je 7 mm schmaler), alle Dachkanten sind 45° abgeschrägt. Höhe 84 → 121 mm, mit LiDAR ca. 155 mm.
+- **Alles hängt am Dach** (beim Druck wachsen die Halter vom Bett nach oben – keine Stützen):
+  - **Raspberry Pi 5** mit Active Cooler und AI HAT+: Der Stapel hängt an 4 Domen. **M2,5 × 16 von oben** durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei), Köpfe bündig im Dach (Senkung mit Brücken-Trick). Unten hält der Pi mit den beiliegenden Schrauben. Ausnahme von „nur M3“, weil die Löcher des Pi nur 2,7 mm groß sind.
+  - **Kamera Modul 3 Wide** vorne in zwei Nuten, von unten einschieben bis sie über eine kleine Nase schnappt. Fenster Ø 18 mm (gerade Kante unten), außen angefast.
+  - **Pololu D36V50F5**, **4G-Modul** (Waveshare SIM7600G-H, nur die Platine, liegt flach; Stirnseiten offen für USB-Stecker und SMA-Buchse) und **GPS-Antenne** in Einklick-Taschen. Die GPS-Antenne empfängt durch das Dach.
+  - **Status-LEDs** (WS2812-Streifen) vorne in einer flachen Tasche, sie leuchten durch 4 Löcher Ø 3 mm.
+  - **Rundes Display** hinten: Das Glas liegt von innen am Dach an und schaut durch ein Loch Ø 44,4 mm (außen angefast), 3 Schnapphaken halten die Platine.
+  - **LiDAR LD19** oben auf dem Dach, Kabel durch ein Loch Ø 10 nach innen. Seine Befestigungslöcher kommen nach dem Nachmessen.
+- **Scharniere hinten:** zwei Scharniere außen an der Trennfuge, Achse 5,5 mm hinter der Rückwand und 5 mm über der Fuge. Je Scharnier zwei Lappen an der Haube, einer am Ring von Ebene 2, Achse **M3 × 16** (Gewinde im äußeren Lappen). Das Skript prüft in 10°-Schritten bis 100°, dass beim Aufklappen nichts anstößt.
+- **Vorne zwei M3 × 12** waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2.
+- **Kabel:** Die Haube ist unten offen – alle Kabel von Ebene 2 laufen hinten beim Scharnier nach oben, dort knicken sie beim Aufklappen am wenigsten.
+- **Luft:** senkrechte Lüftungsschlitze in beiden Seitenwänden (der AI HAT+ braucht Luft). Unter Pi und Kamera bleiben bis Ebene 2 gut 10 mm frei.
+- **Zwei Hälften:** Fuge bei x = +45 (wieder an einer anderen Stelle als Wanne, Deck und Ring). Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand; beide werden mit **6 × M3 × 12** verschraubt (Kopf hinten, Gewinde vorne).
 
 Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufklappen).
 
-**Schrauben für Ebene 3:** 2 × M3 × 16 (Scharniere), 2 × M3 × 12 (vorne), 4 × M2,5 × 6 (Pi, plus die beiliegenden Abstandshalter des AI HAT+). Am Ring von Ebene 2 dazu 4 × M3 × 20.
+**Schrauben für Ebene 3:** 2 × M3 × 16 (Scharniere), 2 × M3 × 12 (vorne), 6 × M3 × 12 (Fuge), 4 × M2,5 × 16 (Pi-Stapel von oben, plus die Abstandshalter des AI HAT+).
 
 ## Befestigung der Bauteile (Löcher für die Platten)
 

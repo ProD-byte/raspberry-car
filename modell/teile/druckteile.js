@@ -6,10 +6,15 @@
   const PETG = 'PETG – verträgt die Wärme von Motoren und Akku (bis ca. 75 °C) und ist zäh. PLA geht zum Probieren, wird im Auto aber weich.';
   const PETG_TEMP = 'Düse 235–245 °C, Bett 75–85 °C, Lüfter 30–50 %';
   window.RC_DRUCK = {
-    'Fahrwerk-Wanne (Druckteil)': {
-      datei: 'ebene1/wanne', anzahl: 1, gramm: 230, filament: PETG, temp: PETG_TEMP,
+    'Fahrwerk-Wanne vordere Hälfte (Druckteil)': {
+      datei: 'ebene1/wanne_vorne', anzahl: 1, gramm: 130, filament: PETG, temp: PETG_TEMP,
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (die Schrauben schneiden ihr Gewinde selbst) · oben/unten je 5 Schichten · 25 % Füllung (Gyroid) · keine Stützen',
-      richtung: 'Boden unten aufs Bett. Braucht ein Druckbett ab 220 × 220 mm (Teil 205 × 130 mm).'
+      richtung: 'Boden unten aufs Bett. Die drei Laschen an der Fuge stehen mit auf dem Bett. 137 × 180 mm.'
+    },
+    'Fahrwerk-Wanne hintere Hälfte (Druckteil)': {
+      datei: 'ebene1/wanne_hinten', anzahl: 1, gramm: 125, filament: PETG, temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (die Schrauben schneiden ihr Gewinde selbst) · oben/unten je 5 Schichten · 25 % Füllung (Gyroid) · keine Stützen',
+      richtung: 'Boden unten aufs Bett. 131 × 180 mm.'
     },
     'Motorbügel (4 × Druckteil)': {
       datei: 'ebene1/motorbuegel', anzahl: 4, gramm: 3, filament: PETG, temp: PETG_TEMP,
@@ -20,22 +25,37 @@
       datei: 'pruefstand/pruefstand', anzahl: 1, gramm: 125,
       filament: 'PLA reicht – der Prüfstand ist ein Werkzeug und wird nicht warm.', temp: 'Düse 205–215 °C, Bett 55–60 °C, Lüfter 100 %',
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3 Wände · 15 % Füllung · keine Stützen',
-      richtung: 'So wie er steht (Unterseite aufs Bett). 112 × 112 mm – passt auf jedes Druckbett.'
+      richtung: 'So wie er steht (Unterseite aufs Bett). 124 × 124 mm – passt auf jedes Druckbett.'
     },
-    'Elektronik-Deck Ebene 2 (Druckteil)': {
-      datei: 'ebene2/platte', anzahl: 1, gramm: 110, filament: PETG, temp: PETG_TEMP,
-      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (Schraubdome) · 20 % Füllung · keine Stützen. Die Rastnasen der Taschen sind keilförmig und drucken sauber.',
-      richtung: 'Unterseite aufs Bett. Braucht ein Druckbett ab 220 × 220 mm (Teil 205 × 130 mm).'
+    'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)': {
+      datei: 'ebene2/platte_vorne', anzahl: 1, gramm: 50, filament: PETG, temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (Schraubdome, Steg mit Gewinde) · 20 % Füllung · keine Stützen. Die Rastnasen der Taschen sind keilförmig und drucken sauber.',
+      richtung: 'Unterseite aufs Bett, der Steg an der Fuge steht nach oben. 67 × 180 mm.'
     },
-    'Gehäuse-Ring oben (Druckteil)': {
-      datei: 'ebene2/ring_oben', anzahl: 1, gramm: 55, filament: PETG, temp: PETG_TEMP,
+    'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)': {
+      datei: 'ebene2/platte_hinten', anzahl: 1, gramm: 130, filament: PETG, temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (Schraubdome) · 20 % Füllung · keine Stützen.',
+      richtung: 'Unterseite aufs Bett. 183 × 180 mm.'
+    },
+    'Gehäuse-Ring oben, vordere Hälfte (Druckteil)': {
+      datei: 'ebene2/ring_vorne', anzahl: 1, gramm: 50, filament: PETG, temp: PETG_TEMP,
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3 Wände · 15 % Füllung · keine Stützen',
-      richtung: 'Aufrecht drucken, so wie er im Auto steht (Unterkante aufs Bett). Die Scharnier-Lappen hinten und die Laschen vorne haben 45°-Schrägen und drucken ohne Stützen.'
+      richtung: 'Aufrecht drucken, so wie er im Auto steht (Unterkante aufs Bett). Die Laschen vorne haben unten 45°-Schrägen. 141 × 180 mm.'
     },
-    'Klappdeckel Ebene 3 (Druckteil)': {
-      datei: 'ebene3/deckel', anzahl: 1, gramm: 125, filament: PETG + ' Der AI HAT+ und der Pi werden warm – deshalb hier unbedingt PETG.', temp: PETG_TEMP,
-      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3–4 Wände (Röhren für Ebene 4, Scharnier-Lappen) · 15–20 % Füllung · keine Stützen',
-      richtung: 'Boden aufs Bett, Wände nach oben. Die M2,5-Senkungen unten haben den Brücken-Trick. Braucht ein Druckbett ab 220 × 220 mm (Teil 215,5 × 130 × 48 mm mit Scharnier-Lappen).'
+    'Gehäuse-Ring oben, hintere Hälfte (Druckteil)': {
+      datei: 'ebene2/ring_hinten', anzahl: 1, gramm: 40, filament: PETG, temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3 Wände · 15 % Füllung · keine Stützen',
+      richtung: 'Aufrecht drucken (Unterkante aufs Bett). Die Scharnier-Lappen hinten haben unten 45°-Schrägen und drucken ohne Stützen. 119 × 180 mm.'
+    },
+    'Klapphaube Ebene 3, vordere Hälfte (Druckteil)': {
+      datei: 'ebene3/haube_vorne', anzahl: 1, gramm: 105, filament: PETG + ' Pi und AI HAT+ werden warm – deshalb hier unbedingt PETG.', temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3–4 Wände (Flansch mit Gewinde, Schraubpolster) · 15–20 % Füllung · keine Stützen',
+      richtung: 'Dach nach unten aufs Bett (die Haube steht kopfüber). Kamera-Nuten, Taschen und Flansch wachsen vom Dach nach oben. 80 × 180 mm.'
+    },
+    'Klapphaube Ebene 3, hintere Hälfte (Druckteil)': {
+      datei: 'ebene3/haube_hinten', anzahl: 1, gramm: 170, filament: PETG + ' Pi und AI HAT+ werden warm – deshalb hier unbedingt PETG.', temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 3–4 Wände (Pi-Dome, Scharnier-Lappen) · 15–20 % Füllung · keine Stützen. Die Senkungen der M2,5 im Dach haben den Brücken-Trick.',
+      richtung: 'Dach nach unten aufs Bett. Die Scharnier-Lappen werden von einem 45°-Keil getragen. 180 × 180 mm.'
     }
   };
 

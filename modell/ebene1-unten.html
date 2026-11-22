@@ -135,7 +135,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
   <div class="stage" id="stage">
     <div class="loading" id="loading">3D-Modell wird gebaut …</div>
-    <div class="dims">Wanne 205 × 130 × 42 mm · Radstand 145 mm · vorne: Nahsensor · hinten: Ladebuchse und Schalter</div>
+    <div class="dims">Wanne 250 × 180 × 42 mm (2 Hälften) · Radstand 160 mm · vorne: Nahsensor · hinten: Ladebuchse und Schalter</div>
     <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf die Wanne, einen Motorbügel oder den Akku.</span></div>
   </div>
 
@@ -144,7 +144,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     <label class="check"><input id="raeder" type="checkbox" checked> Räder zeigen</label>
     <label class="check"><input id="glas" type="checkbox"> Wanne durchsichtig</label>
     <label class="check"><input id="pruefstand" type="checkbox"> Auf dem Prüfstand</label>
-    <label class="check"><input id="kabel" type="checkbox"> Verkabelung</label>
+    <label class="check" title="Die Kabelwege werden nach dem Neubau von Ebene 2 neu gelegt"><input id="kabel" type="checkbox" disabled> Verkabelung (kommt nach Ebene 2)</label>
     <div class="toggles">
       <button id="rotate" type="button" aria-pressed="true">Drehen</button>
       <button id="unten" type="button">Von unten</button>
@@ -167,11 +167,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261121122439"></script>
+<script src="teile/teile.js?v=20261122153548"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261121122439"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122153548"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -199,7 +199,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(32, 1, 2, 6000);
-    const HOME = { pos: V(190, 210, 300), target: V(-17.5, 30, 0) };
+    const HOME = { pos: V(240, 250, 360), target: V(0, 30, 0) };
     camera.position.copy(HOME.pos);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.copy(HOME.target);
@@ -468,14 +468,15 @@ code { font-family: var(--font-mono); font-size: 13px; }
     }
     function m3Mutter(p, x, y, z) { cylY(p, 3.17, 2.4, x, y, z, 0xb9bec3, { metal: 0.85, rough: 0.3, seg: 6 }); }
     const AXLE = 33.8;   // Radius des echten Rads (Ø 67,6 mm) = Höhe der Radachse über dem Boden
-    const MOTORS = { VL: [55, 1, 'vorne links'], HL: [-90, 1, 'hinten links'], VR: [55, -1, 'vorne rechts'], HR: [-90, -1, 'hinten rechts'] };   // Radstand 145 mm, Mitte = Wannenmitte (x −17,5)
+    const MOTORS = { VL: [80, 1, 'vorne links'], HL: [-80, 1, 'hinten links'], VR: [80, -1, 'vorne rechts'], HR: [-80, -1, 'hinten rechts'] };   // Radstand 160 mm, Mitte = Wannenmitte (x 0)
+    const MOTOR_Z = 25;   // Wanne 180 breit: Stirnseite bei |z| = 87 statt 62 → alles am Motor 25 mm weiter außen
 
     // Motor JGA25-370 mit Encoder, L-Halterung und Rad: echte CAD-Modelle von GrabCAD (nur lokal, siehe teile/QUELLEN.md).
     // Motor: Getriebe-Stirnseite liegt bei z = s·62 (direkt an der Halterung), Welle ragt 12,5 mm nach außen, Encoder innen bei z ≈ s·1.
     // Halterung: Motorplatte mit Ø-8-Loch für die Welle, obere Platte unter der Bodenplatte (16,45 mm über der Achse).
     // Rad (Solarbotics-Form, Ø 67,6 × 24,3 mm): Mitte bei z = s·83, Nabe zeigt zum Motor.
     function motor(key, x, s, nm) {
-      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Ø 25 mm, mit Getriebe (hier 21 mm lang, je nach Übersetzung 17–27 mm) und Hall-Encoder (11 Polpaare) hinten. Am Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, 0);
+      const g = part(L0, `Motor ${nm} (JGA25-370, 6 V, Encoder)`, 'Treibt ein Rad an. Ø 25 mm, mit Getriebe (hier 21 mm lang, je nach Übersetzung 17–27 mm) und Hall-Encoder (11 Polpaare) hinten. Am Stecker kommen 6 Adern an: M1, M2, GND, VCC, A, B.', x, AXLE, s * MOTOR_Z);
       const ersatz = new THREE.Group(); ersatz.position.z = s * 5; g.add(ersatz);
       cadTeil('motor', g, ersatz, (m) => {
         // CAD: Achse entlang z, Getriebe-Stirnseite bei z = 0, Welle bei z < 0, Encoder bei z ≈ 52…61
@@ -501,7 +502,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen auf gelber Kunststofffelge, Ø 67,6 × 24,3 mm (die übliche „65-mm“-Form). Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * 83);
+      const g = part(L0, 'Rad 65 mm (beim Motor-Set dabei)', 'Gummireifen auf gelber Kunststofffelge, Ø 67,6 × 24,3 mm (die übliche „65-mm“-Form). Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
       const ersatz = new THREE.Group(); g.add(ersatz);
       cadTeil('rad', g, ersatz, (m) => {
         // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen
@@ -521,15 +522,19 @@ code { font-family: var(--font-mono); font-size: 13px; }
     }
     Object.entries(MOTORS).forEach(([k, [x, s, nm]]) => { motor(k, x, s, nm); wheel(x, s); });
     (function wanne() {
-      const g = part(L0, 'Fahrwerk-Wanne (Druckteil)', 'Trägt Motoren, Akku und die Stromversorgung (BMS, INA226, Sicherung und die Verteiler zwischen Akku und Hinterachse). Das Ladeboard sitzt oben auf dem Elektronik-Deck. Die Motoren werden mit 2 × M3 direkt an die Seitenwand geschraubt (waagerechte Langlöcher für 15,4–17 mm Lochabstand), Encoder-Stecker oben, und liegen in Sätteln. Wird von unten mit 4 × M3 × 45 an das Elektronik-Deck geschraubt: Auto umdrehen, 4 Schrauben lösen, Wanne abnehmen – alles darüber bleibt zusammen. Boden vorne und hinten gleich als Kufen schräg hochgezogen (45°, scharfer Knick – druckt ohne Stützen), damit sie über Steine gleitet, 2 Paar Kabelbinder-Schlitze im Boden für die Kabel der Sicherung (von unten einfädeln, Rille unten), Sechseck-Lüftung, Unterkante angefast. 205 × 130 × 42 mm, Radstand 145 mm. Datei: gehaeuse/ebene1/wanne.stl', 0, 0, 0);
+      const BESCHR = ' Zusammen tragen sie Motoren, Akku und die Stromversorgung. Die Wanne ist 250 × 180 mm groß und aus zwei Hälften gedruckt; die Fuge liegt quer bei x = 6. Die vordere Hälfte greift mit drei Laschen (an beiden Seitenwänden und in der Mitte) in die hintere, verschraubt mit 6 × M3 (seitlich je 2 × M3 × 8 von außen, Kopf bündig; in der Mitte 2 × M3 × 16 von innen).';
+      const g = part(L0, 'Fahrwerk-Wanne vordere Hälfte (Druckteil)', 'Vordere Hälfte der Wanne: Vorderachse mit 2 Motoren, BMS, Sicherung, INA226 und die beiden Verteiler, vorne der Nahsensor. Datei: gehaeuse/ebene1/wanne_vorne.stl.' + BESCHR, 0, 0, 0);
       g.userData.druckteil = 'wanne';
-      cadTeil('e1_wanne', g, new THREE.Group(), (m) => m);
+      cadTeil('e1_wanne_vorne', g, new THREE.Group(), (m) => m);
+      const gh = part(L0, 'Fahrwerk-Wanne hintere Hälfte (Druckteil)', 'Hintere Hälfte der Wanne: Hinterachse mit 2 Motoren, der Akku (2 Halter hintereinander quer im Auto), hinten der Nahsensor. Datei: gehaeuse/ebene1/wanne_hinten.stl.' + BESCHR, 0, 0, 0);
+      gh.userData.druckteil = 'wanne';
+      cadTeil('e1_wanne_hinten', gh, new THREE.Group(), (m) => m);
       const b = part(L0, 'Motorbügel (4 × Druckteil)', 'Drückt den Motor in den Sattel der Wanne. Je 2 × M3-Zylinderkopfschraube, die sich das Gewinde selbst in die Wanne schneiden (Kernloch 2,6 mm). Datei: gehaeuse/ebene1/motorbuegel.stl (4 × drucken)', 0, 0, 0);
       b.userData.druckteil = 'buegel';
       cadTeil('e1_motorbuegel', b, new THREE.Group(), (m) => m);
-      Object.values(MOTORS).forEach(([x, s]) => [-20, 20].forEach((k) => m3Schraube(b, x + k, AXLE + 6, s * 50, 8, false)));
+      Object.values(MOTORS).forEach(([x, s]) => [-20, 20].forEach((k) => m3Schraube(b, x + k, AXLE + 6, s * (50 + MOTOR_Z), 8, false)));
       // Köpfe sitzen versenkt in der Schräge der Kufen (vorne und hinten gleich): 4 × M3 × 45
-      [[77.5, 35, 20.4, 45], [77.5, -35, 20.4, 45], [-112.5, 35, 20.4, 45], [-112.5, -35, 20.4, 45]].forEach(([x, z, y, l]) => m3Schraube(g, x, y, z, l, true));
+      [[117.5, 35, 20.4, 45], [117.5, -35, 20.4, 45], [-117.5, 35, 20.4, 45], [-117.5, -35, 20.4, 45]].forEach(([x, z, y, l]) => m3Schraube(x > 0 ? g : gh, x, y, z, l, true));
     })();
 
     const cellTex = canvasTex(58, 65, 8, (c, w, h) => {
@@ -544,39 +549,41 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // Zellen nach Samsung-Datenblatt: Ø 18,4 mm (max. 18,55), Länge 65,0 mm (max. 65,25), Pluspol flach (Flat-Top).
     // Die Halter hängen kopfüber unter der Bodenplatte, je 2 × M3-Zylinderkopfschraube (ISO 4762) mit Mutter oben.
     (function battery() {
-      const gp = part(L0, 'Akku 2S2P: 2 × Keystone 1047 mit 4 × Samsung INR18650-35E', 'Zwei Doppelhalter Keystone 1047 (77,1 × 39,8 × 18 mm, Lötfahnen), je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Stehen auf dem Boden der Fahrwerk-Wanne, je 2 × M3-Zylinderkopfschraube von innen mit Mutter unter dem Boden. Zellen: Samsung INR18650-35E, Flat-Top, Ø 18,4 × 65 mm.', 0, 22, 0);   // steht auf den 3 mm hohen Sockeln der Wanne
+      const gp = part(L0, 'Akku 2S2P: 2 × Keystone 1047 mit 4 × Samsung INR18650-35E', 'Zwei Doppelhalter Keystone 1047 (77,1 × 39,8 × 18 mm, Lötfahnen), je 2 Zellen parallel (Gruppe 1 links, Gruppe 2 rechts), die beiden Gruppen in Reihe: 7,4 V, 7000 mAh. Stehen auf dem Boden der Fahrwerk-Wanne, je 2 × M3-Zylinderkopfschraube von innen mit Mutter unter dem Boden. Zellen: Samsung INR18650-35E, Flat-Top, Ø 18,4 × 65 mm.', -33, 22, 0);   // steht auf den 3 mm hohen Sockeln der Wanne
       // Aufbau unten ist „kopfüber“ beschrieben (Boden bei y = 0, Zellen darunter) → umdrehen
       const g = new THREE.Group(); g.rotation.x = Math.PI; gp.add(g);
       const HL = 77.1, HB = 39.8, HH = 18.0, PITCH = 19.1, LOCH = 27.6, ZR = 9.2, ZL = 65.0;
       const grau = 0x2b2d30;
-      [[-21, 1, '1'], [21, -1, '2']].forEach(([hx, dir, grp]) => {
+      // Halter liegen längs in z hintereinander (Gruppe 1 links bei z = +40, Gruppe 2 rechts bei z = −40). g ist umgedreht (z gespiegelt).
+      [[40, 1, '1'], [-40, -1, '2']].forEach(([hzw, dir, grp]) => {
+        const hx = 0, hg = new THREE.Group(); hg.position.z = -hzw; g.add(hg);
         // Halter (kopfüber: Boden oben an der Platte, Zellen hängen darunter)
-        box(g, HB, 1.5, HL, hx, -1.5, 0, grau, { rough: 0.7 });                           // Boden
-        [-1, 1].forEach((k) => box(g, HB, HH, 3, hx, -HH, k * (HL / 2 - 1.5), grau, { rough: 0.7 }));   // Stirnwände
-        box(g, 3.2, 7, HL - 6, hx, -8.5, 0, grau, { rough: 0.7 });                       // Mittelsteg
-        [-1, 1].forEach((k) => box(g, 1.2, 6, HL - 6, hx + k * (HB / 2 - 0.6), -7.5, 0, grau, { rough: 0.7 }));  // Seitenwände
+        box(hg, HB, 1.5, HL, hx, -1.5, 0, grau, { rough: 0.7 });                           // Boden
+        [-1, 1].forEach((k) => box(hg, HB, HH, 3, hx, -HH, k * (HL / 2 - 1.5), grau, { rough: 0.7 }));   // Stirnwände
+        box(hg, 3.2, 7, HL - 6, hx, -8.5, 0, grau, { rough: 0.7 });                       // Mittelsteg
+        [-1, 1].forEach((k) => box(hg, 1.2, 6, HL - 6, hx + k * (HB / 2 - 0.6), -7.5, 0, grau, { rough: 0.7 }));  // Seitenwände
         // Befestigung: 2 × M3 im Mittelsteg, Kopf unten im Halter, Mutter oben auf der Platte
         // Befestigung: M3 × 8 von unten durch Boden und Sockel (Kopf bündig in der Senkung), Mutter innen auf dem Halterboden
-        [-LOCH, LOCH].forEach((z) => { m3Schraube(gp, hx, -6, z, 8, true); m3Mutter(gp, hx, 1.5, z); });
+        [-LOCH, LOCH].forEach((z) => { m3Schraube(gp, hx, -6, hzw + z, 8, true); m3Mutter(gp, hx, 1.5, hzw + z); });
         // Federkontakte und Lötfahnen (je Zelle eigene Kontakte)
         [-PITCH / 2, PITCH / 2].forEach((cx) => [-1, 1].forEach((k) => {
-          box(g, 8, 10, 0.4, hx + cx, -16, k * (HL / 2 - 3.2), 0xc9cdd1, { metal: 0.9, rough: 0.3 });
-          box(g, 3, 6, 0.4, hx + cx, -15, k * (HL / 2 + 0.4), 0xc9cdd1, { metal: 0.9, rough: 0.3 });   // Lötfahne außen
+          box(hg, 8, 10, 0.4, hx + cx, -16, k * (HL / 2 - 3.2), 0xc9cdd1, { metal: 0.9, rough: 0.3 });
+          box(hg, 3, 6, 0.4, hx + cx, -15, k * (HL / 2 + 0.4), 0xc9cdd1, { metal: 0.9, rough: 0.3 });   // Lötfahne außen
         }));
         // Zellen
         [-PITCH / 2, PITCH / 2].forEach((cx) => {
           const side = std(0xffffff, { map: cellTex, rough: 0.35, metal: 0.1 });
           const capM = std(0xc9cdd1, { metal: 0.9, rough: 0.25 });
-          add(g, new THREE.CylinderGeometry(ZR, ZR, ZL, 40), [side, capM, capM], hx + cx, -1.5 - 0.3 - ZR, 0, [dir * Math.PI / 2, 0, 0]);
-          cylZ(g, 7.5, dir * (ZL / 2), dir * (ZL / 2 + 0.15), hx + cx, -1.8 - ZR, 0xd5d8dc, { metal: 0.9, rough: 0.25, seg: 24 });  // flacher Pluspol
+          add(hg, new THREE.CylinderGeometry(ZR, ZR, ZL, 40), [side, capM, capM], hx + cx, -1.5 - 0.3 - ZR, 0, [dir * Math.PI / 2, 0, 0]);
+          cylZ(hg, 7.5, dir * (ZL / 2), dir * (ZL / 2 + 0.15), hx + cx, -1.8 - ZR, 0xd5d8dc, { metal: 0.9, rough: 0.25, seg: 24 });  // flacher Pluspol
         });
-        anchor(`G${grp}+`, g, hx, -12, dir * (HL / 2 + 1.5), [0, 0, dir], `Akku Gruppe ${grp} Plus`);
-        anchor(`G${grp}-`, g, hx, -12, -dir * (HL / 2 + 1.5), [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
+        anchor(`G${grp}+`, hg, hx, -12, dir * (HL / 2 + 1.5), [0, 0, dir], `Akku Gruppe ${grp} Plus`);
+        anchor(`G${grp}-`, hg, hx, -12, -dir * (HL / 2 + 1.5), [0, 0, -dir], `Akku Gruppe ${grp} Minus`);
       });
     })();
 
     (function bms() {
-      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+. Liegt links neben dem Akku in einer Tasche der Wanne.', -5, 19, 50);
+      const g = part(L0, 'BMS 2S 20 A mit Balance', 'Schützt den Akku vor Überladen, Tiefentladen und Kurzschluss und gleicht die beiden Zellengruppen aus. Akkuseite: B−, BM, B+. Ausgang: P−, P+. Liegt vorne links in der vorderen Hälfte der Wanne.', 33, 19, 58);
       const pads = [['B-', 4], ['BM', 9], ['B+', 14], ['P-', 36], ['P+', 41]];
       pcb(g, 45, 20, '#244f9e', 0, 0, 0, (c, w, h) => {
         pads.forEach(([t, x]) => { pad(c, x, 2.6, 3.6, 3); silk(c, t, x, 6.6, 1.9, { align: 'center' }); });
@@ -590,7 +597,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     (function ina226() {
       // INA226-Modul 21 × 19 mm OHNE Stiftleiste: alle Leitungen direkt an die Lötpunkte gelötet (flach, nichts wackelt).
       // Gedreht: Lötpunkte VIN+/VIN− zeigen nach hinten (−x, Platz bis zum Motor), die Reihe VBS…ALE nach vorne zum BMS.
-      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Ohne Stiftleiste eingebaut: alle Leitungen direkt angelötet – VIN+ (vom Schalter) und VIN− (zum Verteiler) mit dicker Litze (1,0 mm²), die Datenleitungen VBS, GND, VCC, SCL, SDA zum Pico über I²C. Liegt flach links neben dem Akku, hinter dem BMS, in einer Einklick-Tasche der Wanne. Platine 21 × 19 mm.', -46, 19, 50.5, Math.PI / 2);
+      const g = part(L0, 'INA226 Strom- und Spannungsmesser (R002)', 'Misst Spannung, Strom und Verbrauch des ganzen Autos. Ohne Stiftleiste eingebaut: alle Leitungen direkt angelötet – VIN+ (vom Schalter) und VIN− (zum Verteiler) mit dicker Litze (1,0 mm²), die Datenleitungen VBS, GND, VCC, SCL, SDA zum Pico über I²C. Liegt flach vorne in der Mitte, neben dem BMS, in einer Einklick-Tasche der Wanne. Platine 21 × 19 mm.', 18, 19, 26, Math.PI / 2);
       const names = ['VBS', 'GND', 'VCC', 'SCL', 'SDA', 'ALE'];
       pcb(g, 21, 19, '#4a2f86', 0, 0, 0, (c, w, h) => {
         silk(c, 'INA226', w / 2, h / 2, 2.2, { align: 'center' });
@@ -613,7 +620,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     (function fuse() {
       // Inline-Sicherungshalter für Standard-Flachsicherung (ATO/ATC), wasserdicht, 16-AWG-Kabel (Amazon B078X977PK).
       // Echtes CAD-Modell (GrabCAD, Dawson Dueck) – liegt nur lokal, siehe teile/QUELLEN.md. Steht aufrecht, Deckel oben.
-      const g = part(L0, 'Sicherungshalter mit 10-A-Flachsicherung', 'Inline-Halter für eine Standard-Kfz-Flachsicherung (ATO/ATC) mit 16-AWG-Kabel, wasserdicht mit Klappdeckel. Sitzt direkt hinter dem BMS im Plus und brennt bei einem Kurzschluss durch, bevor Kabel heiß werden. Steht rechts neben dem Akku, Deckel oben (zum Wechseln der Sicherung), die beiden Kabel sind links und rechts mit Kabelbindern durch Schlitze im Boden festgebunden. Halter ca. 25 × 25,5 × 12,5 mm, mit Kabelansätzen 54 mm lang.', -10, 19, -51);
+      const g = part(L0, 'Sicherungshalter mit 10-A-Flachsicherung', 'Inline-Halter für eine Standard-Kfz-Flachsicherung (ATO/ATC) mit 16-AWG-Kabel, wasserdicht mit Klappdeckel. Sitzt direkt hinter dem BMS im Plus und brennt bei einem Kurzschluss durch, bevor Kabel heiß werden. Steht rechts neben dem Akku, Deckel oben (zum Wechseln der Sicherung), die beiden Kabel sind links und rechts mit Kabelbindern durch Schlitze im Boden festgebunden. Halter ca. 25 × 25,5 × 12,5 mm, mit Kabelansätzen 54 mm lang.', 34, 19, -58);
       const ersatz = new THREE.Group(); g.add(ersatz);
       rbox(ersatz, 25, 22, 12.4, 0, 0, 0, 0x1a1b1d, { rough: 0.55, r: 2 });          // Körper
       rbox(ersatz, 26, 3.5, 12.6, 0, 22, 0, 0x1a1b1d, { rough: 0.55, r: 1.2 });       // Deckel
@@ -633,8 +640,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       einpassen('wago', g);   // WAGO 221-415 (GrabCAD), echte Größe 29,7 × 18,4 × 8,1 mm
       return g;
     }
-    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse, Kabelseite nach hinten (15 mm frei bis zum Motor), Hebel klappen nach oben.', -52.5, 19, 17, Math.PI);
-    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu. 29,7 × 18,4 × 8,1 mm. Liegt quer zwischen Akku und Hinterachse neben der Plus-Klemme, Kabelseite nach hinten.', -52.5, 19, -17, Math.PI);
+    wago(L0, 'WP', 'Verteiler Plus (WAGO 221-415)', 'Verteilt das geschaltete Plus vom INA226 an Motortreiber, MP1584 und Pololu. Hebelklemme, nichts wackelt. 29,7 × 18,4 × 8,1 mm. Liegt vorne zwischen BMS und Sicherung, Kabelseite nach hinten (15 mm frei bis zum Motor), Hebel klappen nach oben.', 47, 19, 17, Math.PI);
+    wago(L0, 'WM', 'Verteiler Minus (WAGO 221-415)', 'Gemeinsame Masse vom BMS (P−) für Motortreiber, MP1584 und Pololu. 29,7 × 18,4 × 8,1 mm. Liegt vorne zwischen BMS und Sicherung neben der Plus-Klemme, Kabelseite nach hinten.', 47, 19, -17, Math.PI);
     // Nahsensor VL53L1X als einfaches Modul 25 × 10,7 mm (z. B. Happysnow, Amazon B0CNGP7LCR) – kein Hersteller-CAD.
     // Sitzt INNEN an der Stirnwand der Wanne in zwei Nuten, der Sensor schaut durch ein Fenster in der Wand.
     // Ursprung = Unterkante Mitte der Platinen-Vorderseite, Sensor zeigt nach +x. Lötpunkte oben: VIN GND SCL SDA GPIO1 XSHUT.
@@ -660,9 +667,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const ersatz = new THREE.Group(); [...g.children].forEach((c) => ersatz.add(c)); g.add(ersatz);
       cadTeil('vl53v2', g, ersatz, (m) => { m.rotation.y = -Math.PI / 2; m.position.set(-1.5, 5.25, 0); const w = new THREE.Group(); w.add(m); return w; });
     }
-    // Vorderseite der Platine 1,8 mm hinter der Wand-Innenseite (vorne x = 82, hinten x = −117), um 5° nach oben gekippt
+    // Vorderseite der Platine 1,8 mm hinter der Wand-Innenseite (vorne x = 122, hinten x = −122), um 5° nach oben gekippt
     // (Drehpunkt in der Wanne = Sensor, 3,25 mm über der Platinen-Unterkante → Ursprung um 0,28 mm verschoben)
-    [['V', 80.2 + 0.28, 0, 'vorne'], ['H', -115.2 - 0.28, Math.PI, 'hinten']].forEach(([k, x, ry, n]) => {
+    [['V', 120.2 + 0.28, 0, 'vorne'], ['H', -120.2 - 0.28, Math.PI, 'hinten']].forEach(([k, x, ry, n]) => {
       tof(k, x, ry, n);
       PARTS[`Nahsensor VL53L1X (${n})`].rotation.set(0, ry, 5 * Math.PI / 180);
     });
@@ -739,7 +746,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     rot.addEventListener('click', () => { controls.autoRotate = !controls.autoRotate; rot.setAttribute('aria-pressed', String(controls.autoRotate)); });
     const ansicht = (pos, ziel) => { camera.position.copy(pos); controls.target.copy(ziel); controls.update(); };
     document.getElementById('reset').addEventListener('click', () => ansicht(HOME.pos, HOME.target));
-    document.getElementById('unten').addEventListener('click', () => ansicht(V(-17.5, -260, 140), V(-17.5, 20, 0)));
+    document.getElementById('unten').addEventListener('click', () => ansicht(V(0, -300, 160), V(0, 20, 0)));
     document.getElementById('bauteile').addEventListener('change', (e) => { zeigeBauteile = e.target.checked; anwenden(); if (sel) waehlen(sel); });
     document.getElementById('raeder').addEventListener('change', (e) => { zeigeRaeder = e.target.checked; anwenden(); if (sel) waehlen(sel); });
     document.getElementById('glas').addEventListener('change', (e) => { glas = e.target.checked; anwenden(); });
@@ -749,7 +756,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // Wege von Hand so gelegt, wie man es ordentlich verlegt (Bündel, Kabelbinder, Durchbrüche im Deck)
     // =====================================================================
     const kabelGruppe = new THREE.Group(); kabelGruppe.visible = false; L0.add(kabelGruppe);
-    (function verkabelung() {
+    const VERKABELUNG_FERTIG = false;   // Kabelwege werden nach dem Neubau von Ebene 2 neu gelegt (Durchbrüche im Deck ändern sich)
+    if (VERKABELUNG_FERTIG) (function verkabelung() {
       scene.updateMatrixWorld(true);
       const A = (k) => { const a = ANCH[k]; return L0.worldToLocal(a.g.localToWorld(a.p.clone())); };
       const FARBE = { rot: 0xd23a2a, schwarz: 0x232528, gelb: 0xe8c43a, blau: 0x2f6fd6, gruen: 0x2f9e5a, weiss: 0xeeeeee, orange: 0xf08a24, violett: 0x8a4fd1 };
@@ -840,7 +848,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       [0.3, 0.55].forEach((tt) => binder(busH[1], tt, 3));
       [0.25, 0.42, 0.6, 0.78].forEach((tt) => binder(busV[1], tt, 3));
       kabel('violett', 'VL53L1X vorne XSHUT', 'Pico GP13 (Ebene 2)', ['TV_X', [77, 52, 6.4], oben('vorne', 1, 6)], 'XSHUT vorne – durch den vorderen Durchbruch nach oben');
-      kabel('violett', 'VL53L1X hinten XSHUT', 'Pico GP15 (Ebene 2)', ['TH_X', [-110, 52, -6.4], oben('hinten', 2, -6)], 'XSHUT hinten – durch den hinteren Durchbruch nach oben');
+      kabel('violett', 'VL53L1X hinten XSHUT', 'Pico GP12 (Ebene 2)', ['TH_X', [-110, 52, -6.4], oben('hinten', 2, -6)], 'XSHUT hinten – durch den hinteren Durchbruch nach oben');
 
       // ---------- Motoren: je 6 Adern vom Encoder-Stecker gerade nach oben (vorne → Durchbruch vorne, hinten → Durchbruch hinten)
       const ADERN = [['M1', 'rot', 'Motorstrom'], ['M2', 'weiss', 'Motorstrom'], ['GND', 'schwarz', 'Encoder Masse'], ['VCC', 'blau', 'Encoder 3,3 V'], ['A', 'gelb', 'Encoder Kanal A'], ['B', 'gruen', 'Encoder Kanal B']];
@@ -861,7 +869,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     })();
     document.getElementById('kabel').addEventListener('change', (e) => { kabelGruppe.visible = e.target.checked; if (sel) waehlen(sel); });
     // Prüfstand (Druckteil, gehaeuse/pruefstand.py): das Fahrwerk liegt 19 mm höher, die Räder drehen frei
-    const stand = new THREE.Group(); stand.visible = false; scene.add(stand);
+    const stand = new THREE.Group(); stand.visible = false; stand.position.x = 3.5; scene.add(stand);   // Mitte der Kerben (PRUEF_MITTE)
     stand.userData.part = { name: 'Prüfstand (Druckteil)', desc: 'Zum Testen von Motoren, Encodern und Software – wie eine Hebebühne: das Auto steht auf 4 Stempeln, deren Zapfen in die 4 Kerben unten im Wannenboden (unter dem Akku) einrasten. So rutscht es nicht, auch wenn die Räder laufen. Die Räder hängen 19 mm über dem Tisch und drehen frei. Ein Teil, 112 × 112 mm, ohne Schrauben, druckt ohne Stützen. Dateien: gehaeuse/pruefstand/' };
     cadTeil('pruefstand', stand, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x3f6db5).convertSRGBToLinear(); mat.roughness = 0.7; });
     // Prüfstand auch in der Liste der Druckteile (ein Klick blendet ihn ein und markiert ihn)

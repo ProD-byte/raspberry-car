@@ -91,6 +91,8 @@ Hinweise:
 
 ### Steuerleitungen Motortreiber
 
+Jeder Motor braucht ein **eigenes PWM-Paar** des Pico: Je zwei GPIOs teilen sich einen PWM-Ausgang (GP2 und GP18 sind beide Kanal 1A, GP3 und GP19 beide 1B usw.). Deshalb hängt der Motor hinten rechts an GP14/GP15 (Kanal 7) und nicht an GP18/GP19 – sonst liefen vorne links und hinten rechts immer gleich schnell.
+
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
 | orange | Pico GP2 (Pin 4) | DRV8833 vorne IN1 | PWM IN1 Treiber vorne (Motor vorne links) |
@@ -99,8 +101,8 @@ Hinweise:
 | gelb | Pico GP5 (Pin 7) | DRV8833 hinten IN2 | PWM IN2 Treiber hinten (Motor hinten links) |
 | grün | Pico GP16 (Pin 21) | DRV8833 vorne IN3 | PWM IN3 Treiber vorne (Motor vorne rechts) |
 | blau | Pico GP17 (Pin 22) | DRV8833 vorne IN4 | PWM IN4 Treiber vorne (Motor vorne rechts) |
-| grün | Pico GP18 (Pin 24) | DRV8833 hinten IN3 | PWM IN3 Treiber hinten (Motor hinten rechts) |
-| blau | Pico GP19 (Pin 25) | DRV8833 hinten IN4 | PWM IN4 Treiber hinten (Motor hinten rechts) |
+| grün | Pico GP14 (Pin 19) | DRV8833 hinten IN3 | PWM IN3 Treiber hinten (Motor hinten rechts) |
+| blau | Pico GP15 (Pin 20) | DRV8833 hinten IN4 | PWM IN4 Treiber hinten (Motor hinten rechts) |
 | violett | Pico GP22 (Pin 29) | DRV8833 vorne ULT | Treiber an/aus (Not-Stopp), ULT = Schlaf-Eingang |
 | violett | DRV8833 vorne ULT | DRV8833 hinten ULT | Treiber an/aus, weiter zum hinteren Treiber |
 
@@ -132,7 +134,7 @@ Hinweise:
 | blau | VL53L1X hinten SDA | VL53L1X vorne SDA | I²C SDA weiter zum vorderen Nahsensor (angelötet) |
 | gelb | VL53L1X hinten SCL | VL53L1X vorne SCL | I²C SCL weiter zum vorderen Nahsensor (angelötet) |
 | violett | Pico GP13 (Pin 17) | VL53L1X vorne XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
-| violett | Pico GP15 (Pin 20) | VL53L1X hinten XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
+| violett | Pico GP12 (Pin 16) | VL53L1X hinten XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 
 ### Status-LEDs
 
@@ -144,12 +146,15 @@ Hinweise:
 
 ### USB & Antennen
 
+Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur **0,6 A** ab, solange er nicht weiß, dass sein Netzteil 5 A kann – beim angelöteten USB-C-Stecker vom Pololu weiß er das nicht. Deshalb in Stufe 3 einstellen: `usb_max_current_enable=1` in `/boot/firmware/config.txt` und `PSU_MAX_CURRENT=5000` im EEPROM (`sudo rpi-eeprom-config -e`). Danach einmal den Gesamtstrom am Pololu messen (Pi, AI HAT+, 4G, LiDAR und Display zusammen).
+
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
 | grau | Pico Micro-USB | Pi 5 USB 2.0 unten | Pico ↔ Pi: Befehle und Messwerte |
 | schwarz (STEMMA-QT) | LiDAR-Anschluss | LiDAR-Adapter Eingang | LiDAR-Daten (4-polig) |
 | grau | LiDAR-Adapter USB | Pi 5 USB 2.0 oben | LiDAR-Daten zum Pi |
 | grau | 4G-Modul USB | Pi 5 USB 3.0 unten | Mobilfunk und GPS zum Pi |
+| grau | Status-Display USB-C | Pi 5 USB 3.0 oben | Status-Display: Strom, Touch, Mikrofon und Lautsprecher (USB-C auf USB-A) |
 | schwarz (STEMMA-QT) | GPS-Antenne | 4G-Modul GNSS | Antennenkabel GPS |
 | schwarz (STEMMA-QT) | LTE-Antenne links | 4G-Modul MAIN | Antennenkabel LTE Haupt |
 | schwarz (STEMMA-QT) | LTE-Antenne rechts | 4G-Modul AUX | Antennenkabel LTE Neben |
@@ -178,16 +183,16 @@ Hinweise:
 | 13 | GND | LED-Streifen GND |
 | 14 | GP10 | BNO085 SDA |
 | 15 | GP11 | BNO085 SCL |
-| 16 | GP12 | frei |
+| 16 | GP12 | VL53L1X hinten XSHUT |
 | 17 | GP13 | VL53L1X vorne XSHUT |
 | 18 | GND | BNO085 GND |
-| 19 | GP14 | frei |
-| 20 | GP15 | VL53L1X hinten XSHUT |
+| 19 | GP14 | DRV8833 hinten IN3 |
+| 20 | GP15 | DRV8833 hinten IN4 |
 | 21 | GP16 | DRV8833 vorne IN3 |
 | 22 | GP17 | DRV8833 vorne IN4 |
 | 23 | GND | INA226 GND |
-| 24 | GP18 | DRV8833 hinten IN3 |
-| 25 | GP19 | DRV8833 hinten IN4 |
+| 24 | GP18 | frei (teilt PWM-Kanal mit GP2) |
+| 25 | GP19 | frei (teilt PWM-Kanal mit GP3) |
 | 26 | GP20 | Motor vorne rechts A |
 | 27 | GP21 | Motor vorne rechts B |
 | 28 | GND | Motor vorne rechts GND |

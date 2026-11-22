@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Raspberry Car</title>
+<style>
+  /* Läuft ohne Internet (das Handy hängt im WLAN des Autos) – deshalb alles in dieser Datei. */
+  :root { --bg: #14171a; --karte: #1f2428; --text: #eef1f3; --leise: #9aa4ab; --gruen: #2fbf71; --rot: #e5484d; --blau: #3f8cff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overscroll-behavior: none; }
+  body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px; user-select: none; }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: .02em; }
+  .status { display: flex; gap: 8px; align-items: center; color: var(--leise); font-size: 14px; }
+  .punkt { width: 10px; height: 10px; border-radius: 50%; background: var(--rot); }
+  .punkt.ok { background: var(--gruen); }
+  #feld { position: relative; width: min(78vw, 340px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, #262c31 0 55%, #1b1f23 56%); border: 2px solid #2e353b; touch-action: none; }
+  #feld::before, #feld::after { content: ""; position: absolute; background: #2e353b; }
+  #feld::before { left: 50%; top: 8%; bottom: 8%; width: 2px; transform: translateX(-1px); }
+  #feld::after { top: 50%; left: 8%; right: 8%; height: 2px; transform: translateY(-1px); }
+  #knopf { position: absolute; left: 50%; top: 50%; width: 30%; aspect-ratio: 1; border-radius: 50%;
+    transform: translate(-50%, -50%); background: var(--blau); box-shadow: 0 6px 18px rgba(0,0,0,.45); z-index: 1; }
+  .reihe { display: flex; gap: 10px; width: min(90vw, 380px); }
+  button { flex: 1; min-height: 52px; border: 0; border-radius: 12px; font: inherit; font-weight: 600; color: var(--text); background: var(--karte); }
+  button[aria-pressed="true"] { background: var(--blau); }
+  #stopp { background: var(--rot); font-size: 20px; min-height: 64px; }
+  #stopp.gesperrt { background: var(--gruen); }
+  .werte { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; width: min(90vw, 380px);
+    background: var(--karte); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+  .werte span:nth-child(odd) { color: var(--leise); }
+  .werte span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+  .werte span.nah { color: #ffb224; font-weight: 600; }
+  .werte span.zu-nah { color: var(--rot); font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>Raspberry Car</h1>
+  <div class="status"><span class="punkt" id="punkt"></span><span id="statustext">Verbinde …</span></div>
+
+  <div id="feld" aria-label="Joystick: nach oben ziehen = vorwärts, zur Seite = lenken"><div id="knopf"></div></div>
+
+  <div class="reihe" role="group" aria-label="Tempo-Stufe">
+    <button data-stufe="0.35">Langsam</button>
+    <button data-stufe="0.65" aria-pressed="true">Mittel</button>
+    <button data-stufe="1">Schnell</button>
+  </div>
+  <div class="reihe"><button id="stopp">STOPP</button></div>
+
+  <div class="werte">
+    <span>Tempo links</span><span id="w_l">0 %</span>
+    <span>Tempo rechts</span><span id="w_r">0 %</span>
+    <span>Strecke links</span><span id="w_sl">0 mm</span>
+    <span>Strecke rechts</span><span id="w_sr">0 mm</span>
+    <span>Abstand vorne</span><span id="w_av">–</span>
+    <span>Abstand hinten</span><span id="w_ah">–</span>
+  </div>
+
+<script>
+  const feld = document.getElementById('feld'), knopf = document.getElementById('knopf');
+  let x = 0, y = 0, stufe = 0.65, gesperrt = false, unterwegs = false, fehler = 0;
+
+  // Joystick: Finger oder Maus im runden Feld
+  function bewegen(e) {
+    const r = feld.getBoundingClientRect();
+    let dx = (e.clientX - r.left) / r.width * 2 - 1, dy = (e.clientY - r.top) / r.height * 2 - 1;
+    const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
+    x = dx; y = -dy;                                   // oben = vorwärts
+    knopf.style.left = (50 + dx * 35) + '%'; knopf.style.top = (50 + dy * 35) + '%';
+  }
+  function loslassen() { x = 0; y = 0; knopf.style.left = '50%'; knopf.style.top = '50%'; }
+  feld.addEventListener('pointerdown', (e) => { feld.setPointerCapture(e.pointerId); bewegen(e); });
+  feld.addEventListener('pointermove', (e) => { if (feld.hasPointerCapture(e.pointerId)) bewegen(e); });
+  feld.addEventListener('pointerup', loslassen);
+  feld.addEventListener('pointercancel', loslassen);
+
+  document.querySelectorAll('[data-stufe]').forEach((b) => b.addEventListener('click', () => {
+    stufe = Number(b.dataset.stufe);
+    document.querySelectorAll('[data-stufe]').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+  }));
+
+  const stopp = document.getElementById('stopp');
+  stopp.addEventListener('click', () => {
+    gesperrt = !gesperrt;
+    stopp.textContent = gesperrt ? 'WEITER' : 'STOPP';
+    stopp.classList.toggle('gesperrt', gesperrt);
+    fetch(gesperrt ? '/stopp' : '/start').catch(() => {});
+  });
+
+  // Abstand anzeigen: frei (nichts in Reichweite), Zentimeter, gelb wenn nah, rot wenn zu nah
+  function abstand(id, mm, fehlt) {
+    const el = document.getElementById(id);
+    el.className = '';
+    if (fehlt) { el.textContent = 'kein Sensor'; return; }
+    if (mm === null) { el.textContent = 'frei'; return; }
+    el.textContent = (mm / 10).toFixed(0) + ' cm';
+    if (mm <= 150) el.className = 'zu-nah'; else if (mm < 500) el.className = 'nah';
+  }
+
+  // Alle 100 ms den Joystick schicken. Kommt nichts mehr an, hält das Auto nach 0,5 s von selbst.
+  setInterval(async () => {
+    if (unterwegs || document.hidden) return;
+    unterwegs = true;
+    const sx = (x * stufe).toFixed(2), sy = (y * stufe).toFixed(2);
+    try {
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 800);
+      const a = await fetch(`/fahren?x=${sx}&y=${sy}`, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(t);
+      const d = await a.json();
+      fehler = 0;
+      document.getElementById('punkt').classList.add('ok');
+      document.getElementById('statustext').textContent = d.gesperrt ? 'Gestoppt – „WEITER“ tippen'
+        : d.hindernis ? 'Hindernis – wegdrehen oder zurück' : 'Verbunden';
+      document.getElementById('w_l').textContent = Math.round(d.l * 100) + ' %';
+      document.getElementById('w_r').textContent = Math.round(d.r * 100) + ' %';
+      document.getElementById('w_sl').textContent = Math.round(d.sl) + ' mm';
+      document.getElementById('w_sr').textContent = Math.round(d.sr) + ' mm';
+      abstand('w_av', d.vorne, d.fehlt.includes('vorne'));
+      abstand('w_ah', d.hinten, d.fehlt.includes('hinten'));
+    } catch (err) {
+      if (++fehler > 2) {
+        document.getElementById('punkt').classList.remove('ok');
+        document.getElementById('statustext').textContent = 'Keine Verbindung – Auto hält an';
+      }
+    }
+    unterwegs = false;
+  }, 100);
+</script>
+</body>
+</html>

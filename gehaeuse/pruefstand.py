@@ -1,7 +1,7 @@
 """Raspberry Car – Prüfstand für das Fahrwerk (Ebene 1)
 
 Das Auto wird wie auf einer Hebebühne auf 4 Stempel gesetzt: Unten im Wannenboden sind 4 Kerben
-(8 × 6 mm, 3 mm tief, unter dem Akku). Auf jedem Stempel sitzt ein kleiner Zapfen, der in seine
+(8 × 6 mm, 3 mm tief: hinten unter dem Akku, vorne unter der Stromversorgung). Auf jedem Stempel sitzt ein kleiner Zapfen, der in seine
 Kerbe einrastet. Die Räder hängen dann 19 mm über dem Tisch und können frei drehen – zum Testen
 von Motoren, Encodern, Motortreibern und Software, ohne dass das Auto vom Tisch fährt.
 
@@ -11,7 +11,7 @@ Aufruf (einmalig: pip install build123d):
     python pruefstand.py
 
 Koordinaten wie im 3D-Modell (x nach vorne, z nach links, y nach oben), aber y = 0 ist hier die
-Tischplatte und x = 0 / z = 0 liegt genau unter der Mitte des Akkus (wie bei der Wanne).
+Tischplatte und x = 0 / z = 0 liegt genau in der Mitte der vier Kerben (in der Wanne bei x = PRUEF_MITTE = 3,5).
 
 Aufbau:
   * Sockelplatte mit Fase und Schriftzug, in der Mitte offen,
@@ -19,7 +19,7 @@ Aufbau:
   * oben auf jeder Wand zwei Stempel mit Zapfen (0,3 mm Luft zur Kerbe, oben angefast).
   Zwischen den Stempeln bleiben 2 mm Luft zum Wannenboden – das Auto liegt nur auf den Stempeln.
 
-Druck: so wie er steht (Unterseite aufs Bett), ohne Stützen. 112 × 112 mm – passt auf jedes
+Druck: so wie er steht (Unterseite aufs Bett), ohne Stützen. 124 × 124 mm – passt auf jedes
 Druckbett. PLA oder PETG, 3 Wände, 15 % Füllung reicht.
 """
 from pathlib import Path
@@ -28,10 +28,12 @@ from build123d import (Box, Plane, Polygon, Rectangle, RectangleRounded, Text, P
 
 # ------------------------------------------------------------------ Maße der Wanne (aus ebene1_fahrwerk.py)
 BODEN_UNTEN = 16.0                     # Wannenboden über dem Boden, wenn das Auto auf den Rädern steht
-PRUEF_PUNKTE = [(sx * 32.0, sz * 35.0) for sx in (1, -1) for sz in (1, -1)]
+PRUEF_HX, PRUEF_HZ = 36.5, 40.0       # wie in ebene1_fahrwerk.py (PRUEF_HX, PRUEF_HZ) – bei Änderung beide gleich halten
+PRUEF_MITTE = 3.5                      # Mitte der Kerben in der Wanne (x)
+PRUEF_PUNKTE = [(sx * PRUEF_HX, sz * PRUEF_HZ) for sx in (1, -1) for sz in (1, -1)]
 KERBE = (8.0, 6.0, 3.0)                # Länge (x) × Breite (z) × Tiefe der Kerben in der Wanne
-RAD_INNEN = 70.85                      # Innenseite der Räder (z)
-RAD_X = (55.0, -90.0)                  # Radachsen
+RAD_INNEN = 95.85                      # Innenseite der Räder (z)
+RAD_X = (80.0 - PRUEF_MITTE, -80.0 - PRUEF_MITTE)   # Radachsen, vom Prüfstand aus gesehen
 RAD_R = 32.5
 
 # ------------------------------------------------------------------ Prüfstand
@@ -41,10 +43,10 @@ LUFT = 0.3                             # Luft zwischen Zapfen und Kerbe (je Seit
 ZAPFEN_H = KERBE[2] - 0.5              # Zapfen 0,5 mm kürzer als die Kerbe tief ist
 ZAPFEN_FASE = 0.8
 STEMPEL = (12.0, 10.0)                 # Auflagefläche je Stempel (x × z)
-SOCKEL = 112.0                         # quadratische Sockelplatte
+SOCKEL = 124.0                         # quadratische Sockelplatte
 SOCKEL_H = 4.0
 WAND_FUSS, WAND_KOPF = 22.0, 12.0      # Querwand unten / oben (in x)
-WAND_Z = 41.0                          # Querwand reicht bis z = ±41
+WAND_Z = 46.0                          # Querwand reicht bis z = ±46
 WAND_OBEN = AUFLAGE - 2.0              # zwischen den Stempeln 2 mm Luft zum Wannenboden
 
 AUS = Path(__file__).resolve().parent / "pruefstand"
@@ -81,9 +83,9 @@ def querwand(xm):
 def sockel():
     platte = extrude(RectangleRounded(SOCKEL, SOCKEL, 10), SOCKEL_H)
     platte = chamfer(platte.edges().group_by(Axis.Z)[-1], 1.2)            # obere Außenkante angefast
-    platte -= Pos(0, 0, -1) * extrude(RectangleRounded(2 * (32 - WAND_FUSS / 2), 2 * WAND_Z - 12, 6), SOCKEL_H + 2)
+    platte -= Pos(0, 0, -1) * extrude(RectangleRounded(2 * (PRUEF_HX - WAND_FUSS / 2), 2 * WAND_Z - 12, 6), SOCKEL_H + 2)
     # Schriftzug vorne und hinten auf dem Rand (0,6 mm vertieft)
-    for xm, text, r in ((49.0, "PRÜFSTAND", 90), (-49.0, "RASPBERRY CAR", -90)):
+    for xm, text, r in ((55.0, "PRÜFSTAND", 90), (-55.0, "RASPBERRY CAR", -90)):
         schrift = Pos(xm, 0, SOCKEL_H - 0.6) * Rot(0, 0, r) * extrude(Text(text, 5.5), 1)
         platte -= schrift
     return platte
@@ -91,7 +93,7 @@ def sockel():
 
 def pruefstand():
     teil = sockel()
-    for xm in (32.0, -32.0):
+    for xm in (PRUEF_HX, -PRUEF_HX):
         teil += querwand(xm)
     return teil
 

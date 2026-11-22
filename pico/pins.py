@@ -11,8 +11,10 @@ DRV_V_IN4 = 17  # GP17 (Pin 22) -> Motor vorne rechts
 # --- Motortreiber DRV8833 hinten (Motorzone hinten): OUT1/OUT2 = Motor hinten links, OUT3/OUT4 = hinten rechts ---
 DRV_H_IN1 = 4   # GP4  (Pin 6)  -> Motor hinten links
 DRV_H_IN2 = 5   # GP5  (Pin 7)  -> Motor hinten links
-DRV_H_IN3 = 18  # GP18 (Pin 24) -> Motor hinten rechts
-DRV_H_IN4 = 19  # GP19 (Pin 25) -> Motor hinten rechts
+DRV_H_IN3 = 14  # GP14 (Pin 19) -> Motor hinten rechts
+DRV_H_IN4 = 15  # GP15 (Pin 20) -> Motor hinten rechts
+# Wichtig: Je zwei GPIOs teilen sich einen PWM-Ausgang (GP2 und GP18 = Kanal 1A, GP3 und GP19 = 1B …).
+# Jeder Motor hat deshalb ein eigenes PWM-Paar: Kanal 1 (GP2/3), 2 (GP4/5), 0 (GP16/17), 7 (GP14/15).
 
 # Beide Treiber an/aus: Anschluss ULT am Modul (= nSLEEP des DRV8833). LOW = Motoren aus = Not-Stopp.
 # Nicht EEP – das ist auf diesem Modul nur der Fehler-Ausgang. Lötbrücke J1 offen lassen.
@@ -32,10 +34,10 @@ I2C_SCL = 11  # GP11 (Pin 15)
 # XSHUT der Nahsensoren: beim Start einzeln einschalten, damit jeder eine eigene Adresse bekommt
 TOF_XSHUT = {
     "vorne": 13,         # GP13 (Pin 17)
-    "hinten": 15,        # GP15 (Pin 20)
+    "hinten": 12,        # GP12 (Pin 16)
 }
 TOF_ADRESSEN = {"vorne": 0x31, "hinten": 0x33}
-# GP12 (Pin 16) und GP14 (Pin 19) sind frei (früher für die Eck-Sensoren vorgesehen)
+# GP18 (Pin 24) und GP19 (Pin 25) sind frei – nicht für PWM nutzen, sie teilen sich den Kanal mit GP2/GP3
 
 # Feste I²C-Adressen
 ADR_INA226 = 0x40

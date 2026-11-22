@@ -4,11 +4,16 @@ Eine gedruckte Platte für Pico 2 W (auf dem Freenove-Board), 2 × DRV8833, MP15
 BNO085, 2 × WAGO 221-415 und das Ladeboard DDTCCRUB 2S (hinten links, USB-C durch den Ring). Alle Maße in mm. Erzeugt STL und STEP in gehaeuse/ebene2/.
 
 Aufteilung in Zonen (gut erreichbar, ordentlich):
-  * Motorzone vorne und Motorzone hinten, beide gleich: ein Griffloch genau über den beiden
-    Motorsteckern der Achse (von oben einstecken/abziehen, mit Rand eingefasst), daneben der
-    Motortreiber DRV8833 für diese Achse und der 3,3-V-Verteiler für deren Encoder. Kurze Motorkabel.
-  * Mitte: Steuerung – Pico auf dem Freenove-Board (um 90° gedreht) und davor der Kompass BNO085.
-  * Rand: hinten links Laden (Ladeboard), hinten rechts Strom (Durchbruch C, MP1584).
+  * Motorzone vorne und Motorzone hinten, beide gleich: je ein Griffloch genau über jedem Motorstecker
+    (von oben einstecken/abziehen, mit Rand eingefasst), dazwischen der Motortreiber DRV8833 für diese Achse,
+    rechts außen der 3,3-V-Verteiler für deren Encoder. Kurze Motorkabel.
+  * Mitte: Steuerung – vorne der Pico auf dem Freenove-Board, hinten der Kompass BNO085 (weit weg von der
+    Stromversorgung, die vorne in der Wanne liegt).
+  * Rand: hinten links Laden (Ladeboard, USB-C durch den Ring), hinten rechts der Hauptschalter, vorne rechts
+    Strom (Durchbruch C über den Verteilern, MP1584).
+  * Zwei Druckteile je Teil: das Deck ist bei x = DECK_FUGE geteilt (zwei aufrechte Stege, quer verschraubt),
+    der Ring bei x = RING_FUGE. Jede Ring-Hälfte ist für sich auf das Deck geschraubt – so überbrückt der Ring
+    die Fuge des Decks und das Deck die Fuge des Rings.
   * Ebene 3 wird ein Klappdeckel: die beiden hinteren Dome tragen das Scharnier (M3 als Achse),
     vorne hält eine Schraube. Deckel auf → die ganze Ebene 2 liegt offen.
 
@@ -21,7 +26,7 @@ Koordinaten wie im 3D-Modell: Mitte des Autos = 0, x nach vorne, z nach links,
 y nach oben. Im CAD (Z oben): X = x, Y = −z, Z = y.
 
 Aufbau:
-  * Platte 205 × 130 × 3 mm in derselben Form wie die Wanne. Sie ist der Deckel der
+  * Platte 250 × 180 × 3 mm in derselben Form wie die Wanne. Sie ist der Deckel der
     Wanne (liegt auf dem Rand bei 58 mm). Die Wanne wird von unten mit 4 × M3 × 45
     an 4 Dome dieser Platte geschraubt (Kernloch von unten, 11 mm tief, oben geschlossen).
   * Gehäuse-Ring oben (23 mm): Seitenwand bis Ebene 3, Röhren über den Domen
@@ -32,18 +37,19 @@ Aufbau:
   * Module ohne Befestigungslöcher sitzen in Einklick-Taschen: passgenauer
     Rahmen (0,3 mm Luft) mit Rastnasen an den langen Seiten und einer Kerbe zum
     Heraushebeln.
-  * 4 Kernlöcher für Ebene 3 (x 60 / z ±52 vorne, x −111 / z ±20 hinten = Scharnier), in 8 mm hohen Domen.
-  * Grifflöcher vorne/hinten, Durchbrüche hinten links/rechts (Daten), seitlich A/B, rechts C (Strom).
+  * Dome für den Ring (8 mm hoch, Kernloch 11 mm): vorne in den Ecken, hinten an der Rückwand (= Scharnier) und
+    je zwei an den Seiten bei der Fuge des Rings.
+  * 4 Grifflöcher (über den Motorsteckern), Durchbrüche D (Daten), S (Schalter), B (Laden), C (Strom).
 """
 from pathlib import Path
 from build123d import (Box, Cylinder, Rot, Rectangle, RectangleRounded, Pos, Plane, Polygon, extrude, chamfer, Axis,
                        export_stl, export_step)
 
 # ------------------------------------------------------------------ Parameter
-X_VORNE, X_HINTEN = 85.0, -120.0         # gleiche Außenform wie die Wanne
-L = X_VORNE - X_HINTEN                   # 205 mm
-XM = (X_VORNE + X_HINTEN) / 2            # −17,5
-B, R_ECKE = 130.0, 10.0
+X_VORNE, X_HINTEN = 125.0, -125.0       # gleiche Außenform wie die Wanne
+L = X_VORNE - X_HINTEN                   # 250 mm
+XM = (X_VORNE + X_HINTEN) / 2            # 0
+B, R_ECKE = 180.0, 12.0
 UNTEN = 58.0                             # liegt direkt auf dem Wannenrand (Deckel der Wanne, LEVEL[1] im Modell)
 DICKE = 3.0
 OBEN = UNTEN + DICKE                     # Oberkante Platte (TOP[1] im Modell)
@@ -53,11 +59,14 @@ DURCH = 3.4                              # Durchgangsloch M3
 KOPF_D, KOPF_H = 6.5, 3.1                # Senkung: Zylinderkopf schließt bündig ab
 DOM_D = 10.0                             # Schraubdom: (10 − 2,6)/2 = 3,7 mm Material
 
-WANNE_DOME = [(77.5, 35), (77.5, -35), (-112.5, 35), (-112.5, -35)]   # über den Säulen der Wanne: M3 × 45 von unten
-NACH_OBEN = [(73.5, 57.6), (73.5, -57.6), (-112.6, 23.3), (-112.6, -23.3)]   # Kernlöcher für Ebene 3 – an der Außenwand; hinten = Scharnier
+WANNE_DOME = [(X_VORNE - 7.5, 35), (X_VORNE - 7.5, -35), (X_HINTEN + 7.5, 35), (X_HINTEN + 7.5, -35)]   # über den Säulen der Wanne: M3 × 45 von unten
+NACH_OBEN = [(X_VORNE - 11.5, B / 2 - 7.4), (X_VORNE - 11.5, -(B / 2 - 7.4)), (X_HINTEN + 7.4, 23.3), (X_HINTEN + 7.4, -23.3)]   # Ring ↔ Deck in den Ecken; hinten = Scharnier
+RING_FUGE = -16.5                        # der Ring ist hier geteilt (vordere / hintere Hälfte)
+HALTE = [(RING_FUGE + 12, B / 2 - 7.4), (RING_FUGE + 12, -(B / 2 - 7.4)), (RING_FUGE - 12, B / 2 - 7.4), (RING_FUGE - 12, -(B / 2 - 7.4))]   # zusätzlich: jede Ring-Hälfte an der Fuge ans Deck
+RING_DOME = NACH_OBEN + HALTE
 ROHR_R = DOM_D / 2 + 0.3 + 1.2         # Röhre im Ring als Hülse über den Dom der Platte: 0,3 mm Luft + 1,2 mm Wand (Ø 13)
 
-FREENOVE = (-38.0, 0.0)                  # Mitte des Freenove-Boards, NICHT gedreht: die Klemmen-Reihen zeigen zu den Seiten, dort ist Platz für die Kabel
+FREENOVE = (20.0, 0.0)                   # Mitte des Freenove-Boards, NICHT gedreht: die Klemmen-Reihen zeigen zu den Seiten, dort ist Platz für die Kabel
 FREENOVE_LOCH = (29.0, 26.0)             # Lochabstand 58 × 52 (x, z)
 FREENOVE_HALB = (31.5, 28.5)             # halbe Plattengröße (x, z)
 FREENOVE_DOM_H = 4.0                     # Platz für Lötstellen unter dem Board
@@ -68,17 +77,17 @@ FREENOVE_DOM_H = 4.0                     # Platz für Lötstellen unter dem Boar
 # (Hebel klappen frei auf), die Rastnasen sitzen an den kurzen Enden.
 LUFT = 0.3
 TASCHEN = [
-    # Motorzone vorne (Achse x = 55): Treiber links vom Griffloch, 3,3-V-Verteiler rechts davon (Kabelseite nach außen)
-    ("DRV8833 vorne",   55.0,  26.0, 16.8, 18.6, 1.6, 3.2, None),
-    ("WAGO 3,3 V vorne", 55.0, -29.0, 29.7, 18.4, 8.1, 8.8, -1),
-    # Motorzone hinten (Achse x = −90): genauso
-    ("DRV8833 hinten", -90.0,  26.0, 16.8, 18.6, 1.6, 3.2, None),
-    ("WAGO 3,3 V hinten", -88.5, -29.0, 29.7, 18.4, 8.1, 8.8, -1),   # 1,5 mm vor der Achse: Platz für die Hülse des Rings
-    # Steuerung: Kompass vor dem Freenove-Board, um 90° gedreht (STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist frei)
-    ("BNO085",          8.0,   0.0, 22.9, 25.4, 1.6, 3.2, None),
+    # Motorzone vorne (Achse x = 80): Treiber mittig zwischen den beiden Grifflöchern, 3,3-V-Verteiler rechts außen (Kabelseite nach außen)
+    ("DRV8833 vorne",   80.0,   0.0, 16.8, 18.6, 1.6, 3.2, None),
+    ("WAGO 3,3 V vorne", 80.0, -60.0, 29.7, 18.4, 8.1, 8.8, -1),
+    # Motorzone hinten (Achse x = −80): genauso
+    ("DRV8833 hinten", -80.0,   0.0, 16.8, 18.6, 1.6, 3.2, None),
+    ("WAGO 3,3 V hinten", -80.0, -60.0, 29.7, 18.4, 8.1, 8.8, -1),
+    # Steuerung: Kompass hinter dem Freenove-Board, um 90° gedreht (STEMMA-QT-Buchsen zeigen zu den Seiten, dort ist frei)
+    ("BNO085",        -35.0,   0.0, 22.9, 25.4, 1.6, 3.2, None),
     # Strom und Laden
-    ("MP1584",        -40.0, -50.0, 22.1, 16.8, 1.6, 3.2, None),   # rechts neben dem Freenove-Board (niedrig, Kabel gehen darüber), neben Durchbruch C, ca. 7 cm vom Kompass
-    ("Ladeboard",     -99.7,  49.5, 38.4, 18.0, 1.6, 3.2, "-x"),  # hinten links: Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt in der Wand (1 mm hinter der Außenseite)
+    ("MP1584",         20.0, -62.0, 22.1, 16.8, 1.6, 3.2, None),   # vorne rechts neben Durchbruch C (Strom von den Verteilern), weit weg vom Kompass
+    ("Ladeboard",  X_HINTEN + 20.3, 60.0, 38.4, 18.0, 1.6, 3.2, "-x"),  # hinten links: Platine liegt bündig an der Innenseite der Rückwand, die USB-C-Buchse steckt in der Wand (1 mm hinter der Außenseite)
 ]
 WAND = 1.6
 NASE = 0.6
@@ -86,13 +95,23 @@ NASE = 0.6
 AUSSPARUNG = {"BNO085": 16.0}                               # wie weit die Rastnase über die Platine greift
 
 # Durchbrüche (x, z, Länge in x, Breite in z)
+GRIFFLOECHER = 4                         # die ersten 4 Einträge sind Grifflöcher (mit Rand)
 SCHLITZE = [
-    (55, 0, 28, 22),                     # Griffloch vorne: über den beiden Motorsteckern der Vorderachse (Platz für zwei Finger), Motorkabel hoch
-    (-90, 0, 28, 22),                    # Griffloch hinten: genauso für die Hinterachse (auch XSHUT hinten)
-    (-55, 40, 20, 10),                   # links: Daten (INA226), Schalter-Rückleitung
-    (20, -50, 30, 9), (20, 50, 30, 9),   # A und B an den Seiten
-    (-62, -52, 14, 9),                   # C: Plus/Minus von den Verteilern – am rechten Rand neben dem MP1584, weit weg vom Kompass
+    (80, 30, 28, 20), (80, -30, 28, 20),     # Grifflöcher vorne: je eines über einem Motorstecker der Vorderachse (Platz für zwei Finger)
+    (-80, 30, 28, 20), (-80, -30, 28, 20),   # Grifflöcher hinten: genauso für die Hinterachse (auch XSHUT vorne/hinten)
+    (0, 50, 20, 10),                         # D: Daten vom INA226 (Wanne vorne links) zum Pico
+    (-50, -76, 14, 9),                       # S: Leitungen zum Hauptschalter (hinten rechts)
+    (-70, 62, 14, 9),                        # B: BMS → Ladeboard (hinten links)
+    (40, -62, 14, 9),                        # C: Plus/Minus von den Verteilern – über ihnen, vorne rechts, weit weg vom Kompass
 ]
+# Teilung des Decks: zwei aufrechte Stege an der Fuge, quer (in x) verschraubt
+DECK_FUGE = 58.0                          # zwischen Freenove-Board und vorderer Motorzone
+DECK_SPALT = 0.1
+STEG_H = 10.0                             # Stege 10 mm hoch über dem Deck
+STEG_VORNE, STEG_HINTEN = 5.0, 6.0        # Dicke (x) des vorderen (Gewinde) und hinteren Stegs (Kopf)
+STEG_Z = [(-80.0, -48.0), (48.0, 80.0)]   # zwei Stücke außen (innen sind die Grifflöcher und das Freenove-Board)
+STEG_SCHRAUBEN = [-64.0, 64.0]            # z der Schrauben M3 × 10 (Kopf hinten, Gewinde im vorderen Steg)
+STEG_SCHRAUBE_Y = 5.0                     # Höhe der Schrauben über dem Deck
 GRIFFLOCH_RAND = (1.6, 2.0)              # Rand um die beiden Grifflöcher: Breite, Höhe – sieht sauber aus, Kabel scheuern nicht
 
 AUS = Path(__file__).resolve().parent / "ebene2"
@@ -140,8 +159,8 @@ def platte():
         teil += zyl_y(DOM_D / 2, x, z, OBEN - 0.1, OBEN + 9)
         teil -= zyl_y(PILOT / 2, x, z, UNTEN - 0.1, UNTEN + 11)
 
-    # Kernlöcher für Ebene 3: Dom auf der Platte, Loch 11 mm tief
-    for (x, z) in NACH_OBEN:
+    # Dome für den Ring: Dom auf der Platte, Kernloch 11 mm tief
+    for (x, z) in RING_DOME:
         teil += zyl_y(DOM_D / 2, x, z, OBEN - 0.1, OBEN + 8)
         teil -= zyl_y(PILOT / 2, x, z, UNTEN + 0.1, OBEN + 8.1)
 
@@ -161,8 +180,8 @@ def platte():
         if offen == "-x":      # hintere Wand weg, sonst wie eine normale Tasche
             rahmen -= quader(x - ax - WAND - 0.2, x - ax + 0.1, OBEN - 0.2, OBEN + wand_h + 0.2, z - az - WAND - 0.2, z + az + WAND + 0.2)
             # Seitenwände nur im vorderen Teil: hinten sitzen der Dom der Wannenschraube und die Ecke des Rings
-            rahmen -= quader(x - ax - WAND - 0.2, -106.0, OBEN - 0.2, OBEN + wand_h + 0.2, z - az - WAND - 0.2, z - az + 0.1)
-            rahmen -= quader(x - ax - WAND - 0.2, -112.0, OBEN - 0.2, OBEN + wand_h + 0.2, z + az - 0.1, z + az + WAND + 0.2)
+            rahmen -= quader(x - ax - WAND - 0.2, X_HINTEN + 14.0, OBEN - 0.2, OBEN + wand_h + 0.2, z - az - WAND - 0.2, z - az + 0.1)
+            rahmen -= quader(x - ax - WAND - 0.2, X_HINTEN + 8.0, OBEN - 0.2, OBEN + wand_h + 0.2, z + az - 0.1, z + az + WAND + 0.2)
             offen = None
         # Kerbe in einer kurzen Seite zum Heraushebeln
         kurz_x = ix <= iz
@@ -205,7 +224,7 @@ def platte():
 
     # Rand um die Grifflöcher (die ersten beiden Durchbrüche)
     rb, rh = GRIFFLOCH_RAND
-    for (x, z, lx, bz) in SCHLITZE[:2]:
+    for (x, z, lx, bz) in SCHLITZE[:GRIFFLOECHER]:
         r = min(lx, bz) / 2 - 0.01
         teil += P(x, OBEN - 0.1, z) * extrude(RectangleRounded(lx + 2 * rb, bz + 2 * rb, r + rb), rh + 0.1)
     # Durchbrüche
@@ -218,7 +237,7 @@ def platte():
 RING_WAND = 2.4                          # Wandstärke der Ringe
 EBENE3_UNTEN = 84.0                      # Unterkante Ebene 3 (LEVEL[2] im Modell)
 # Ausschnitte von der Unterkante aus: (Seite, Mitte, Breite, Höhe) – Seite "hinten"/"vorne"/"links"/"rechts"
-RING_OBEN_AUSSCHNITTE = [("hinten", 49.5, 13.5, 8.0)]   # USB-C des Ladeboards: so groß, dass der Stecker-Griff (bis 13,5 × 8 mm) hineinpasst und voll einrastet
+RING_OBEN_AUSSCHNITTE = [("hinten", 60.0, 13.5, 8.0)]   # USB-C des Ladeboards: so groß, dass der Stecker-Griff (bis 13,5 × 8 mm) hineinpasst und voll einrastet
 USB_FASE = 1.0                                          # außen 45° angefast – der Stecker findet leichter hinein
 LADE_ECKE_R = 4.0                                       # innere Ecke des Rings hinten links enger gerundet (sonst 7,6), damit das Ladeboard bündig an die Wand passt
 USB_SENKE = 1.5                                         # im Deck darunter eine flache Mulde, damit auch dicke Stecker-Griffe Platz haben
@@ -232,11 +251,11 @@ SCH_Z = (33.0, -33.0)
 SCH_RING_B, SCH_LAPPEN_B, SCH_SPALT = 8.0, 5.0, 0.3
 # Vorne: Laschen vom Ring Ebene 2 (bei z = ±46), Schraube waagerecht bei y = 92
 VORNE_Z = (46.0, -46.0)
-LASCHE_B, LASCHE_X0, LASCHE_X1, LASCHE_OBEN = 9.6, 70.0, 77.5, 97.0
+LASCHE_B, LASCHE_X0, LASCHE_X1, LASCHE_OBEN = 9.6, X_VORNE - 15.0, X_VORNE - 7.5, 97.0
 VORNE_Y = 92.0
 
 RING_RUECKWAND = [
-    ("Druckschalter Ø 12 mm", -49.0, 74.0, 12.2, 12.2, True),   # 12-mm-Taster (GrabCAD „Push button 12mm“): Frontring Ø 13,9 außen, Körper Ø 11,8 × 19 mm innen, Mutter ca. Ø 16,5
+    ("Druckschalter Ø 12 mm", -55.0, 74.0, 12.2, 12.2, True),   # 12-mm-Taster (GrabCAD „Push button 12mm“): Frontring Ø 13,9 außen, Körper Ø 11,8 × 19 mm innen, Mutter ca. Ø 16,5
 ]
 
 
@@ -314,7 +333,7 @@ def ring_klappdeckel():
 def ring_oben():
     """Zwischen Elektronik-Deck und Ebene 3. Röhren über den Domen für Ebene 3.
     In der Rückwand: Hauptschalter und Ausschnitt für die USB-C-Buchse des Ladeboards."""
-    wand = ring(OBEN, EBENE3_UNTEN, NACH_OBEN, RING_OBEN_AUSSCHNITTE, rohr_ab=OBEN + 8)
+    wand = ring(OBEN, EBENE3_UNTEN, RING_DOME, RING_OBEN_AUSSCHNITTE, rohr_ab=OBEN + 8)
     wand += ring_klappdeckel()
     xr = X_HINTEN
     for (name, z, y, br, h, rund) in RING_RUECKWAND:
@@ -326,6 +345,31 @@ def ring_oben():
         else:
             wand -= P(xr + RING_WAND / 2, y, z) * Rot(0, 90, 0) * extrude(RectangleRounded(h, br, min(br, h) / 2 - 0.01), RING_WAND / 2 + 2, both=True)
     return wand
+
+
+# ------------------------------------------------------------------ Teilung in zwei Hälften
+def teilen_deck(teil):
+    """Deck → (vordere, hintere Hälfte). An der Fuge auf jeder Seite ein aufrechter Steg, beide quer verschraubt:
+    Kopf hinten, Gewinde im vorderen Steg. Die Stege wachsen beim Druck aus der Platte nach oben (ohne Stützen)."""
+    gross = 400.0
+    vorne = teil & quader(DECK_FUGE + DECK_SPALT, gross, -gross, gross, -gross, gross)
+    hinten = teil & quader(-gross, DECK_FUGE - DECK_SPALT, -gross, gross, -gross, gross)
+    for (z0, z1) in STEG_Z:
+        vorne += quader(DECK_FUGE + DECK_SPALT, DECK_FUGE + STEG_VORNE, OBEN - 0.1, OBEN + STEG_H, z0, z1)
+        hinten += quader(DECK_FUGE - STEG_HINTEN, DECK_FUGE - DECK_SPALT, OBEN - 0.1, OBEN + STEG_H, z0, z1)
+    ys = OBEN + STEG_SCHRAUBE_Y
+    for z in STEG_SCHRAUBEN:
+        hinten -= zyl_x(DURCH / 2, ys, z, DECK_FUGE - STEG_HINTEN - 1, DECK_FUGE + 1)
+        vorne -= zyl_x(PILOT / 2, ys, z, DECK_FUGE - 1, DECK_FUGE + STEG_VORNE + 1)
+    return vorne, hinten
+
+
+def teilen_ring(teil):
+    """Ring → (vordere, hintere Hälfte), stumpf gestoßen. Jede Hälfte ist mit eigenen Röhren ans Deck geschraubt."""
+    gross = 400.0
+    vorne = teil & quader(RING_FUGE + DECK_SPALT, gross, -gross, gross, -gross, gross)
+    hinten = teil & quader(-gross, RING_FUGE - DECK_SPALT, -gross, gross, -gross, gross)
+    return vorne, hinten
 
 
 def ueberlappungen():
@@ -340,10 +384,12 @@ def ueberlappungen():
     rechtecke.append(("Freenove-Board", fx - hx, fx + hx, fz - hz, fz + hz))
     for (x, z) in WANNE_DOME:
         rechtecke.append((f"Dom {x},{z}", x - 5, x + 5, z - 5, z + 5))
-    for (x, z) in NACH_OBEN:
+    for (x, z) in RING_DOME:
         rechtecke.append((f"Röhre/Dom {x},{z}", x - ROHR_R, x + ROHR_R, z - ROHR_R, z + ROHR_R))
     for (x, z, lx, bz) in SCHLITZE:
         rechtecke.append((f"Durchbruch {x},{z}", x - lx / 2, x + lx / 2, z - bz / 2, z + bz / 2))
+    for (z0, z1) in STEG_Z:
+        rechtecke.append((f"Steg an der Fuge {z0:+.0f}", DECK_FUGE - STEG_HINTEN - 3.5, DECK_FUGE + STEG_VORNE, z0, z1))   # 3,5 mm hinten: Schraubenkopf
     fehler = 0
     for i in range(len(rechtecke)):
         for j in range(i + 1, len(rechtecke)):
@@ -356,11 +402,17 @@ def ueberlappungen():
             continue        # Hülsen des Rings gehen in die Ringwand über; das Ladeboard liegt absichtlich bündig an der Wand
         if x0 < X_HINTEN + 1 or x1 > X_VORNE - 1 or z0 < -B / 2 + 1 or z1 > B / 2 - 1:
             print("  Zu nah am Rand:", name); fehler += 1
+    # Nichts (außer den Stegen) liegt über der Fuge des Decks
+    for (name, x0, x1, z0, z1) in rechtecke:
+        if not name.startswith("Steg") and x0 < DECK_FUGE + 0.6 and x1 > DECK_FUGE - 0.6:
+            print("  liegt über der Fuge des Decks:", name); fehler += 1
     print("Überschneidungen:", fehler)
     # Abstand des Kompasses zu allem, was ein Magnetfeld macht (Motoren: Mitte der Motoren in der Wanne)
     bx, bz = next((x, z) for (n, x, z, *_r) in TASCHEN if n == "BNO085")
     mx, mz = next((x, z) for (n, x, z, *_r) in TASCHEN if n == "MP1584")
-    for (name, x, z) in [("Motor vorne", 55, 20), ("Motor hinten", -90, 20), ("MP1584 (Spule)", mx, mz), ("Durchbruch C (Strom)", -62, -52)]:
+    cx, cz = next((x, z) for (x, z, lx, bz) in SCHLITZE if (x, z) == (40, -62))
+    for (name, x, z) in [("Motor vorne", 80, 30), ("Motor hinten", -80, 30), ("MP1584 (Spule)", mx, mz), ("Durchbruch C (Strom)", cx, cz),
+                         ("Verteiler in der Wanne (Strom)", 47, 17), ("Akku in der Wanne", -33, 12)]:
         print(f"  Kompass – {name}: {((x - bx) ** 2 + (z - bz) ** 2) ** 0.5:.0f} mm")
 
 
@@ -389,8 +441,10 @@ def hindernisse():
     h.append(("Freenove-Board", fx - hx, fx + hx, fz - hz, fz + hz, 19.0))
     for (x, z) in WANNE_DOME:
         h.append((f"Dom {x},{z}", x - 5, x + 5, z - 5, z + 5, 9.0))
-    for (x, z) in NACH_OBEN:
+    for (x, z) in RING_DOME:
         h.append((f"Röhre/Dom {x},{z}", x - ROHR_R, x + ROHR_R, z - ROHR_R, z + ROHR_R, 23.0))   # Hülse des Rings über dem Dom
+    for (z0, z1) in STEG_Z:
+        h.append((f"Steg {z0:+.0f}", DECK_FUGE - STEG_HINTEN - 3.5, DECK_FUGE + STEG_VORNE, z0, z1, STEG_H))
     return h
 
 
@@ -419,9 +473,10 @@ def erreichbarkeit():
                 for sz in (1, -1):
                     kante = z + sz * (iz / 2 + LUFT + WAND)
                     zonen.append((f"{name}: STEMMA-QT {'links' if sz > 0 else 'rechts'}", x - a, x + a, min(kante, kante + sz * ZUGANG_STEMMA), max(kante, kante + sz * ZUGANG_STEMMA), 2.0, name))
-    for i, (x, z, lx, bz) in enumerate(SCHLITZE[:2]):
+    for i, (x, z, lx, bz) in enumerate(SCHLITZE[:GRIFFLOECHER]):
         f = ZUGANG_FINGER + GRIFFLOCH_RAND[0]
-        zonen.append((f"Griffloch {'vorne' if i == 0 else 'hinten'}: Finger", x - lx / 2 - f, x + lx / 2 + f, z - bz / 2 - f, z + bz / 2 + f, 6.0, "Griffloch"))
+        wo = ("vorne" if x > 0 else "hinten") + (" links" if z > 0 else " rechts")
+        zonen.append((f"Griffloch {wo}: Finger", x - lx / 2 - f, x + lx / 2 + f, z - bz / 2 - f, z + bz / 2 + f, 6.0, "Griffloch"))
     for (name, z, y, br, h, rund) in RING_RUECKWAND:
         # Taster innen: Mutter (ca. Ø 16,5, 3 mm dick) direkt an der Wand, dahinter Körper Ø 12 bis 19 mm, dann Lötfahnen und Kabel
         xi = X_HINTEN + RING_WAND
@@ -449,11 +504,17 @@ if __name__ == "__main__":
     AUS.mkdir(exist_ok=True)
     ueberlappungen()
     erreichbarkeit()
-    teile = {"platte": platte(), "ring_oben": ring_oben()}
+    deck, ring_ganz = platte(), ring_oben()
+    dv, dh = teilen_deck(deck)
+    rv, rh = teilen_ring(ring_ganz)
+    teile = {"platte_vorne": dv, "platte_hinten": dh, "ring_vorne": rv, "ring_hinten": rh}
+    for name, t in teile.items():
+        print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
+    print("Deck-Hälften durchdringen sich:", "nein" if (dv & dh).volume < 0.5 else "JA")
     # Selbstprüfung: jede Röhre im Ring muss auf ganzer Höhe mit der Außenwand verbunden sein (CAD-Rechenfehler finden)
     from build123d import Vector
-    r, luecken = teile["ring_oben"], []
-    for (x, z) in NACH_OBEN:
+    r, luecken = ring_ganz, []
+    for (x, z) in RING_DOME:
         sz = 1 if z > 0 else -1
         bis_seite, bis_ende = B / 2 - abs(z), ((X_VORNE - x) if x > XM else (x - X_HINTEN))
         pruef = []
@@ -461,7 +522,11 @@ if __name__ == "__main__":
             pruef += [(x + dx, z + sz * (ROHR_R - 1)) for dx in (-(ROHR_R - 0.5), ROHR_R - 0.5)]
         if bis_ende < bis_seite or bis_ende < 15:
             pruef += [(x + (ROHR_R - 1 if x > XM else -(ROHR_R - 1)), z + dz) for dz in (-(ROHR_R - 0.5), ROHR_R - 0.5)]
-        luecken += [(px, pz, y) for (px, pz) in pruef for y in (OBEN + 10, OBEN + 16, EBENE3_UNTEN - 1) if not r.is_inside(Vector(px, -pz, y))]
+        # nur Punkte innerhalb der Außenform zählen (in den gerundeten Ecken liegen manche schon draußen)
+        def drin(px, pz):
+            cx = min(max(px, X_HINTEN + R_ECKE), X_VORNE - R_ECKE); cz = min(max(pz, -B / 2 + R_ECKE), B / 2 - R_ECKE)
+            return (px - cx) ** 2 + (pz - cz) ** 2 < (R_ECKE - 0.3) ** 2
+        luecken += [(px, pz, y) for (px, pz) in pruef if drin(px, pz) for y in (OBEN + 10, OBEN + 16, EBENE3_UNTEN - 1) if not r.is_inside(Vector(px, -pz, y))]
         # unten neben der Dom-Aussparung: zwischen Aussparung und Wand muss Material sein
         unten = [(x, z + sz * 5.9)] if (bis_seite <= bis_ende or bis_seite < 15) else []
         unten += [(x + (5.9 if x > XM else -5.9), z)] if (bis_ende < bis_seite or bis_ende < 15) else []

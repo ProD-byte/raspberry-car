@@ -3,6 +3,11 @@
 Dieses Projekt ist ein **Nachbau-Projekt**: ein kleines, vierrädriges Roboterauto, das sich wie eine DJI-Drohne anfühlen soll (Live-Video, Karte, „Folge mir“, „Nach Hause fahren“). Andere sollen es mit gekauften Standardmodulen nachbauen können.
 
 ## Zusammenarbeit
+- **Arbeitsort: `C:\Projekte\raspberry-car`** (lokal). `H:\Kreativ und Basteln\Elektronik\raspberry-car` (HiDrive über SSHFS) ist **nur Sicherung** – dort nicht arbeiten, das Laufwerk bricht bei vielen Zugriffen weg. Sichern mit `robocopy "C:\Projekte\raspberry-car" "H:\Kreativ und Basteln\Elektronik\raspberry-car" /E /R:10 /W:5 /XD __pycache__` (nichts auf H: löschen ohne Rückfrage).
+aspberry-car`** (lokal). `H:\Kreativ und Basteln\Elektronik
+aspberry-car` (HiDrive über SSHFS) ist **nur Sicherung** – dort nicht arbeiten, das Laufwerk bricht bei vielen Zugriffen weg. Sichern mit `robocopy "C:\Projekte
+aspberry-car" "H:\Kreativ und Basteln\Elektronik
+aspberry-car" /E /R:10 /W:5 /XD __pycache__` (nichts auf H: löschen ohne Rückfrage).
 - Sprache: **Deutsch**, einfach und verständlich erklären. Der Bauherr kann löten (auch SMD), programmiert aber nicht beruflich.
 - Eingekauft wird **Stück für Stück, jeden Monat etwas** (Budget pro Monat oft ~50 €). Immer sagen, was jetzt nötig ist und was warten kann.
 - Vor dem Bestellen Screenshots der gewählten Variante prüfen (Spannung, Encoder, 2S/3S usw.).
@@ -17,7 +22,8 @@ Siehe `docs/entscheidungen.md`. Kurz:
 - **Motoren und Pi haben getrennte Stromwege** (DRV8833 direkt am Akku, Pi über eigenen Pololu-Wandler), damit Motorspitzen den Pi nicht zum Absturz bringen. Deshalb **kein** Waveshare UPS HAT.
 - **Pico 2 W** (auf Freenove Breakout Board) = Echtzeit: Motoren, Encoder, Sensoren, Not-Stopp. **Pi 5** = Gehirn: Kamera, LiDAR-Karte, Navigation, Web-App, KI.
 - **Vorne/hinten:** Hinten = Seite mit Ladebuchse (USB-C) und Hauptschalter, vorne = Nahsensor und Kamera. In allen Skripten zeigt x nach vorne.
-- **Aufbau als Sandwich in 4 Ebenen** (gedruckte Ebenen 205 × 130 mm, Wanne unten mit der kompletten Stromversorgung, Säulen mitgedruckt, nur M3-Zylinderkopfschrauben ISO 4762). Möglichst flach bauen – kein Turm.
+- **Aufbau als Sandwich in 3 Ebenen** (gedruckte Ebenen **250 × 180 mm**, Radstand 160 mm, Räder 65 mm außen; Wanne unten mit der kompletten Stromversorgung, Ebene 2 Antrieb, Ebene 3 Gehirn mit Dach als Klappdeckel; Säulen mitgedruckt, nur M3-Zylinderkopfschrauben ISO 4762). Möglichst flach bauen – kein Turm. **Jede Ebene aus zwei Druckteilen** (vordere / hintere Hälfte, quer geteilt, überlappende Laschen + M3), Fugen je Ebene versetzt. Drucker: Bambu A1 (256 × 256 mm).
+- **Umbau auf 250 × 180 (seit 22.11.2026):** Ebene 1–3 sind fertig umgebaut (CAD, großes 3D-Modell, Werkstatt-Ansichten). Noch alt: die Fahrsimulation und die Kabelwege in der Werkstatt-Ansicht Ebene 1.
 
 ## Wo was liegt
 | Pfad | Inhalt |
@@ -31,7 +37,7 @@ Siehe `docs/entscheidungen.md`. Kurz:
 | (Ansicht) | Das 3D-Modell startet mit „Vorhandene Teile“. Kommt ein Teil an: in der Liste `VORHANDEN` im Skript eine Zeile ergänzen und in der Stückliste auf 📦 setzen. |
 | `modell/ebene1-unten.html` | **Werkstatt-Ansicht**: nur der Bereich, an dem gerade gebaut wird (zurzeit Ebene 1), ohne Kabel. Bauteile und Positionen wie im großen Modell – ändert sich dort etwas an Ebene 1, hier mit ändern. |
 | `modell/ebene2-oben.html` | **Werkstatt-Ansicht Ebene 2**: nur das Elektronik-Deck mit Ring und Bauteilen, ohne Kabel; Haken für Kompass-Freiraum, Höhe von Ebene 3 und die Wanne darunter. Die Bauteile werden aus `raspberry-car-3d.html` kopiert: nach Änderungen an Ebene 2 dort `python modell/werkzeug/mach_ebene2.py` laufen lassen (erzeugt die Seite neu). |
-| `modell/ebene3-gehirn.html` | **Werkstatt-Ansicht Ebene 3**: Klappdeckel mit Pi, AI HAT+, Kamera, Pololu und 4G-Dongle, Regler zum Aufklappen, Ebene 2 darunter. Wird erzeugt: nach Änderungen an Ebene 3 im großen Modell `python modell/werkzeug/mach_ebene3.py` laufen lassen. Deckel-Druckteil: `gehaeuse/ebene3_gehirn.py` (prüft das Aufklappen bis 100°). |
+| `modell/ebene3-gehirn.html` | **Werkstatt-Ansicht Ebene 3**: Klapphaube (Dach integriert, unten offen) mit allem, was am Dach hängt (Pi, AI HAT+, Kamera, Pololu, 4G, GPS, LEDs, Display) und dem LiDAR oben, Regler zum Aufklappen, Ebene 2 darunter. Wird erzeugt: nach Änderungen an Ebene 3 im großen Modell `python modell/werkzeug/mach_ebene3.py` laufen lassen. Deckel-Druckteil: `gehaeuse/ebene3_gehirn.py` (prüft das Aufklappen bis 100°). |
 | `gehaeuse/pruefstand.py` | Prüfstand (Druckteil) wie eine Hebebühne: 4 Zapfen rasten in 4 Kerben unten in der Wanne (`PRUEF_PUNKTE` in `ebene1_fahrwerk.py` – bei Änderung in beiden Skripten gleich halten), Räder hängen frei – zum Testen von Motoren und Software. In der Werkstatt-Ansicht per Haken „Auf dem Prüfstand“. Die Werkstatt-Ansicht zeigt per Haken „Verkabelung“ auch die ordentlich verlegten Kabel in der Wanne (Wege von Hand festgelegt, Anschlüsse wie in `docs/verdrahtung.md` – bei Änderungen dort auch hier nachziehen). |
 | `modell/fahrsimulation.html` | **Fahrsimulation**: das Fahrwerk (Ebene 1) auf Gelände (Wohnzimmer, Garten, Testparcours) – Panzerlenkung mit Schlupf, Auflage auf 3/4 Rädern, Bodenfreiheit, Stufen, Steigung, Kippen, Stromschätzung. Enthält eine Kopie der Ebene-1-Bauteile aus `ebene1-unten.html` – bei Änderungen an Fahrwerk-Maßen (Radstand, Spur, Bodenfreiheit) die Werte oben im Simulationsteil mit ändern. Ebene 2 ist mit aufgesetzt (Haken „Ebene 2 zeigen“): nach Änderungen an Ebene 2 im großen Modell `python modell/werkzeug/sim_ebene2.py` laufen lassen. |
 | `modell/teile/druckteile.js` | Druck-Infos je Druckteil (Filament, Temperaturen, Einstellungen, Druckrichtung, Download-Link). Erscheinen in allen 3D-Ansichten beim Antippen eines Druckteils – bei neuen Druckteilen hier eintragen. |

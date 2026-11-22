@@ -8,7 +8,7 @@ M = Path(__file__).resolve().parent.parent   # Ordner modell/
 e1 = (M / "ebene1-unten.html").read_text(encoding="utf-8").split("\n")
 gz = (M / "raspberry-car-3d.html").read_text(encoding="utf-8").split("\n")
 
-SCH_X, SCH_Y = -125.5, 89.0                  # Scharnierachse (wie gehaeuse/ebene2_elektronik.py)
+SCH_X, SCH_Y = -130.5, 89.0                  # Scharnierachse (wie gehaeuse/ebene2_elektronik.py: X_HINTEN − 5,5)
 
 
 def zeilen(lst, von, bis):          # 1-basiert, inklusive
@@ -33,19 +33,19 @@ html = """<body>
   <header>
     <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html" aria-current="page">Werkstatt Ebene 3</a><a href="fahrsimulation.html">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
     <div class="eyebrow">Raspberry Car · Werkstatt</div>
-    <h1>Ebene 3: Gehirn (Klappdeckel)</h1>
-    <p class="lead">Der obere Teil des Autos ist ein <strong>Klappdeckel</strong>: Boden und Seitenwände in einem Druckteil, hinten zwei Scharniere, vorne zwei Schrauben. Darin sitzen Raspberry Pi 5 mit Active Cooler und AI HAT+, die Kamera hinter dem Fenster vorne, der Pololu (5 V für den Pi) und das 4G/GPS-Modul. Mit dem Regler klappst du den Deckel auf. Ohne Kabel.</p>
+    <h1>Ebene 3: Gehirn mit Dach (Klapphaube)</h1>
+    <p class="lead">Der obere Teil des Autos ist eine <strong>Klapphaube</strong>: Seitenwände und Dach in einem, unten offen, aus zwei Hälften gedruckt. Alles hängt am Dach: Raspberry Pi 5 mit Active Cooler und AI HAT+, die Kamera hinter dem Fenster vorne, Pololu (5 V für den Pi), 4G-Modul, GPS-Antenne, Status-LEDs und das runde Display. Oben steht der LiDAR. Hinten zwei Scharniere, vorne zwei Schrauben. Mit dem Regler klappst du die Haube auf. Ohne Kabel.</p>
   </header>
 
   <div class="stage" id="stage">
     <div class="loading" id="loading">3D-Modell wird gebaut …</div>
-    <div class="dims">Deckel 215,5 × 130 × 48 mm · vorne: Kamera · hinten: Scharniere, Ladebuchse und Schalter</div>
-    <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Pi, die Kamera oder den Deckel.</span></div>
+    <div class="dims">Haube 250 × 180 × 37 mm (2 Hälften) · vorne: Kamera · hinten: Scharniere, Ladebuchse und Schalter</div>
+    <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Pi, die Kamera oder die Haube.</span></div>
   </div>
 
   <div class="controls">
     <label class="check"><input id="bauteile" type="checkbox" checked> Bauteile zeigen</label>
-    <label class="check"><input id="glas" type="checkbox"> Deckel durchsichtig</label>
+    <label class="check"><input id="glas" type="checkbox"> Haube durchsichtig</label>
     <label class="check"><input id="unten2" type="checkbox" checked> Ebene 2 darunter</label>
     <label class="range" for="klappen">Aufklappen <input id="klappen" type="range" min="0" max="100" step="1" value="0"> <span id="klappen-wert" style="font-family:var(--font-mono);font-size:13px">0°</span></label>
     <div class="toggles">
@@ -58,9 +58,10 @@ html = """<body>
   <div class="teile" id="teile"></div>
 
   <div class="notes">
-    <p><strong>Druckdatei:</strong> <code>gehaeuse/ebene3/deckel.stl</code>, erzeugt von <code>gehaeuse/ebene3_gehirn.py</code> – ein Teil, Boden aufs Bett, ohne Stützen. Das Skript prüft auch, dass der Deckel beim Aufklappen bis 100° nirgends am Ring von Ebene 2 anstößt.</p>
-    <p><strong>Klappdeckel:</strong> Hinten zwei Scharniere außen an der Trennfuge (Achse M3 × 16, Gewinde im äußeren Lappen). Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen, die vom Ring von Ebene 2 durch den Boden nach oben ragen. Schrauben raus, Deckel hochklappen – Ebene 2 liegt offen.</p>
-    <p><strong>Pi 5:</strong> M2,5 von unten durch Boden und Dom in die 16-mm-Abstandshalter des AI HAT+ (liegen bei). M2,5, weil die Löcher des Pi nur 2,7 mm groß sind. <strong>Kamera:</strong> von oben in die zwei Nuten schieben, das Objektiv sitzt im Fenster. <strong>Luft:</strong> Schlitze in beiden Seitenwänden – der AI HAT+ darf nicht ohne Belüftung eingebaut werden.</p>
+    <p><strong>Druckdateien:</strong> <code>gehaeuse/ebene3/haube_vorne.stl</code> und <code>haube_hinten.stl</code>, erzeugt von <code>gehaeuse/ebene3_gehirn.py</code> – mit dem Dach nach unten drucken, ohne Stützen. Das Skript prüft auch, dass die Haube beim Aufklappen bis 100° nirgends am Ring von Ebene 2 anstößt.</p>
+    <p><strong>Klappen:</strong> Hinten zwei Scharniere außen an der Trennfuge (Achse M3 × 16, Gewinde im äußeren Lappen). Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2. Alle Kabel von Ebene 2 in die Haube laufen hinten beim Scharnier – dort knicken sie beim Aufklappen am wenigsten.</p>
+    <p><strong>Pi 5:</strong> Der Stapel aus Pi, Active Cooler und AI HAT+ hängt an 4 Domen unter dem Dach: M2,5 × 16 von oben durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei), Köpfe bündig im Dach. Unten hält der Pi mit den beiliegenden Schrauben. Bis zu den höchsten Teilen von Ebene 2 bleiben gut 10 mm Luft. <strong>Kamera:</strong> von unten in die zwei Nuten schieben, bis sie einrastet. <strong>Display:</strong> von unten einsetzen, das Glas liegt am Dach an, 3 Schnapphaken halten die Platine.</p>
+    <p><strong>Zwei Hälften:</strong> Fuge bei x = 45. Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand, beide werden mit 6 × M3 × 12 verschraubt (Kopf hinten).</p>
   </div>
 </div>
 """
@@ -82,7 +83,8 @@ rahmen = r"""
     richtungsSchilder(scene);
     const ANCH = {};
     function anchor(key, g, x, y, z, d, label) { ANCH[key] = { g, p: V(x, y, z), label: label || key }; }
-    const TOP = [0, 61, 87];       // Oberkante Deck Ebene 2 (61) und Boden Ebene 3 (87)
+    const LEVEL = [50.25, 58, 84, 118];   // wie im großen Modell: [2] Unterkante Haube, [3] Unterseite des Dachs
+    const TOP = [0, 61, 87, 121];        // [3] = Oberseite des Dachs (dort steht der LiDAR)
     let zeigeBauteile = true, glas = false;
     let sel = null;
     function eachMat(o, fn) { if (!o.material) return; (Array.isArray(o.material) ? o.material : [o.material]).forEach(fn); }
@@ -110,25 +112,30 @@ rahmen = r"""
     }
 __RIBBON__
     const deckelFarbe = (mat) => { mat.color.set(0x5a7fbf).convertSRGBToLinear(); mat.roughness = 0.8; };
-    (function deckel() {
-      const g = part(L0, 'Klappdeckel Ebene 3 (Druckteil)', 'Boden von Ebene 3 und Seitenwände bis Ebene 4 in einem Stück. Klappt hinten an zwei Scharnieren (Achse M3 × 16) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2. Trägt Pi 5 (4 Dome, M2,5 von unten), Pololu und 4G-Modul in Einklick-Taschen, die Kamera in zwei Nuten hinter dem Fenster vorne; Lüftungsschlitze in den Seiten; 4 Röhren für Ebene 4. Druckt mit dem Boden aufs Bett ohne Stützen. 215,5 × 130 × 48 mm. Datei: gehaeuse/ebene3/deckel.stl', 0, 0, 0);
+    const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 16) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
+    [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)', 'Vorne: Kamera in zwei Nuten hinter dem Fenster, Status-LEDs unter dem Dach, Pololu, Schraubpolster für die Laschen des Rings, oben steht der LiDAR. 80 × 180 mm. Datei: gehaeuse/ebene3/haube_vorne.stl'],
+     ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)', 'Pi 5 mit AI HAT+ hängt an 4 Domen unter dem Dach (M2,5 von oben, Köpfe bündig), 4G-Modul und GPS-Antenne in Taschen, hinten das runde Display im Dach und die Scharnier-Lappen. Lüftungsschlitze in den Seiten. 180 × 180 mm. Datei: gehaeuse/ebene3/haube_hinten.stl']].forEach(([datei, name, desc]) => {
+      const g = part(L0, name, desc + HAUBE, 0, 0, 0);
       g.userData.druckteil = 'e3';
-      cadTeil('e3_deckel', g, new THREE.Group(), (m) => m, deckelFarbe);
-    })();
+      cadTeil(datei, g, new THREE.Group(), (m) => m, deckelFarbe);
+    });
     // Ebene 2 darunter (bleibt stehen, wenn der Deckel aufklappt)
     const unten2 = new THREE.Group(); scene.add(unten2);
     const e2Farbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
-    ['e2_platte', 'e2_ring_oben'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, e2Farbe));
+    ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, e2Farbe));
 """.replace("__SX__", str(SCH_X)).replace("__SY__", str(SCH_Y)).replace("__RIBBON__", "\n".join(rib))
 
 b0 = finde(gz, "    const PI = { x: -8, y: TOP[2] + 5, z: 0 };")
 b1 = finde(gz, "// EBENE 4 – Dach") - 2
-teile = [z.replace("part(L2,", "part(L0,").replace("ribbon(L2,", "ribbon(L0,") for z in zeilen(gz, b0, b1)]
+d0 = finde(gz, "const L3 = makeLayer(3);") + 1
+d1 = finde(gz, "// VERDRAHTUNG – jede Leitung") - 2
+teile = [z.replace("part(L2,", "part(L0,").replace("ribbon(L2,", "ribbon(L0,").replace("part(L3,", "part(L0,")
+         for z in zeilen(gz, b0, b1) + zeilen(gz, d0, d1)]
 
 bedienung = zeilen(e1, finde(e1, "    anwenden();", finde(e1, "PARTS[`Nahsensor VL53L1X")), finde(e1, "document.getElementById('glas').addEventListener"))
-bedienung = [z.replace("<span>Zum Beispiel auf die Wanne, einen Motorbügel oder den Akku.</span>", "<span>Zum Beispiel auf den Pi, die Kamera oder den Deckel.</span>")
+bedienung = [z.replace("<span>Zum Beispiel auf die Wanne, einen Motorbügel oder den Akku.</span>", "<span>Zum Beispiel auf den Pi, die Kamera oder die Haube.</span>")
                .replace("ray.intersectObjects([L0, stand], true)", "ray.intersectObjects([L0], true)")
-               .replace("// durchsichtige Wanne: durch sie hindurch tippen", "// durchsichtiger Deckel: durch ihn hindurch tippen")
+               .replace("// durchsichtige Wanne: durch sie hindurch tippen", "// durchsichtige Haube: durch sie hindurch tippen")
              for z in bedienung]
 bedienung = [z for z in bedienung if "getElementById('unten')" not in z and "getElementById('raeder')" not in z]
 gi = next(i for i, z in enumerate(bedienung) if "getElementById('glas')" in z)

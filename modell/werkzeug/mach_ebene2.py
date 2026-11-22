@@ -31,12 +31,12 @@ html = """<body>
     <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html" aria-current="page">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html">Werkstatt Ebene 3</a><a href="fahrsimulation.html">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
     <div class="eyebrow">Raspberry Car · Werkstatt</div>
     <h1>Ebene 2: Antrieb</h1>
-    <p class="lead">Nur das Elektronik-Deck, an dem wir gerade bauen – aufgeteilt in Zonen: vorne und hinten je eine <strong>Motorzone</strong> (Griffloch über den Motorsteckern, Motortreiber, 3,3-V-Verteiler), in der Mitte die <strong>Steuerung</strong> (Pico und Kompass), am Rand <strong>Strom und Laden</strong>. Ohne Kabel. Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
+    <p class="lead">Nur das Elektronik-Deck, an dem wir gerade bauen – aufgeteilt in Zonen: vorne und hinten je eine <strong>Motorzone</strong> (zwei Grifflöcher über den Motorsteckern, Motortreiber, 3,3-V-Verteiler), in der Mitte die <strong>Steuerung</strong> (vorne Pico, hinten Kompass), am Rand <strong>Strom und Laden</strong>. Deck und Ring sind je aus zwei Hälften gedruckt. Ohne Kabel. Ziehen zum Drehen, Mausrad oder zwei Finger zum Zoomen. <strong>Tippe auf ein Bauteil</strong>, dann steht unten, was es ist.</p>
   </header>
 
   <div class="stage" id="stage">
     <div class="loading" id="loading">3D-Modell wird gebaut …</div>
-    <div class="dims">Deck 205 × 130 × 3 mm · bis Ebene 3: 23 mm · vorne: Nahsensor · hinten: Ladebuchse und Schalter</div>
+    <div class="dims">Deck 250 × 180 × 3 mm (2 Hälften) · bis Ebene 3: 23 mm · vorne: Nahsensor · hinten: Ladebuchse und Schalter</div>
     <div class="info" id="info"><b>Tippe auf ein Bauteil</b><span>Zum Beispiel auf den Pico, den Kompass oder einen Motortreiber.</span></div>
   </div>
 
@@ -59,8 +59,9 @@ html = """<body>
 
   <div class="notes">
     <p><strong>Druckdateien:</strong> <code>gehaeuse/ebene2/</code>, erzeugt von <code>gehaeuse/ebene2_elektronik.py</code>. Beschreibung und Zusammenbau: <code>gehaeuse/README.md</code>.</p>
-    <p><strong>Kompass:</strong> Der BNO085 sitzt vor dem Pico, ca. 5 cm vom vorderen und 10 cm vom hinteren Motor. Der grüne Kreis (Haken „Freiraum um den Kompass“, 5 cm) zeigt, wo kein Magnet, keine Spule und keine Leitung mit viel Strom hin darf. Der Pico darf hinein – er macht kaum ein Magnetfeld. Der MP1584 (Spule) sitzt deshalb rechts neben dem Pico, ca. 7 cm entfernt, Plus und Minus kommen am rechten Rand durch Durchbruch C hoch.</p>
-    <p><strong>Erreichbar:</strong> Ebene 3 wird ein Klappdeckel (Scharnier an den beiden hinteren Domen, vorne eine Schraube). Deckel auf – dann liegen alle Klemmen offen, und durch die beiden Grifflöcher steckt man die Motorstecker direkt am Motor ein und aus.</p>
+    <p><strong>Zwei Hälften:</strong> Das Deck ist bei x = 58 geteilt (zwei aufrechte Stege, 2 × M3 × 10 quer), der Ring bei x = −16,5. Jede Ring-Hälfte ist mit eigenen M3 × 20 auf das Deck geschraubt – so überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings.</p>
+    <p><strong>Kompass:</strong> Der BNO085 sitzt hinten in der Mitte, ca. 12 cm von der Stromversorgung (vorne in der Wanne) und von Durchbruch C entfernt. Der grüne Kreis (Haken „Freiraum um den Kompass“, 5 cm) zeigt, wo kein Magnet, keine Spule und keine Leitung mit viel Strom hin darf. Darunter liegt in der Wanne der Akku (4 cm tiefer) – ob sein Strom den Kompass stört, zeigt erst ein Test mit dem echten Auto.</p>
+    <p><strong>Erreichbar:</strong> Ebene 3 ist ein Klappdeckel (Scharnier hinten am Ring, vorne zwei Schrauben). Deckel auf – dann liegen alle Klemmen offen, und durch die vier Grifflöcher steckt man die Motorstecker direkt am Motor ein und aus.</p>
     <p><strong>Erreichbarkeit geprüft:</strong> <code>gehaeuse/ebene2_elektronik.py</code> prüft bei jedem Lauf nicht nur Überschneidungen, sondern auch, ob man herankommt: vor jeder Klemmen-Reihe 13 mm frei für Kabel, vor jeder WAGO-Kabelseite 15 mm, vor jeder STEMMA-QT-Buchse 12 mm, um jedes Griffloch nichts Hohes, unter dem Schalter frei. Ergebnis: 0 Probleme.</p>
     <p><strong>Höhe:</strong> Zwischen Deck und Ebene 3 sind 23 mm Platz (Haken „Höhe von Ebene 3“). Am höchsten ist der Pico auf dem Freenove-Board – die echte Höhe vor dem Druck nachmessen.</p>
     <p><strong>Das ganze Auto</strong> mit allen Ebenen und Kabeln zeigt <code>raspberry-car-3d.html</code>, die Wanne darunter <code>ebene1-unten.html</code>.</p>
@@ -81,8 +82,8 @@ hilfe = [z.replace("// Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselb
                    "// Werkstatt-Ansicht: nur Ebene 2. Die Bauteile sind dieselben wie in raspberry-car-3d.html")
           .replace("// (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.",
                    "// (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 2, hier mit ändern.")
-          .replace("const HOME = { pos: V(190, 210, 300), target: V(-17.5, 30, 0) };",
-                   "const HOME = { pos: V(170, 270, 260), target: V(-17.5, 62, 0) };")
+          .replace("const HOME = { pos: V(240, 250, 360), target: V(0, 30, 0) };",
+                   "const HOME = { pos: V(210, 320, 300), target: V(0, 62, 0) };")
          for z in hilfe]
 
 # ---------- Ebene 2: Rahmen ----------
@@ -120,20 +121,23 @@ rahmen = r"""
       return s;
     }
     const deckFarbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
-    (function deck() {
-      const g = part(L0, 'Elektronik-Deck Ebene 2 (Druckteil)', 'In Zonen aufgeteilt: vorne und hinten je eine Motorzone (Griffloch mit Rand über den beiden Motorsteckern, DRV8833 und 3,3-V-Verteiler für diese Achse), in der Mitte Pico auf dem Freenove-Board (Klemmen zu den Seiten) und davor der Kompass BNO085, hinten links das Ladeboard, rechts MP1584 und Strom-Durchbruch C. Ist zugleich der Deckel der Wanne: liegt auf dem Wannenrand, die Wanne wird von unten mit 4 × M3 × 45 an 4 Dome dieses Decks geschraubt. 4 Dome mit Kernloch für Ebene 3 – die beiden hinteren tragen das Scharnier des Klappdeckels. Dazu Durchbrüche hinten links/rechts (Daten), A/B an den Seiten und C am rechten Rand (Strom). Alles auf der Oberseite – druckt flach ohne Stützen. 205 × 130 × 3 mm. Datei: gehaeuse/ebene2/platte.stl', 0, 0, 0);
+    const ALLE = ' Ist zugleich der Deckel der Wanne: liegt auf dem Wannenrand, die Wanne wird von unten mit 4 × M3 × 45 an 4 Dome des Decks geschraubt. Das Deck ist bei x = 58 geteilt: an der Fuge auf jeder Hälfte ein aufrechter Steg, beide mit 2 × M3 × 10 quer verschraubt. Alles auf der Oberseite – druckt flach ohne Stützen.';
+    [['e2_platte_vorne', 'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)', 'Motorzone vorne: zwei Grifflöcher mit Rand über den Motorsteckern der Vorderachse, dazwischen der Motortreiber DRV8833, rechts außen der 3,3-V-Verteiler. 67 × 180 mm. Datei: gehaeuse/ebene2/platte_vorne.stl'],
+     ['e2_platte_hinten', 'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)', 'Vorne der Pico auf dem Freenove-Board (Klemmen zu den Seiten), dahinter der Kompass BNO085, vorne rechts MP1584 und Strom-Durchbruch C, hinten die Motorzone hinten (zwei Grifflöcher, Treiber, 3,3-V-Verteiler), hinten links das Ladeboard. Dome für den Ring (M3 × 20 von oben). 183 × 180 mm. Datei: gehaeuse/ebene2/platte_hinten.stl']].forEach(([datei, name, desc]) => {
+      const g = part(L0, name, desc + ALLE, 0, 0, 0);
       g.userData.druckteil = 'deck';
-      cadTeil('e2_platte', g, new THREE.Group(), (m) => m, deckFarbe);
-    })();
-    (function ring() {
-      const g = part(L0, 'Gehäuse-Ring oben (Druckteil)', 'Seitenwand zwischen Elektronik-Deck und Ebene 3, 23 mm hoch. In der Rückwand: links (von hinten) das Loch Ø 12,2 mm für den 12-mm-Taster, rechts ein Ausschnitt 13,5 × 8 mm (außen angefast) für die USB-C-Buchse des Ladeboards. Röhren über den 4 Domen – dort wird Ebene 3 festgeschraubt. Umgedreht drucken (Oberkante aufs Bett), ohne Stützen. Datei: gehaeuse/ebene2/ring_oben.stl', 0, 0, 0);
+      cadTeil(datei, g, new THREE.Group(), (m) => m, deckFarbe);
+    });
+    [['e2_ring_vorne', 'Gehäuse-Ring oben, vordere Hälfte (Druckteil)', 'Seitenwand zwischen Elektronik-Deck und Ebene 3, 23 mm hoch. Vorne die zwei Laschen, in die die Schrauben des Klappdeckels greifen. Hülsen über den Domen des Decks: vorne in den Ecken und zwei an der Fuge des Rings. Aufrecht drucken, ohne Stützen. Datei: gehaeuse/ebene2/ring_vorne.stl'],
+     ['e2_ring_hinten', 'Gehäuse-Ring oben, hintere Hälfte (Druckteil)', 'Hinten die Scharnier-Lappen des Klappdeckels, in der Rückwand in Fahrtrichtung links der Ausschnitt 13,5 × 8 mm für die USB-C-Buchse des Ladeboards und rechts das Loch Ø 12,2 mm für den 12-mm-Taster. Hülsen über den Domen des Decks (M3 × 20 von oben). Aufrecht drucken, ohne Stützen. Datei: gehaeuse/ebene2/ring_hinten.stl']].forEach(([datei, name, desc]) => {
+      const g = part(L0, name, desc, 0, 0, 0);
       g.userData.druckteil = 'ring';
-      cadTeil('e2_ring_oben', g, new THREE.Group(), (m) => m, deckFarbe);
-    })();
+      cadTeil(datei, g, new THREE.Group(), (m) => m, deckFarbe);
+    });
     // Wanne darunter (nur zur Orientierung, durchsichtig, nicht anklickbar)
     const wanneGrau = new THREE.Group(); wanneGrau.visible = false; scene.add(wanneGrau);
-    cadTeil('e1_wanne', wanneGrau, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; },
-      (mat) => { mat.color.set(0x9aa3aa).convertSRGBToLinear(); mat.transparent = true; mat.opacity = 0.22; mat.depthWrite = false; });
+    ['e1_wanne_vorne', 'e1_wanne_hinten'].forEach((n) => cadTeil(n, wanneGrau, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; },
+      (mat) => { mat.color.set(0x9aa3aa).convertSRGBToLinear(); mat.transparent = true; mat.opacity = 0.22; mat.depthWrite = false; }));
 """
 pin = next(z for z in gz if "const PIN = {" in z).strip()[len("const PIN = "):].rstrip(";")
 rahmen = rahmen.replace("__PIN__", pin)
@@ -154,13 +158,13 @@ extra = r"""
     const kompass = new THREE.Group(); scene.add(kompass);
     (function () {
       const ring = new THREE.Mesh(new THREE.RingGeometry(48.5, 50, 96), new THREE.MeshBasicMaterial({ color: 0x1d9e75, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
-      ring.rotation.x = -Math.PI / 2; ring.position.set(8, TOP[1] + 0.3, 0); ring.userData.noPick = true; kompass.add(ring);
+      ring.rotation.x = -Math.PI / 2; ring.position.set(-35, TOP[1] + 0.3, 0); ring.userData.noPick = true; kompass.add(ring);
       const flaeche = new THREE.Mesh(new THREE.CircleGeometry(48.5, 96), new THREE.MeshBasicMaterial({ color: 0x1d9e75, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
-      flaeche.rotation.x = -Math.PI / 2; flaeche.position.set(8, TOP[1] + 0.25, 0); flaeche.userData.noPick = true; kompass.add(flaeche);
+      flaeche.rotation.x = -Math.PI / 2; flaeche.position.set(-35, TOP[1] + 0.25, 0); flaeche.userData.noPick = true; kompass.add(flaeche);
     })();
     // Unterkante von Ebene 3 (84 mm): so hoch darf nichts auf dem Deck werden
-    const decke = new THREE.Mesh(new THREE.BoxGeometry(205, 0.6, 130), new THREE.MeshStandardMaterial({ color: 0x3f6db5, transparent: true, opacity: 0.2, depthWrite: false }));
-    decke.position.set(-17.5, 84, 0); decke.visible = false; decke.userData.noPick = true; scene.add(decke);
+    const decke = new THREE.Mesh(new THREE.BoxGeometry(250, 0.6, 180), new THREE.MeshStandardMaterial({ color: 0x3f6db5, transparent: true, opacity: 0.2, depthWrite: false }));
+    decke.position.set(0, 84, 0); decke.visible = false; decke.userData.noPick = true; scene.add(decke);
 """
 
 # ---------- Liste, Auswahl, Bedienung ----------
@@ -173,8 +177,8 @@ bedienung = [z.replace("<span>Zum Beispiel auf die Wanne, einen Motorbügel oder
              for z in bedienung]
 bedienung = [z for z in bedienung if "getElementById('unten')" not in z and "getElementById('raeder')" not in z]
 bedienung += [
-    "    document.getElementById('oben').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(-17.5, 430, 1), V(-17.5, 61, 0)); });",
-    "    document.getElementById('unten').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(-17.5, -330, 60), V(-17.5, 60, 0)); });",
+    "    document.getElementById('oben').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(0, 470, 1), V(0, 61, 0)); });",
+    "    document.getElementById('unten').addEventListener('click', () => { controls.autoRotate = false; rot.setAttribute('aria-pressed', 'false'); ansicht(V(0, -360, 60), V(0, 60, 0)); });",
     "    document.getElementById('ring').addEventListener('change', (e) => { zeigeRing = e.target.checked; anwenden(); if (sel) waehlen(sel); });",
     "    document.getElementById('kompass').addEventListener('change', (e) => { kompass.visible = e.target.checked; });",
     "    document.getElementById('decke').addEventListener('change', (e) => { decke.visible = e.target.checked; });",
