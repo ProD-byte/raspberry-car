@@ -10,8 +10,9 @@ Koordinaten wie im 3D-Modell (x nach vorne, z nach links, y nach oben). Das Teil
 modelliert: Achse bei x = 80, y = 33,8, Rad Ø 85 × 36 mm, Innenseite bei z = 95,9.
 
 Aufbau:
-  * Bogen über dem Rad: Innenradius 47 mm (4,5 mm Luft zum Reifen), 2,4 mm dick, von −60° bis +60° (die Enden
-    liegen auf Höhe der Fuge Wanne/Deck), in z von der Gehäusewand (z = 90) bis 4 mm über die Außenseite des Rads.
+  * Bogen über dem Rad, ECKIG (facettiert, passend zum Rover-Design): flaches Dach, schräge Schultern, steile Flanken.
+    Jede Fläche hat 47 mm Abstand von der Achse (mindestens 4,5 mm Luft zum Reifen), 2,4 mm dick, unten endet er auf Höhe
+    der Fuge Wanne/Deck, in z von der Gehäusewand (z = 90) bis 4 mm über die Außenseite des Rads.
     Außen ein nach innen gezogener Rand (2 mm, unten 45° schräg) – sieht fertig aus und macht den Bogen steifer.
   * Flansch an der Gehäusewand: 6 mm dick, folgt dem Bogen. Er liegt am Gehäuse-Ring von Ebene 2 an (y 61 … 84)
     und wird mit 2 × M3 × 10 von außen in zwei Schraubsäulen des Rings geschraubt (Kopf bündig im Flansch).
@@ -34,7 +35,10 @@ WAND_Z = 90.0                            # Außenseite der Gehäusewand (B/2)
 BOGEN_RI = 47.0                          # Innenradius des Bogens (4,5 mm Luft zum Reifen)
 BOGEN_D = 2.4                            # Dicke des Bogens
 BOGEN_RA = BOGEN_RI + BOGEN_D            # 49,4
-BOGEN_WINKEL = 60.0                      # von −60° bis +60° (0° = senkrecht über der Achse)
+FACETTEN = [-62.0, -30.7, 0.0, 30.7, 62.0]   # Richtungen der Flächen (0° = Dach, Winkel ab senkrecht). Die Schultern zeigen genau
+                                         # auf die Schrauben – so kommt der Schraubendreher außen am Bogen vorbei
+ENDE_WINKEL = 75.0                       # so weit laufen die Flanken (unten schneidet die Fuge Wanne/Deck ab)
+BOGEN_UNTEN = 58.5                       # Unterkante des Bogens (Fuge Wanne/Deck)
 BOGEN_Z1 = RAD_AUSSEN + 4.0              # außen 4 mm über die Außenseite des Rads
 RAND_B = 2.0                             # Rand außen: 2 mm nach innen gezogen
 
@@ -69,30 +73,47 @@ def quader(x0, x1, y0, y1, z0, z1):
     return P((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2) * Box(abs(x1 - x0), abs(z1 - z0), abs(y1 - y0))
 
 
-def sektor(r, winkel, z0, z1):
-    """Tortenstück um die Radachse (Spitze in der Achse), von −winkel bis +winkel, in z von z0 bis z1."""
-    pts = [(RAD_X, ACHSE)] + [(RAD_X + r * math.sin(math.radians(a)), ACHSE + r * math.cos(math.radians(a)))
-                              for a in [-winkel + i * 2 * winkel / 48 for i in range(49)]]
-    flaeche = Plane.XZ * Polygon(*pts, align=None)            # Plane.XZ: (u, v) = (x, y)
-    return Pos(0, -z1, 0) * extrude(flaeche.face(), z1 - z0)   # Extrusion geht in +Y (= −z), daher bei −z1 beginnen
+def kontur(r):
+    """Eckige Kontur um die Radachse: Flächen in den Richtungen FACETTEN, jede im Abstand r von der Achse.
+    Fläche (in der x/y-Ebene) mit der Spitze in der Achse, Enden auf den Strahlen ±ENDE_WINKEL."""
+    def richtung(a):
+        return math.sin(math.radians(a)), math.cos(math.radians(a))
+    def schnitt(a, b):           # Schnittpunkt der Flächen mit den Richtungen a und b
+        (s1, c1), (s2, c2) = richtung(a), richtung(b)
+        det = s1 * c2 - s2 * c1
+        x, y = (r * c2 - r * c1) / det, (s1 * r - s2 * r) / det
+        return RAD_X + x, ACHSE + y
+    def strahl(a, b):            # Strahl in Richtung a trifft die Fläche b
+        (sx, cx), (s2, c2) = richtung(a), richtung(b)
+        tt = r / (sx * s2 + cx * c2)
+        return RAD_X + tt * sx, ACHSE + tt * cx
+    pts = [(RAD_X, ACHSE), strahl(-ENDE_WINKEL, FACETTEN[0])]
+    pts += [schnitt(FACETTEN[i], FACETTEN[i + 1]) for i in range(len(FACETTEN) - 1)]
+    pts += [strahl(ENDE_WINKEL, FACETTEN[-1])]
+    return Plane.XZ * Polygon(*pts, align=None)              # Plane.XZ: (u, v) = (x, y)
+
+
+def sektor(r, z0, z1):
+    """Eckige Kontur mit Abstand r als Körper von z0 bis z1."""
+    return Pos(0, -z1, 0) * extrude(kontur(r).face(), z1 - z0)   # Extrusion geht in +Y (= −z), daher bei −z1 beginnen
 
 
 def schutzblech():
     # Bogen: Ring zwischen RI und RA, von der Wand bis außen
-    bogen = sektor(BOGEN_RA, BOGEN_WINKEL, WAND_Z, BOGEN_Z1) - zyl_z(BOGEN_RI, RAD_X, ACHSE, WAND_Z - 1, BOGEN_Z1 + 1)
+    bogen = sektor(BOGEN_RA, WAND_Z, BOGEN_Z1) - sektor(BOGEN_RI, WAND_Z - 1, BOGEN_Z1 + 1)
     # Rand außen: nach innen gezogen (außen bleibt der Bogen glatt, dort muss der Schraubendreher vorbei).
     # Liegt ganz außerhalb des Reifens (ab dessen Außenseite), unten 45° schräg – druckt ohne Stützen.
     z_a = BOGEN_Z1 - 2.0
-    rand = zyl_z(BOGEN_RI + 0.1, RAD_X, ACHSE, RAD_AUSSEN, BOGEN_Z1)
-    rand -= P(RAD_X, ACHSE, RAD_AUSSEN - 0.01) * Rot(90, 0, 0) * Cone(BOGEN_RI + 0.01, BOGEN_RI - RAND_B, z_a - RAD_AUSSEN + 0.02, align=None)
-    rand -= zyl_z(BOGEN_RI - RAND_B, RAD_X, ACHSE, z_a, BOGEN_Z1 + 1)
-    rand &= sektor(BOGEN_RA, BOGEN_WINKEL, RAD_AUSSEN - 1, BOGEN_Z1 + 1)
+    rand = sektor(BOGEN_RI + 0.1, RAD_AUSSEN, BOGEN_Z1)
+    # 45°-Schräge: Kontur RI − RAND_B bei z_a, wächst nach innen (zur Wand hin) auf RI
+    rand -= Pos(0, -z_a, 0) * extrude(kontur(BOGEN_RI - RAND_B).face(), z_a - RAD_AUSSEN + 0.01, taper=-45)
+    rand -= sektor(BOGEN_RI - RAND_B, z_a - 0.01, BOGEN_Z1 + 1)
     # Flansch an der Wand
-    flansch = sektor(FLANSCH_RA, 89.0, WAND_Z, WAND_Z + FLANSCH_D) - zyl_z(BOGEN_RI, RAD_X, ACHSE, WAND_Z - 1, WAND_Z + FLANSCH_D + 1)
+    flansch = sektor(FLANSCH_RA, WAND_Z, WAND_Z + FLANSCH_D) - sektor(BOGEN_RI, WAND_Z - 1, WAND_Z + FLANSCH_D + 1)
     flansch &= quader(RAD_X - FLANSCH_X, RAD_X + FLANSCH_X, FLANSCH_Y[0], FLANSCH_Y[1], WAND_Z - 1, WAND_Z + FLANSCH_D + 1)
     teil = bogen + rand + flansch
     # Bogen oben nicht über die Trennfuge zur Haube
-    teil &= quader(RAD_X - 80, RAD_X + 80, 0, FLANSCH_Y[1], WAND_Z - 1, BOGEN_Z1 + 1)
+    teil &= quader(RAD_X - 80, RAD_X + 80, BOGEN_UNTEN, FLANSCH_Y[1], WAND_Z - 1, BOGEN_Z1 + 1)
     # Schraubenlöcher mit Senkung (Kopf bündig)
     for k in (-1, 1):
         x = RAD_X + k * SCHRAUBE_DX

@@ -136,25 +136,17 @@ Jeder Motor braucht ein **eigenes PWM-Paar** des Pico: Je zwei GPIOs teilen sich
 | violett | Pico GP13 (Pin 17) | VL53L1X vorne XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 | violett | Pico GP12 (Pin 16) | VL53L1X hinten XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 
-### Status-LEDs
-
-| Farbe | Von | Nach | Zweck |
-|---|---|---|---|
-| grün | Pico GP28 (Pin 34) | LED-Streifen DIN | Daten (GP28) |
-| rot | MP1584 OUT+ | LED-Streifen 5V | 5 V für die LEDs |
-| schwarz | Pico GND (Pin 13) | LED-Streifen GND | Masse LEDs |
-
 ### Front- und Rücklicht
 
-Zwei WS2812B-Leisten mit je 8 LEDs (53 × 10 mm) unten in der Vorder- und Rückwand der Haube. Sie hängen in derselben Kette
-hinter den 4 Status-LEDs (Nummern 4–11 vorne, 12–19 hinten). Alle Leitungen angelötet, entlang des Dachs mit Klebesockeln geführt.
-Zusammen bis ca. 1,2 A bei voll Weiß – die Software begrenzt die Helligkeit (`LED_HELL_MAX` in `pico/pins.py`).
+Zwei WS2812B-Leisten mit je 8 LEDs unten in der Vorder- und Rückwand der Haube, eine Kette an GP28 (Nummern 0–7 vorne,
+8–15 hinten). Status-LEDs gibt es nicht mehr – den Zustand zeigt das runde Display. Alle Leitungen angelötet, vom Deck durch
+Durchbruch A nach oben und entlang des Dachs mit Klebesockeln geführt. Zusammen bis ca. 1 A bei voll Weiß – die Software begrenzt die Helligkeit (`LED_HELL_MAX` in `pico/pins.py`).
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| grün | LED-Streifen DOUT | Frontlicht DIN | Daten weiter zum Frontlicht |
-| rot | LED-Streifen 5V (Ende) | Frontlicht 5V | 5 V weiter |
-| schwarz | LED-Streifen GND (Ende) | Frontlicht GND | Masse weiter |
+| grün | Pico GP28 (Pin 34) | Frontlicht DIN | Daten (GP28) |
+| rot | MP1584 OUT+ | Frontlicht 5V | 5 V für die Lichter |
+| schwarz | Pico GND (Pin 13) | Frontlicht GND | Masse Lichter |
 | grün | Frontlicht DOUT | Rücklicht DIN | Daten weiter zum Rücklicht |
 | rot | Frontlicht 5V (Ende) | Rücklicht 5V | 5 V weiter |
 | schwarz | Frontlicht GND (Ende) | Rücklicht GND | Masse weiter |
@@ -195,7 +187,7 @@ Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur *
 | 10 | GP7 | Motor vorne links B |
 | 11 | GP8 | Motor hinten links A |
 | 12 | GP9 | Motor hinten links B |
-| 13 | GND | LED-Streifen GND |
+| 13 | GND | Frontlicht GND |
 | 14 | GP10 | BNO085 SDA |
 | 15 | GP11 | BNO085 SCL |
 | 16 | GP12 | VL53L1X hinten XSHUT |
@@ -215,7 +207,7 @@ Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur *
 | 31 | GP26 | Motor hinten rechts A |
 | 32 | GP27 | Motor hinten rechts B |
 | 33 | GND | Motor hinten rechts GND |
-| 34 | GP28 | LED-Streifen DIN |
+| 34 | GP28 | Frontlicht DIN |
 | 36 | 3V3 | 3,3-V-Verteiler vorne Platz 1 |
 | 38 | GND | MP1584 OUT− |
 | 39 | VSYS | MP1584 OUT+ |

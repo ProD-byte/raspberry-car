@@ -15,7 +15,7 @@ Akku 2S2P ── B−/BM/B+ ── BMS 2S 20A Balance ─┤ P+/P−
                                                                     ┌──────────────┬───────┴──────┬──────────────┐
                                                                DRV8833 vorne  DRV8833 hinten   MP1584 5 V     Pololu 5 V/5,5 A
                                                                 (Motoren)       (Motoren)      → Pico VSYS     → Pi 5 (USB-C)
-                                                                                               → Status-LEDs
+                                                                                               → Front-/Rücklicht
 ```
 
 ## Wichtige Zahlen

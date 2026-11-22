@@ -146,7 +146,7 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
 
 | Datei | Anzahl | Maße | Druckrichtung | Hinweise |
 |---|---|---|---|---|
-| `ebene3/haube_vorne.stl` | 1 | 80 × 180 × 37 mm | **Dach nach unten** (aufs Bett) | Ohne Stützen. Kamera, Status-LEDs, Pololu, Schraubpolster vorne. |
+| `ebene3/haube_vorne.stl` | 1 | 80 × 180 × 37 mm | **Dach nach unten** (aufs Bett) | Ohne Stützen. Kamera, Frontlicht, Pololu, Schraubpolster vorne. |
 | `ebene3/haube_hinten.stl` | 1 | 180 × 180 × 37 mm (mit Scharnier-Lappen) | **Dach nach unten** | Ohne Stützen. Pi-Dome, 4G- und GPS-Tasche, Display, Scharnier-Lappen (mit 45°-Keil). |
 
 - **Form:** Vorder- und Rückwand senkrecht (vorne das Kamerafenster, hinten das Scharnier). Die Seiten sind unten 12 mm senkrecht und laufen dann schräg nach innen (oben je 7 mm schmaler), alle Dachkanten sind 45° abgeschrägt. Höhe 84 → 121 mm, mit LiDAR ca. 155 mm.
@@ -154,7 +154,6 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
   - **Raspberry Pi 5** mit Active Cooler und AI HAT+: Der Stapel hängt an 4 Domen. **M2,5 × 16 von oben** durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei), Köpfe bündig im Dach (Senkung mit Brücken-Trick). Unten hält der Pi mit den beiliegenden Schrauben. Ausnahme von „nur M3“, weil die Löcher des Pi nur 2,7 mm groß sind.
   - **Kamera Modul 3 Wide** vorne in zwei Nuten, von unten einschieben bis sie über eine kleine Nase schnappt. Fenster Ø 18 mm (gerade Kante unten), außen angefast.
   - **Pololu D36V50F5**, **4G-Modul** (Waveshare SIM7600G-H, nur die Platine, liegt flach; Stirnseiten offen für USB-Stecker und SMA-Buchse) und **GPS-Antenne** in Einklick-Taschen. Die GPS-Antenne empfängt durch das Dach.
-  - **Status-LEDs** (WS2812-Streifen) vorne in einer flachen Tasche, sie leuchten durch 4 Löcher Ø 3 mm.
   - **Rundes Display** hinten: Das Glas liegt von innen am Dach an und schaut durch ein Loch Ø 44,4 mm (außen angefast), 3 Schnapphaken halten die Platine.
   - **LiDAR LD19** oben auf dem Dach, Kabel durch ein Loch Ø 10 nach innen. Seine Befestigungslöcher kommen nach dem Nachmessen.
 - **Scharniere hinten:** zwei Scharniere außen an der Trennfuge, Achse 5,5 mm hinter der Rückwand und 5 mm über der Fuge. Je Scharnier zwei Lappen an der Haube, einer am Ring von Ebene 2, Achse **M3 × 18** (Gewinde im äußeren Lappen). Das Skript prüft in 10°-Schritten bis 100°, dass beim Aufklappen nichts anstößt.
@@ -170,19 +169,25 @@ Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufk
 ## Schutzbleche (`schutzblech.py` → `schutzbleche/`)
 
 - **Ein Druckteil, 4 × drucken:** passt an jedes Rad, für die rechte Seite einfach um 180° gedreht.
-- Bogen über dem Rad: Innenradius 47 mm (4,5 mm Luft zum 85-mm-Reifen), 2,4 mm dick, von −60° bis +60°; außen ein nach innen gezogener Rand.
-- Befestigt **am Gehäuse-Ring von Ebene 2** (nicht an der Wanne – die bleibt nach unten abnehmbar): 6 mm dicker Flansch, **2 × M3 × 10** von außen in zwei Schraubsäulen innen am Ring (Köpfe bündig). Die Schrauben sitzen 52,8 mm von der Achse – der Schraubendreher kommt am Rad vorbei (geprüft in `ebene2_elektronik.py`).
-- Druck: Flansch-Rückseite aufs Bett, Bogen senkrecht nach oben, ohne Stützen. Farbe nach Wunsch (im Modell orange wie die Kante des Decks).
+- **Eckiger Bogen** (Rover-Design): flaches Dach, schräge Schultern, steile Flanken. Jede Fläche 47 mm von der Achse (mindestens 4,5 mm Luft zum 85-mm-Reifen), 2,4 mm dick; außen ein nach innen gezogener Rand.
+- Befestigt **am Gehäuse-Ring von Ebene 2** (nicht an der Wanne – die bleibt nach unten abnehmbar): 6 mm dicker Flansch, **2 × M3 × 10** von außen in zwei Schraubsäulen innen am Ring (Köpfe bündig). Die Schultern zeigen genau auf die Schrauben – der Schraubendreher kommt außen am Bogen und am Rad vorbei (geprüft in `ebene2_elektronik.py`).
+- Druck: Flansch-Rückseite aufs Bett, Bogen senkrecht nach oben, ohne Stützen. **Orange.**
 
 ## Front- und Rücklicht (in `ebene3_gehirn.py`)
 
-- Je eine **WS2812B-Leiste mit 8 LEDs (53 × 10 mm)** unten in der Vorder- und Rückwand der Haube, LEDs zur Wand.
-- Die LEDs liegen in einer Tasche; außen bleiben **0,8 mm** Kunststoff, durch die helles PETG leuchtet (außen eine flache Lichtband-Mulde). Deshalb die Haube in **hellem PETG** (weiß / hellgrau) drucken.
-- Einbau: Haube aufklappen, Leiste von unten zwischen die zwei Pfosten schieben, bis sie oben anschlägt – eine kleine Nase hält sie. Vorne läuft sie unter der Kamera durch.
+- Je eine **WS2812B-Leiste mit 8 LEDs** unten in der Vorder- und Rückwand der Haube, LEDs zur Wand.
+- Vor jeder LED ein kleines Fenster (4,6 × 3 mm) durch die Wand – von außen eine **Pixel-Linie** in einer flachen Mulde. Innen davor liegt eine **Streuscheibe** (`ebene3/streuscheibe.stl`, 2 Stück, 1 mm dick, **Natur- oder Weiß-PETG**), auf die die LEDs drücken. So darf die Haube dunkel sein.
+- Einbau: Haube aufklappen, Streuscheibe in die Vertiefung legen, Leiste von unten zwischen die zwei Pfosten schieben, bis sie oben anschlägt – eine kleine Nase hält sie. Vorne läuft sie unter der Kamera durch.
+- Maße der Leiste nach der Lieferung nachmessen (`LICHT_L`, `LICHT_H`) – die Angaben der Händler schwanken.
 
-## Farben (Vorschlag)
+## Farben (Rover-Design)
 
-Damit das Auto nicht nach Brotdose aussieht: **Wanne dunkel** (Anthrazit / Schwarz), **Elektronik-Deck orange** – seine 3 mm dicke Kante ist von außen der Farbstreifen zwischen Wanne und Ring –, **Ring und Haube hell** (Hellgrau / Weiß, die Haube muss hell sein, damit die Lichter durchscheinen), **Schutzbleche orange**.
+Dunkler Rover mit orangen Akzenten – jedes Teil hat nur eine Farbe, kein Mehrfarbdruck:
+- **Wanne:** Graphit dunkel (Anthrazit / Schwarz)
+- **Gehäuse-Ring und Haube:** Graphit / Dunkelgrau (gerne eine Spur heller als die Wanne)
+- **Elektronik-Deck:** Orange – seine 3 mm dicke Kante ist von außen der Farbstreifen zwischen Wanne und Ring
+- **Schutzbleche:** Orange
+- **Streuscheiben:** Natur oder Weiß (das Licht muss hindurch)
 
 ## Befestigung der Bauteile (Löcher für die Platten)
 

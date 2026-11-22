@@ -12,7 +12,7 @@ Gebaut wird nur aus Standardmodulen, verbunden mit Schraubklemmen, Lötstellen u
 
 | Ebene | Inhalt | Warum dort |
 |---|---|---|
-| 3 · Gehirn mit Dach (Klapphaube) | Raspberry Pi 5 + Active Cooler + AI HAT+, Kamera Modul 3 Wide, Pololu 5 V/5,5 A, 4G/GPS-Modul, GPS-Antenne, Status-LEDs, rundes Status-Display (Touch, Mikrofon, Lautsprecher) – alles hängt am Dach; oben der 360°-LiDAR LD19 | Rechenleistung, Belüftung, Kamera vorne, Rundumsicht; klappt hinten auf, dann liegt Ebene 2 offen |
+| 3 · Gehirn mit Dach (Klapphaube) | Raspberry Pi 5 + Active Cooler + AI HAT+, Kamera Modul 3 Wide, Pololu 5 V/5,5 A, 4G/GPS-Modul, GPS-Antenne, Front- und Rücklicht, rundes Status-Display (Touch, Mikrofon, Lautsprecher) – alles hängt am Dach; oben der 360°-LiDAR LD19 | Rechenleistung, Belüftung, Kamera vorne, Rundumsicht; klappt hinten auf, dann liegt Ebene 2 offen |
 | 2 · Antrieb | Pico 2 W auf Freenove-Board, 2× DRV8833, MP1584, BNO085, 2× 3,3-V-Verteiler, Ladeboard, Hauptschalter | Echtzeit-Steuerung, kurze Wege, vier Grifflöcher über den Motorsteckern |
 | 1 · Fahrwerk & Energie | 4× JGA25-370 mit Encoder + Räder (außen, Radstand 160 mm), Akku 2S2P und die Stromversorgung in der Wanne: BMS, INA226, Sicherung und Verteiler; 2× VL53L1X innen hinter Fenstern vorne und hinten | Schwerpunkt ganz unten |
 

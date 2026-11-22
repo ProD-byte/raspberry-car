@@ -73,7 +73,7 @@ Ohne Akku läuft nur der Pico (über USB): Joystick-Seite und Encoder lassen sic
 
 ## Druckteile
 
-Alle Ebenen in derselben Außenform 250 × 180 mm, jede aus zwei Hälften, Räder außen (Radstand 160 mm). Druckhinweise und Zusammenbau: `gehaeuse/README.md`. Alle drei Ebenen sind neu (seit 22.11.2026).
+Alle Ebenen in derselben Außenform 250 × 180 mm, jede aus zwei Hälften, Räder außen (Radstand 160 mm). Druckhinweise und Zusammenbau: `gehaeuse/README.md`. Alle drei Ebenen sind neu (seit 22.11.2026). **Farben (Rover-Design):** Wanne, Ring und Haube Graphit/Dunkelgrau, Elektronik-Deck und Schutzbleche Orange, Streuscheiben Natur/Weiß.
 
 | Status | Teil | Datei | Anzahl | Hinweis |
 |---|---|---|---|---|
@@ -84,9 +84,10 @@ Alle Ebenen in derselben Außenform 250 × 180 mm, jede aus zwei Hälften, Räde
 | ⬜ | Elektronik-Deck hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/platte_hinten.stl` | 1 | zugleich Deckel der Wanne: Pico, Kompass, Motorzone hinten, Ladeboard |
 | ⬜ | Gehäuse-Ring vordere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_vorne.stl` | 1 | mit den Laschen für die Schrauben der Klapphaube |
 | ⬜ | Gehäuse-Ring hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_hinten.stl` | 1 | Scharnier, Loch für den Hauptschalter, Ausschnitt für USB-C |
-| ⬜ | Klapphaube vordere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_vorne.stl` | 1 | Kamera, Frontlicht, Status-LEDs, Pololu, oben der LiDAR |
+| ⬜ | Klapphaube vordere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_vorne.stl` | 1 | Kamera, Frontlicht, Pololu, oben der LiDAR |
 | ⬜ | Klapphaube hintere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_hinten.stl` | 1 | Pi 5 mit AI HAT+, 4G, GPS, rundes Display, Rücklicht, Scharnier |
-| ⬜ | Schutzblech | `gehaeuse/schutzbleche/schutzblech.stl` | 4 | Dasselbe Teil an allen vier Rädern (rechts um 180° gedreht). Je 2 × M3 × 10 von außen in die Schraubsäulen des Gehäuse-Rings. Farbe nach Wunsch (im Modell orange) |
+| ⬜ | Schutzblech | `gehaeuse/schutzbleche/schutzblech.stl` | 4 | Eckig, dasselbe Teil an allen vier Rädern (rechts um 180° gedreht). Je 2 × M3 × 10 von außen in die Schraubsäulen des Gehäuse-Rings. **Orange** |
+| ⬜ | Streuscheibe | `gehaeuse/ebene3/streuscheibe.stl` | 2 | Für Front- und Rücklicht, 1 mm dick, **Natur- oder Weiß-PETG** |
 | ⬜ | **Prüfstand** (Werkzeug, kommt nicht ins Auto) | `gehaeuse/pruefstand/pruefstand.stl` | 1 | 112 × 112 mm, ein Teil, ohne Schrauben, ca. 98 cm³. Wie eine Hebebühne: 4 Zapfen rasten in die 4 Kerben unten in der Wanne. Räder hängen frei, zum Testen von Motoren und Software |
 
 Kamerahalter und Ebene 3/4 folgen.

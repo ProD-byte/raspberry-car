@@ -1,7 +1,7 @@
 """Raspberry Car – Ebene 3: Gehirn mit Dach (Klapphaube)
 
 Die oberste Ebene ist eine HAUBE: Seitenwände und Dach in einem, unten offen. Alles hängt am Dach
-(Raspberry Pi 5 mit AI HAT+, Kamera, Pololu, 4G-Modul, GPS-Antenne, Status-LEDs, rundes Display),
+(Raspberry Pi 5 mit AI HAT+, Kamera, Pololu, 4G-Modul, GPS-Antenne, rundes Display, Front- und Rücklicht),
 oben auf dem Dach steht der LiDAR. Die Haube klappt hinten an zwei Scharnieren nach hinten auf –
 dann liegt Ebene 2 offen. Alle Maße in mm. Erzeugt STL und STEP in gehaeuse/ebene3/.
 
@@ -22,9 +22,8 @@ Was darin hängt (alles am Dach, die Haube wird mit dem Dach nach unten gedruckt
   * Kamera Modul 3 Wide vorne in zwei Nuten, schaut durch ein Fenster in der Vorderwand.
   * Pololu D36V50F5 und das 4G-Modul (Waveshare SIM7600G-H, nur die Platine) in Einklick-Taschen unter dem Dach.
   * GPS-Keramikantenne in einer Tasche unter dem Dach (Kunststoff lässt das Signal durch).
-  * Status-LEDs (WS2812-Streifen) vorne unter dem Dach, sie leuchten durch 4 Löcher.
-  * Front- und Rücklicht: je eine WS2812B-Leiste (8 LEDs) unten in Vorder- und Rückwand, LEDs in einer Tasche hinter
-    0,8 mm Wand (helles PETG leuchtet durch), von unten zwischen zwei Pfosten geschoben.
+  * Front- und Rücklicht: je eine WS2812B-Leiste (8 LEDs) unten in Vorder- und Rückwand, vor jeder LED ein Pixel-Fenster,
+    innen eine Streuscheibe (eigenes Druckteil, Natur-PETG), Leiste von unten zwischen zwei Pfosten geschoben.
   * Rundes Display (ESP32-S3-Touch-AMOLED-1.75) hinten: Das Glas liegt von innen am Dach an und schaut
     durch ein rundes Loch, 3 Schnapphaken halten die Platine.
   * LiDAR LD19 oben auf dem Dach, Kabel durch ein Loch nach innen (Befestigungslöcher erst nach dem Nachmessen).
@@ -79,16 +78,18 @@ TASCHEN = [
     ("GPS-Antenne", -80.0, -55.0, 25.0, 25.0, 0.0, 6.0),
 ]
 LTE_USB_X = -18.85 - 41.15 - 15.3        # Ende des USB-A-Steckers (hinten)
-LED = (101.0, 0.0, 6.0, 34.0)            # WS2812-Streifen (x, z, Breite, Länge), leuchtet durch 4 Löcher im Dach
-LED_LOECHER = [-12.0, -4.0, 4.0, 12.0]
 # Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm, LEDs zur Wand) unten in der Vorder- und Rückwand.
-# Die LEDs liegen in einer Tasche der Wand, außen bleiben 0,8 mm – helles PETG leuchtet hindurch (außen eine flache Lichtband-Mulde).
+# Rover-Design (dunkle Haube): vor jeder LED ein kleines Fenster durch die Wand („Pixel-Linie“), innen davor eine 1 mm dünne
+# Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG), auf die die LEDs drücken. Außen eine flache Mulde um die Pixel-Reihe.
 # Die Leiste wird von unten (Haube offen) zwischen zwei Pfosten geschoben; hinten hält sie eine Lippe, unten eine kleine Nase.
 LICHT_L, LICHT_H, LICHT_PCB, LICHT_LED = 53.0, 10.0, 1.6, 1.6
 LICHT_OBEN = UNTEN + 11.2                # 95,2: Oberkante der Leiste (Anschlag in den Pfosten)
 LICHT_Y = LICHT_OBEN - LICHT_H / 2       # 90,2: Mitte der LED-Reihe
-LICHT_TASCHE = (1.0, 26.0, 3.4)          # Tasche in der Wand von innen: Tiefe, halbe Länge, halbe Höhe (LEDs 5 × 5 mm)
-LICHT_MULDE = (0.6, 28.0, 4.5)           # außen: Tiefe, halbe Länge, halbe Höhe (Enden rund)
+STREU = (1.0, 26.9, 4.4)                 # Streuscheibe (eigenes Druckteil, Natur-/Weiß-PETG): Dicke, halbe Länge, halbe Höhe
+STREU_LUFT = 0.2                         # Luft rundum in der Vertiefung
+LICHT_PIXEL = (4.6, 3.0)                 # 8 Fenster durch die Wand, eins vor jeder LED: Breite (z) × Höhe (y) – oben/unten nur 4,6 mm Brücke
+LICHT_TEILUNG = 6.35                     # Abstand der LEDs auf der Leiste
+LICHT_MULDE = (0.4, 28.0, 4.5)           # außen: flache Mulde um die Pixel-Reihe – Tiefe, halbe Länge, halbe Höhe (Enden rund)
 DISPLAY = (-92.0, 0.0)                   # Mitte des runden Displays
 DISPLAY_SICHT, DISPLAY_GLAS, DISPLAY_PCB = 44.4, 48.96, 46.0
 DISPLAY_PCB_UNTEN = DACH_UNTEN - 6.9     # Unterseite der Platine (Zeichnung Waveshare)
@@ -225,7 +226,7 @@ def licht(s, nur_ausschnitt=False):
     """Halter für eine WS2812B-Leiste an der Vorder- (s = +1) bzw. Rückwand (s = −1). Gibt (Zugabe, Ausschnitt) zurück,
     wenn nur_ausschnitt False ist, wird nur die Zugabe (Pfosten) geliefert – der Ausschnitt kommt über licht_ausschnitt()."""
     xi = s * (X_VORNE - WAND)                      # Wand-Innenseite
-    lippe = xi - s * (LICHT_LED + LICHT_PCB - 0.9 + 0.1)   # LEDs 0,9 mm in der Tasche, Rückseite der Leiste + 0,1 Luft
+    lippe = xi - s * (LICHT_LED + LICHT_PCB + 0.1)   # LEDs drücken auf die Streuscheibe (bündig mit der Wand-Innenseite), + 0,1 Luft
     zugabe = None
     for sz in (1, -1):
         # Pfosten: von unten bis über die Leiste, oben 45° zur Wand (druckt mit dem Dach nach unten ohne Stützen)
@@ -235,6 +236,9 @@ def licht(s, nur_ausschnitt=False):
         pf = Pos(0, -(z0 + z1) / 2, 0) * extrude(prof.face(), abs(z1 - z0) / 2, both=True)
         # Platz für die Leiste: von der Lippe bis zur Wand, Ende 0,2 mm Luft, oben Anschlag bei LICHT_OBEN
         pf -= quader(lippe, xi + s * 0.01, UNTEN - 1, LICHT_OBEN, z0 - sz * 0.1, sz * (LICHT_L / 2 + 0.2))
+        # … und die Vertiefung der Streuscheibe bleibt frei
+        pf -= quader(xi - s * 0.02, xi + s * (STREU[0] + 0.01), LICHT_Y - STREU[2] - STREU_LUFT, LICHT_Y + STREU[2] + STREU_LUFT,
+                     z0 - sz * 0.1, sz * (STREU[1] + STREU_LUFT))
         # kleine Nase unten an der Lippe: die Leiste schnappt beim Einschieben darüber
         pf += quader(lippe, lippe + s * 0.4, LICHT_OBEN - LICHT_H - 0.9, LICHT_OBEN - LICHT_H - 0.3, z0, sz * (LICHT_L / 2 + 0.2))
         zugabe = pf if zugabe is None else zugabe + pf
@@ -245,13 +249,27 @@ def licht_ausschnitt(s):
     """Was für ein Licht aus der Haube weg muss: Platz für die Leiste (auch in den Kamera-Pfosten), Tasche in der Wand, Mulde außen."""
     xi = s * (X_VORNE - WAND)
     xa = s * X_VORNE
-    lippe = xi - s * (LICHT_LED + LICHT_PCB - 0.9 + 0.1)
-    td, tl, th = LICHT_TASCHE
+    lippe = xi - s * (LICHT_LED + LICHT_PCB + 0.1)
+    sd, sl, sh = STREU
     md, ml, mh = LICHT_MULDE
+    pb, ph = LICHT_PIXEL
     a = quader(lippe, xi, UNTEN - 1, LICHT_OBEN, -(LICHT_L / 2 + 0.2), LICHT_L / 2 + 0.2)
-    a += quader(xi - s * 0.01, xi + s * td, LICHT_Y - th, LICHT_Y + th, -tl, tl)
+    # Vertiefung für die Streuscheibe (von innen)
+    a += quader(xi - s * 0.01, xi + s * sd, LICHT_Y - sh - STREU_LUFT, LICHT_Y + sh + STREU_LUFT, -sl - STREU_LUFT, sl + STREU_LUFT)
+    # 8 Pixel-Fenster durch den Rest der Wand
+    for i in range(8):
+        zc = (i - 3.5) * LICHT_TEILUNG
+        a += quader(xi + s * (sd - 0.01), xa + s * 1.0, LICHT_Y - ph / 2, LICHT_Y + ph / 2, zc - pb / 2, zc + pb / 2)
     a += P(xa + s * 0.01, LICHT_Y, 0) * Rot(0, -90 * s, 0) * extrude(RectangleRounded(2 * mh, 2 * ml, mh - 0.01), md + 0.01, taper=45)   # Rand 45° – druckt sauber
     return a
+
+
+def streuscheibe():
+    """Streuscheibe für ein Licht (2 Stück drucken, Natur- oder Weiß-PETG): liegt innen in der Vertiefung vor den Pixel-Fenstern.
+    Modelliert an der Vorderwand."""
+    sd, sl, sh = STREU
+    xi = X_VORNE - WAND
+    return quader(xi, xi + sd, LICHT_Y - sh, LICHT_Y + sh, -sl, sl)
 
 
 def scharnier_lappen():
@@ -301,14 +319,9 @@ def haube():
     pts = [(r * math.cos(math.radians(d)), KAM_OBJ_Y + r * math.sin(math.radians(d))) for d in range(-45, 226, 5)]
     fen = Plane.YZ * Polygon(*pts, align=None)
     teil -= Pos(X_VORNE - WAND / 2, 0, 0) * extrude(fen.face(), WAND, both=True)
-    teil -= P(X_VORNE + 0.01, KAM_OBJ_Y, 0) * Rot(0, -90, 0) * extrude(Rectangle(KAM_FENSTER + 3, KAM_FENSTER + 3), 1.5, taper=45)
-
-    # Status-LEDs: flache Tasche unter dem Dach, 4 Löcher Ø 3 nach oben
-    lx, lz, lb, ll = LED
-    teil += quader(lx - lb / 2 - TWAND, lx + lb / 2 + TWAND, DACH_UNTEN - 2.5, DACH_UNTEN + 0.1, lz - ll / 2 - TWAND, lz + ll / 2 + TWAND)
-    teil -= quader(lx - lb / 2, lx + lb / 2, DACH_UNTEN - 2.6, DACH_UNTEN - 1.0, lz - ll / 2, lz + ll / 2)
-    for z in LED_LOECHER:
-        teil -= zyl_y(1.5, lx, lz + z, DACH_UNTEN - 1.1, DACH_OBEN + 1)
+    # Fase außen in derselben Form wie das Fenster (rund mit gerader Kante unten), 1,5 mm breit, 45°
+    fase = P(X_VORNE + 0.01, KAM_OBJ_Y, 0) * Rot(0, -90, 0) * Cone(r + 1.51, r, 1.51, align=None)   # runde 45°-Fase, nach innen enger
+    teil -= fase & quader(X_VORNE - 3, X_VORNE + 1, KAM_OBJ_Y - r * math.sin(math.radians(45)), KAM_OBJ_Y + r + 3, -r - 3, r + 3)   # unten bleibt die gerade Kante
 
     # Display: rundes Sichtloch im Dach (außen angefast), 3 Schnapphaken halten die Platine von unten
     dx, dz = DISPLAY
@@ -438,9 +451,7 @@ def pruefen(haube_teil, ring_teile):
     rechtecke.append(("4G: USB-Stecker + Kabel", LTE_USB_X - 20, -18.85 - 41.15 - LUFT - TWAND, 46.0, 66.0))
     rechtecke.append(("4G: SMA-Buchse", -18.85 + 41.15 + LUFT + TWAND, -18.85 + 41.15 + 9.5, 52.0, 60.0))
     rechtecke.append(("Raspberry Pi 5 + AI HAT+", PI_X - 42.5 - 3, PI_X + 42.5, -28.0, 28.0))
-    rechtecke.append(("Kamera", KAM_X - KAM_T - 3, X_VORNE - WAND - 5.0, -KAM_B / 2 - 3.5, KAM_B / 2 + 3.5))   # vorderster Teil der Pfosten: unter der Kamera geht das Frontlicht durch (Höhe geprüft unten)
-    lx, lz, lb, ll = LED
-    rechtecke.append(("Status-LEDs", lx - lb / 2 - TWAND, lx + lb / 2 + TWAND, lz - ll / 2 - TWAND, lz + ll / 2 + TWAND))
+    rechtecke.append(("Kamera", KAM_X - KAM_T - 3, X_VORNE - WAND - 5.3, -KAM_B / 2 - 3.5, KAM_B / 2 + 3.5))   # vorderster Teil der Pfosten: unter der Kamera geht das Frontlicht durch (Höhe geprüft unten)
     dx, dz = DISPLAY
     rr = DISPLAY_PCB / 2 + 2.0
     rechtecke.append(("Display mit Haken", dx - rr, dx + rr, dz - rr, dz + rr))
@@ -448,7 +459,7 @@ def pruefen(haube_teil, ring_teile):
     rechtecke.append(("LiDAR-Kabelloch", kx - kd / 2, kx + kd / 2, kz - kd / 2, kz + kd / 2))
     for s, nm in ((1, "Frontlicht"), (-1, "Rücklicht")):
         xi = s * (X_VORNE - WAND)
-        x0, x1 = sorted((xi, xi - s * 5.0))
+        x0, x1 = sorted((xi, xi - s * 5.3))
         rechtecke.append((f"{nm} (Leiste + Pfosten)", x0, x1, -(LICHT_L / 2 + 3.5), LICHT_L / 2 + 3.5))
     rechtecke += [(f"Lasche/Polster {z}", LASCHE_X0 - 0.5, X_VORNE - WAND, z - 7, z + 7) for z in VORNE_Z]
     rechtecke.append(("Flansch hinten (mit Schraubenköpfen)", FUGE - FLANSCH_D - 3.5, FUGE, -B / 2, B / 2))
@@ -492,7 +503,9 @@ if __name__ == "__main__":
                 ("Kamera", KAM_X - KAM_T - 4, X_VORNE - WAND, KAM_UNTEN - 3, DACH_UNTEN, -17, 17),
                 ("Display", DISPLAY[0] - 26, DISPLAY[0] + 26, DISPLAY_PCB_UNTEN - 3, DACH_UNTEN, -26, 26)]
     zugang_pruefen(schr, [("Haube", vorne + hinten)], bauteile)
-    for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten)):
+    sc = streuscheibe()
+    print("Streuscheibe passt in die Vertiefung (berührt die Haube nicht):", "ja" if (sc & (vorne + hinten)).volume < 0.01 else "NEIN")
+    for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten), ("streuscheibe", sc)):
         export_stl(t, str(AUS / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
         export_step(t, str(AUS / f"{name}.step"))
         bb = t.bounding_box()

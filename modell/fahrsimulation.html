@@ -227,9 +227,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122181107"></script>
+<script src="teile/teile.js?v=20261122185623"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122181107"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122185623"></script>
 <script>
 // Fahrsimulation: Fahrwerk (Ebene 1) auf Gelände. Einfache, gut nachvollziehbare Physik (keine Physik-Bibliothek):
 // Panzerlenkung mit Schlupf, Auflage auf 3 oder 4 Rädern, Bodenfreiheit, Stufen, Steigung, Kippen, Stromschätzung.
@@ -567,10 +567,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const BESCHR = ' Zusammen tragen sie Motoren, Akku und die Stromversorgung. Die Wanne ist 250 × 180 mm groß und aus zwei Hälften gedruckt; die Fuge liegt quer bei x = 6. Die vordere Hälfte greift mit drei Laschen (an beiden Seitenwänden und in der Mitte) in die hintere, verschraubt mit 6 × M3 (seitlich je 2 × M3 × 10 von außen, Kopf bündig; in der Mitte 2 × M3 × 16 von innen).';
       const g = part(L0, 'Fahrwerk-Wanne vordere Hälfte (Druckteil)', 'Vordere Hälfte der Wanne: Vorderachse mit 2 Motoren, BMS, Sicherung, INA226 und die beiden Verteiler, vorne der Nahsensor. Datei: gehaeuse/ebene1/wanne_vorne.stl.' + BESCHR, 0, 0, 0);
       g.userData.druckteil = 'wanne';
-      cadTeil('e1_wanne_vorne', g, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x3d4247).convertSRGBToLinear(); mat.roughness = 0.7; });
+      cadTeil('e1_wanne_vorne', g, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x43484d).convertSRGBToLinear(); mat.roughness = 0.7; });
       const gh = part(L0, 'Fahrwerk-Wanne hintere Hälfte (Druckteil)', 'Hintere Hälfte der Wanne: Hinterachse mit 2 Motoren, der Akku (2 Halter hintereinander quer im Auto), hinten der Nahsensor. Datei: gehaeuse/ebene1/wanne_hinten.stl.' + BESCHR, 0, 0, 0);
       gh.userData.druckteil = 'wanne';
-      cadTeil('e1_wanne_hinten', gh, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x3d4247).convertSRGBToLinear(); mat.roughness = 0.7; });
+      cadTeil('e1_wanne_hinten', gh, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x43484d).convertSRGBToLinear(); mat.roughness = 0.7; });
       const b = part(L0, 'Motorbügel (4 × Druckteil)', 'Drückt den Motor in den Sattel der Wanne. Je 2 × M3-Zylinderkopfschraube, die sich das Gewinde selbst in die Wanne schneiden (Kernloch 2,6 mm). Datei: gehaeuse/ebene1/motorbuegel.stl (4 × drucken)', 0, 0, 0);
       b.userData.druckteil = 'buegel';
       cadTeil('e1_motorbuegel', b, new THREE.Group(), (m) => m);
@@ -732,8 +732,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       return add(p, geo, std(color, { rough: 0.5 }));
     }
     const deckFarbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; };
-    const ringFarbe = (mat) => { mat.color.set(0xcfd4d8).convertSRGBToLinear(); mat.roughness = 0.8; };
-    const haubeFarbe = (mat) => { mat.color.set(0xe6e9ec).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const ringFarbe = (mat) => { mat.color.set(0x575d63).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const haubeFarbe = (mat) => { mat.color.set(0x6a7178).convertSRGBToLinear(); mat.roughness = 0.8; };
     [['e2_platte_vorne', 'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)', 'deck'], ['e2_platte_hinten', 'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)', 'deck'],
      ['e2_ring_vorne', 'Gehäuse-Ring oben, vordere Hälfte (Druckteil)', 'ring'], ['e2_ring_hinten', 'Gehäuse-Ring oben, hintere Hälfte (Druckteil)', 'ring']].forEach(([datei, name, art]) => {
       const d = part(E2, name, 'Teil von Ebene 2 (Elektronik-Deck mit Ring). Einzelheiten: Werkstatt Ebene 2.', 0, 0, 0);
@@ -741,7 +741,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     });
     // Schutzbleche: 4 × dasselbe Druckteil (vorne links modelliert; rechts um 180° gedreht), am Ring von Ebene 2 verschraubt
     [[0, false], [-160, false], [160, true], [0, true]].forEach(([dx, rechts]) => {
-      const w = part(E2, 'Schutzblech (4 × Druckteil)', 'Kotflügel über dem Rad (gehaeuse/schutzblech.py): Bogen mit 4,5 mm Luft zum Reifen, außen ein nach innen gezogener Rand. Der 6 mm dicke Flansch liegt am Gehäuse-Ring von Ebene 2 an und wird mit 2 × M3 × 10 von außen in zwei Schraubsäulen des Rings geschraubt (Köpfe bündig) – nicht an der Wanne, die bleibt nach unten abnehmbar. Die Schrauben sitzen so weit außen, dass der Schraubendreher am Rad vorbeikommt. Viermal dasselbe Teil (rechts um 180° gedreht). Flansch-Rückseite aufs Bett, ohne Stützen. Datei: gehaeuse/schutzbleche/schutzblech.stl', dx, 0, 0);
+      const w = part(E2, 'Schutzblech (4 × Druckteil)', 'Kotflügel über dem Rad (gehaeuse/schutzblech.py): eckiger Bogen (flaches Dach, schräge Schultern, steile Flanken) mit mindestens 4,5 mm Luft zum Reifen, außen ein nach innen gezogener Rand. Der 6 mm dicke Flansch liegt am Gehäuse-Ring von Ebene 2 an und wird mit 2 × M3 × 10 von außen in zwei Schraubsäulen des Rings geschraubt (Köpfe bündig) – nicht an der Wanne, die bleibt nach unten abnehmbar. Die Schrauben sitzen so weit außen, dass der Schraubendreher am Rad vorbeikommt. Viermal dasselbe Teil (rechts um 180° gedreht). Flansch-Rückseite aufs Bett, ohne Stützen. Datei: gehaeuse/schutzbleche/schutzblech.stl', dx, 0, 0);
       w.userData.druckteil = 'ring'; if (rechts) w.rotation.y = Math.PI;
       cadTeil('schutzblech', w, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.6; mat.metalness = 0; });
     });
@@ -932,7 +932,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     }
     drv('V', 80, 'vorne'); drv('H', -80, 'hinten');
     (function mp1584() {
-      const g = part(E2, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und die Status-LEDs. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -24, TOP[1], -62);
+      const g = part(E2, 'Spannungswandler MP1584 (5 V)', 'Macht aus der Akkuspannung saubere 5 V für den Pico (über eine Schottky-Diode an VSYS) und das Front- und Rücklicht. Sitzt rechts neben dem Freenove-Board in einer Einklick-Tasche, direkt neben dem Strom-Durchbruch C – seine Spule macht ein Magnetfeld, deshalb ca. 7 cm weg vom Kompass. Er ist niedrig, die Kabel zu den Freenove-Klemmen gehen darüber.', -24, TOP[1], -62);
       pcb(g, 22, 17, '#264f9a', 0, 0, 0, (c, w, h) => {
         pad(c, 2, 3, 2.6, 2.6); pad(c, 2, h - 3, 2.6, 2.6); pad(c, w - 2, 3, 2.6, 2.6); pad(c, w - 2, h - 3, 2.6, 2.6);
         silk(c, 'IN+', 5.4, 3, 1.4, { align: 'center' }); silk(c, 'IN-', 5.4, h - 3, 1.4, { align: 'center' });
@@ -1143,18 +1143,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
       box(g, 30, 0.2, 2, 2, 0.8, 0, 0x6d6f72, { metal: 0.7 });
       anchor(`ANT_${k}`, g, -21.4, 0.5, 0, [-1, 0, 0], `LTE-Antenne ${nm}`);
     });
-    (function leds() {
-      const g = part(E3, 'Status-LEDs (WS2812, 4 Stück)', 'Zeigen an, ob das Auto bereit ist, fährt, lädt oder ein Problem hat. 5 V, GND und Daten vom Pico (GP28).', 101, LEVEL[3] - 2.6, 0);
-      box(g, 6, 1, 34, 0, 0, 0, 0x111214);
-      [-12, -4, 4, 12].forEach((z, k) => box(g, 5, 1.6, 5, 0, 1, z, 0xf4f4f4, { emissive: [0x2fe070, 0x2fe070, 0x2a9cff, 0x2fe070][k], ei: 0.9 }));
-      [['5V', -16.2], ['DIN', -14.2], ['GND', -12.2]].forEach(([n, z]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${n}`); });
-      [['GND2', 12.2, 'GND (Ende)'], ['DOUT', 14.2, 'DOUT'], ['5V2', 16.2, '5V (Ende)']].forEach(([n, z, l]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${l}`); });
-    })();
     // Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm) unten in der Vorder-/Rückwand der Haube (gehaeuse/ebene3_gehirn.py).
-    // LEDs zur Wand, in einer Tasche – außen bleiben 0,8 mm, helles PETG leuchtet hindurch. Kette: Status-LEDs → Frontlicht → Rücklicht.
-    [[1, 'FL', 'Frontlicht', 0xffffff, 'Nummer 4–11 in der Kette. Leuchtet weiß nach vorne (Scheinwerfer), kann auch blinken oder die Farbe zeigen, in die das Auto gleich abbiegt.'],
-     [-1, 'RL', 'Rücklicht', 0xff2a1a, 'Nummer 12–19 in der Kette. Leuchtet rot nach hinten, beim Bremsen heller, beim Rückwärtsfahren weiß.']].forEach(([s, k, nm, farbe, txt]) => {
-      const g = part(E3, `${nm} (WS2812B-Leiste, 8 LEDs)`, `${txt} Platine ca. 51 × 10 mm (3D-Form: Adafruit NeoPixel Stick, die günstigen Nachbauten sind gleich aufgebaut – Maße nach der Lieferung nachmessen), die LEDs zeigen zur Wand und liegen in einer Tasche: außen bleiben 0,8 mm Kunststoff, durch die helles PETG leuchtet (außen eine flache Mulde als Lichtband). Wird bei offener Haube von unten zwischen zwei Pfosten geschoben, eine kleine Nase hält sie. 5 V, GND und Daten angelötet.`, s * 121.1, 90.2, 0);
+    // LEDs zur Wand, drücken auf eine Streuscheibe (Natur-PETG), davor 8 Pixel-Fenster in der Wand. Kette: GP28 → Frontlicht → Rücklicht.
+    [[1, 'FL', 'Frontlicht', 0xffffff, 'Nummer 0–7 in der Kette. Leuchtet weiß nach vorne (Scheinwerfer), kann auch blinken oder die Farbe zeigen, in die das Auto gleich abbiegt.'],
+     [-1, 'RL', 'Rücklicht', 0xff2a1a, 'Nummer 8–15 in der Kette. Leuchtet rot nach hinten, beim Bremsen heller, beim Rückwärtsfahren weiß.']].forEach(([s, k, nm, farbe, txt]) => {
+      const g = part(E3, `${nm} (WS2812B-Leiste, 8 LEDs)`, `${txt} Platine ca. 51 × 10 mm (3D-Form: Adafruit NeoPixel Stick, die günstigen Nachbauten sind gleich aufgebaut – Maße nach der Lieferung nachmessen), die LEDs zeigen zur Wand und drücken auf eine 1 mm dünne Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG). Davor hat die Wand 8 kleine Fenster, eins je LED – von außen eine leuchtende Pixel-Linie in einer flachen Mulde. Wird bei offener Haube von unten zwischen zwei Pfosten geschoben, eine kleine Nase hält sie. 5 V, GND und Daten angelötet.`, s * 120.2, 90.2, 0);
       // Platine: echtes CAD-Modell des Adafruit NeoPixel Stick (Nr. 1426, MIT), 50,8 × 10,16 mm, LEDs nach außen (zur Wand)
       const ersatz = new THREE.Group(); g.add(ersatz);
       box(ersatz, 1.6, 10, 53, 0, 0, 0, 0x16181a, { rough: 0.6 });
@@ -1166,7 +1159,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
         return w;
       }, (mat) => { mat.color.set(0x16181a).convertSRGBToLinear(); mat.roughness = 0.6; mat.metalness = 0; });
       for (let i = 0; i < 8; i++) box(g, 0.3, 5, 5, s * 2.3, 0, -22.225 + i * 6.35, 0xf4f4f4, { emissive: farbe, ei: 0.85 });   // leuchtende LED-Flächen
-      box(g, 0.1, 7.6, 54, s * 3.4, 0, 0, farbe, { emissive: farbe, ei: 0.9 });   // außen: die dünne Wand in der Mulde leuchtet
+      const st = part(g, 'Streuscheibe (2 × Druckteil)', 'Dünne Platte 53,8 × 8,8 × 1 mm aus Natur- oder Weiß-PETG: liegt innen in der Vertiefung vor den 8 Pixel-Fenstern, die LED-Leiste drückt sie an. Verteilt das Licht, damit jedes Fenster gleichmäßig leuchtet und man die LEDs nicht als Punkte sieht. Datei: gehaeuse/ebene3/streuscheibe.stl', s * 2.85, 0, 0);
+      st.userData.druckteil = 'e3';
+      box(st, 0.9, 8.6, 53.6, 0, 0, 0, 0xf2f0ea,   // 0,1 mm kleiner als die echte Scheibe: keine Fläche liegt genau auf einer Fläche der Haube (sonst flackert es)
+          { emissive: farbe, ei: 0.35, rough: 0.9 });
+      for (let i = 0; i < 8; i++) box(g, 0.1, 2.6, 4.2, s * 3.75, 0, (i - 3.5) * 6.35, farbe, { emissive: farbe, ei: 0.95 });   // die 8 Pixel-Fenster leuchten: Fläche mitten im Fenster, etwas kleiner – berührt keine Wand (kein Flackern)
       // Lötpunkte an den Enden auf der Rückseite: z > 0 Eingang (DIN), z < 0 Ausgang (DOUT)
       [['DIN', 24.5, 2.6, 'DIN'], ['5V', 24.5, 0, '5V'], ['GND', 24.5, -2.6, 'GND'], ['DOUT', -24.5, 2.6, 'DOUT'], ['5V2', -24.5, 0, '5V (Ende)'], ['GND2', -24.5, -2.6, 'GND (Ende)']].forEach(([n, z, y, l]) => {
         box(g, 0.3, 1.6, 1.8, -s * 0.95, y, z, 0xd8b46a, { metal: 0.8 });

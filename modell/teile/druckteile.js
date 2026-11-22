@@ -22,9 +22,15 @@
       richtung: 'Flach auf die große Seite legen.'
     },
     'Schutzblech (4 × Druckteil)': {
-      datei: 'schutzbleche/schutzblech', anzahl: 4, gramm: 17, filament: PETG + ' Farbe nach Wunsch – im Modell orange als Farbtupfer zur dunklen Wanne.', temp: PETG_TEMP,
+      datei: 'schutzbleche/schutzblech', anzahl: 4, gramm: 17, filament: PETG + ' Farbe: Orange (wie die Kante des Decks) – der Farbtupfer am dunklen Rover.', temp: PETG_TEMP,
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (dünner Bogen, wird dann ganz massiv) · 20 % Füllung · keine Stützen. Alle 4 auf einmal drucken. Schrauben: 2 × M3 × 10 je Blech.',
       richtung: 'Flansch-Rückseite (die an der Wand anliegt) aufs Bett, der Bogen steht senkrecht nach oben. Grundfläche 86 × 28 mm, 46 mm hoch.'
+    },
+    'Streuscheibe (2 × Druckteil)': {
+      datei: 'ebene3/streuscheibe', anzahl: 2, gramm: 1,
+      filament: 'PETG in Natur (transparent) oder Weiß – das Licht muss hindurch. Nicht in der dunklen Farbe der Haube drucken.', temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm (5 Schichten) · 100 % Füllung, Muster „konzentrisch“ oder „geradlinig“ · keine Stützen. Beide zusammen drucken.',
+      richtung: 'Flach aufs Bett (53,8 × 8,8 mm, 1 mm dick).'
     },
     'Prüfstand (Druckteil)': {
       datei: 'pruefstand/pruefstand', anzahl: 1, gramm: 125,

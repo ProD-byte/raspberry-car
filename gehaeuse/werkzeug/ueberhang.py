@@ -21,7 +21,7 @@ ORDNER = Path(__file__).resolve().parent.parent
 # Datei, Druckrichtung – wie in gehaeuse/README.md
 TEILE = [("ebene1/wanne_vorne.stl", "none"), ("ebene1/wanne_hinten.stl", "none"), ("ebene1/motorbuegel.stl", "+y"),
          ("ebene2/platte_vorne.stl", "none"), ("ebene2/platte_hinten.stl", "none"), ("ebene2/ring_vorne.stl", "none"), ("ebene2/ring_hinten.stl", "none"), ("ebene3/haube_vorne.stl", "flip"), ("ebene3/haube_hinten.stl", "flip"),
-         ("pruefstand/pruefstand.stl", "none"), ("schutzbleche/schutzblech.stl", "+y")]
+         ("pruefstand/pruefstand.stl", "none"), ("schutzbleche/schutzblech.stl", "+y"), ("ebene3/streuscheibe.stl", "+x")]
 STEIL = -0.74          # Flächen mit Normalen-z kleiner als das sind flacher als ca. 45° (nach unten)
 BRUECKE_MAX = 15.0     # längste erlaubte Brücke (mm)
 LOCH_MAX = 10.0        # runde Löcher in senkrechten Wänden bis zu diesem Durchmesser druckt jeder Drucker ohne Stützen
@@ -34,6 +34,8 @@ def pruefe(datei, dreh):
         m.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
     elif dreh == "+y":
         m.apply_transform(trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]))
+    elif dreh == "+x":
+        m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [0, 1, 0]))
     elif dreh == "-y":
         m.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
     bett = m.bounds[0][2]

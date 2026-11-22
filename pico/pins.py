@@ -44,13 +44,12 @@ ADR_INA226 = 0x40
 ADR_BNO085 = 0x4A
 
 # --- LEDs WS2812B: eine Kette an GP28 ---
-# Status-LEDs (4, unter dem Dach) -> Frontlicht (Leiste mit 8 LEDs vorne) -> Rücklicht (Leiste mit 8 LEDs hinten)
+# Frontlicht (Leiste mit 8 LEDs vorne) -> Rücklicht (Leiste mit 8 LEDs hinten). Den Status zeigt das runde Display.
 LED_DATA = 28  # GP28 (Pin 34)
-LED_ANZAHL = 20
-LED_STATUS = range(0, 4)     # Nummern in der Kette
-LED_FRONT = range(4, 12)
-LED_HECK = range(12, 20)
-LED_HELL_MAX = 0.35  # alle 20 LEDs voll weiß ziehen ca. 1,2 A aus dem MP1584 – in der Software begrenzen
+LED_ANZAHL = 16
+LED_FRONT = range(0, 8)      # Nummern in der Kette
+LED_HECK = range(8, 16)
+LED_HELL_MAX = 0.35  # alle 16 LEDs voll weiß ziehen ca. 1 A aus dem MP1584 – in der Software begrenzen
 
 # --- Grenzwerte ---
 # 6-V-Motoren am 2S-Akku (bis 8,4 V): PWM begrenzen, damit die Motoren nicht überlastet werden

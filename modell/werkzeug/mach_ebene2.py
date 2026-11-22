@@ -121,7 +121,7 @@ rahmen = r"""
       return s;
     }
     const deckFarbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; };
-    const ringFarbe = (mat) => { mat.color.set(0xcfd4d8).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const ringFarbe = (mat) => { mat.color.set(0x575d63).convertSRGBToLinear(); mat.roughness = 0.8; };
     const ALLE = ' Ist zugleich der Deckel der Wanne: liegt auf dem Wannenrand, die Wanne wird von unten mit 4 × M3 × 45 an 4 Dome des Decks geschraubt. Das Deck ist bei x = 58 geteilt: an der Fuge auf jeder Hälfte ein aufrechter Steg, beide mit 2 × M3 × 10 quer verschraubt. Alles auf der Oberseite – druckt flach ohne Stützen.';
     [['e2_platte_vorne', 'Elektronik-Deck Ebene 2, vordere Hälfte (Druckteil)', 'Motorzone vorne: zwei Grifflöcher mit Rand über den Motorsteckern der Vorderachse, dazwischen der Motortreiber DRV8833, rechts außen der 3,3-V-Verteiler. 67 × 180 mm. Datei: gehaeuse/ebene2/platte_vorne.stl'],
      ['e2_platte_hinten', 'Elektronik-Deck Ebene 2, hintere Hälfte (Druckteil)', 'Vorne der Pico auf dem Freenove-Board (Klemmen zu den Seiten), dahinter der Kompass BNO085, vorne rechts MP1584 und Strom-Durchbruch C, hinten die Motorzone hinten (zwei Grifflöcher, Treiber, 3,3-V-Verteiler), hinten links das Ladeboard. Dome für den Ring (M3 × 20 von oben). 183 × 180 mm. Datei: gehaeuse/ebene2/platte_hinten.stl']].forEach(([datei, name, desc]) => {
@@ -137,7 +137,7 @@ rahmen = r"""
     });
     // Schutzbleche: 4 × dasselbe Druckteil (vorne links modelliert; rechts um 180° gedreht), am Ring von Ebene 2 verschraubt
     [[0, false], [-160, false], [160, true], [0, true]].forEach(([dx, rechts]) => {
-      const w = part(L0, 'Schutzblech (4 × Druckteil)', 'Kotflügel über dem Rad (gehaeuse/schutzblech.py): Bogen mit 4,5 mm Luft zum Reifen, außen ein nach innen gezogener Rand. Der 6 mm dicke Flansch liegt am Gehäuse-Ring von Ebene 2 an und wird mit 2 × M3 × 10 von außen in zwei Schraubsäulen des Rings geschraubt (Köpfe bündig) – nicht an der Wanne, die bleibt nach unten abnehmbar. Die Schrauben sitzen so weit außen, dass der Schraubendreher am Rad vorbeikommt. Viermal dasselbe Teil (rechts um 180° gedreht). Flansch-Rückseite aufs Bett, ohne Stützen. Datei: gehaeuse/schutzbleche/schutzblech.stl', dx, 0, 0);
+      const w = part(L0, 'Schutzblech (4 × Druckteil)', 'Kotflügel über dem Rad (gehaeuse/schutzblech.py): eckiger Bogen (flaches Dach, schräge Schultern, steile Flanken) mit mindestens 4,5 mm Luft zum Reifen, außen ein nach innen gezogener Rand. Der 6 mm dicke Flansch liegt am Gehäuse-Ring von Ebene 2 an und wird mit 2 × M3 × 10 von außen in zwei Schraubsäulen des Rings geschraubt (Köpfe bündig) – nicht an der Wanne, die bleibt nach unten abnehmbar. Die Schrauben sitzen so weit außen, dass der Schraubendreher am Rad vorbeikommt. Viermal dasselbe Teil (rechts um 180° gedreht). Flansch-Rückseite aufs Bett, ohne Stützen. Datei: gehaeuse/schutzbleche/schutzblech.stl', dx, 0, 0);
       w.userData.druckteil = 'ring'; if (rechts) w.rotation.y = Math.PI;
       cadTeil('schutzblech', w, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.6; mat.metalness = 0; });
     });

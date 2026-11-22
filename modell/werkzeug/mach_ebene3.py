@@ -34,7 +34,7 @@ html = """<body>
     <nav class="seiten" aria-label="3D-Ansichten"><a href="ebene1-unten.html">Werkstatt Ebene 1</a><a href="ebene2-oben.html">Werkstatt Ebene 2</a><a href="ebene3-gehirn.html" aria-current="page">Werkstatt Ebene 3</a><a href="fahrsimulation.html">Fahrsimulation</a><a href="raspberry-car-3d.html">Ganzes Auto</a></nav>
     <div class="eyebrow">Raspberry Car · Werkstatt</div>
     <h1>Ebene 3: Gehirn mit Dach (Klapphaube)</h1>
-    <p class="lead">Der obere Teil des Autos ist eine <strong>Klapphaube</strong>: Seitenwände und Dach in einem, unten offen, aus zwei Hälften gedruckt. Alles hängt am Dach: Raspberry Pi 5 mit Active Cooler und AI HAT+, die Kamera hinter dem Fenster vorne, Pololu (5 V für den Pi), 4G-Modul, GPS-Antenne, Status-LEDs und das runde Display. Oben steht der LiDAR. Hinten zwei Scharniere, vorne zwei Schrauben. Mit dem Regler klappst du die Haube auf. Ohne Kabel.</p>
+    <p class="lead">Der obere Teil des Autos ist eine <strong>Klapphaube</strong>: Seitenwände und Dach in einem, unten offen, aus zwei Hälften gedruckt. Alles hängt am Dach: Raspberry Pi 5 mit Active Cooler und AI HAT+, die Kamera hinter dem Fenster vorne, Pololu (5 V für den Pi), 4G-Modul, GPS-Antenne, das runde Display und die Lichtleisten vorne und hinten. Oben steht der LiDAR. Hinten zwei Scharniere, vorne zwei Schrauben. Mit dem Regler klappst du die Haube auf. Ohne Kabel.</p>
   </header>
 
   <div class="stage" id="stage">
@@ -111,9 +111,9 @@ rahmen = r"""
       return s;
     }
 __RIBBON__
-    const deckelFarbe = (mat) => { mat.color.set(0xe6e9ec).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const deckelFarbe = (mat) => { mat.color.set(0x6a7178).convertSRGBToLinear(); mat.roughness = 0.8; };
     const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 18) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
-    [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)', 'Vorne: Kamera in zwei Nuten hinter dem Fenster, Status-LEDs unter dem Dach, Pololu, Schraubpolster für die Laschen des Rings, oben steht der LiDAR. 80 × 180 mm. Datei: gehaeuse/ebene3/haube_vorne.stl'],
+    [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)', 'Vorne: Kamera in zwei Nuten hinter dem Fenster, Frontlicht unten in der Vorderwand, Pololu, Schraubpolster für die Laschen des Rings, oben steht der LiDAR. 80 × 180 mm. Datei: gehaeuse/ebene3/haube_vorne.stl'],
      ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)', 'Pi 5 mit AI HAT+ hängt an 4 Domen unter dem Dach (M2,5 von oben, Köpfe bündig), 4G-Modul und GPS-Antenne in Taschen, hinten das runde Display im Dach und die Scharnier-Lappen. Lüftungsschlitze in den Seiten. 180 × 180 mm. Datei: gehaeuse/ebene3/haube_hinten.stl']].forEach(([datei, name, desc]) => {
       const g = part(L0, name, desc + HAUBE, 0, 0, 0);
       g.userData.druckteil = 'e3';
@@ -121,7 +121,7 @@ __RIBBON__
     });
     // Ebene 2 darunter (bleibt stehen, wenn der Deckel aufklappt)
     const unten2 = new THREE.Group(); scene.add(unten2);
-    const e2Farbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; }, ringFarbe2 = (mat) => { mat.color.set(0xcfd4d8).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const e2Farbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; }, ringFarbe2 = (mat) => { mat.color.set(0x575d63).convertSRGBToLinear(); mat.roughness = 0.8; };
     ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, n.includes('ring') ? ringFarbe2 : e2Farbe));
 """.replace("__SX__", str(SCH_X)).replace("__SY__", str(SCH_Y)).replace("__RIBBON__", "\n".join(rib))
 
