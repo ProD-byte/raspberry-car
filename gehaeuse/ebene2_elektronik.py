@@ -255,6 +255,10 @@ VORNE_Z = (46.0, -46.0)
 LASCHE_B, LASCHE_X0, LASCHE_X1, LASCHE_OBEN = 9.6, X_VORNE - 15.0, X_VORNE - 7.5, 97.0
 VORNE_Y = 92.0
 
+# Schutzbleche (schutzblech.py): je Rad 2 × M3 × 10 von außen durch den Flansch in eine Schraubsäule innen am Ring
+import schutzblech as SB
+BLECH_SAEULE = (4.9, 82.0)               # halbe Breite der Säule (x, ≥ 3,5 mm um das Kernloch) und wie weit sie nach innen reicht (|z|)
+
 RING_RUECKWAND = [
     ("Druckschalter Ø 12 mm", -55.0, 74.0, 12.2, 12.2, True),   # 12-mm-Taster (GrabCAD „Push button 12mm“): Frontring Ø 13,9 außen, Körper Ø 11,8 × 19 mm innen, Mutter ca. Ø 16,5
 ]
@@ -336,6 +340,11 @@ def ring_oben():
     In der Rückwand: Hauptschalter und Ausschnitt für die USB-C-Buchse des Ladeboards."""
     wand = ring(OBEN, EBENE3_UNTEN, RING_DOME, RING_OBEN_AUSSCHNITTE, rohr_ab=OBEN + 8)
     wand += ring_klappdeckel()
+    # Schraubsäulen für die Schutzbleche: vom Deck bis oben, mit der Seitenwand verbunden, Kernloch waagerecht durch Wand und Säule
+    bx, bz = BLECH_SAEULE
+    for (x, y, s) in SB.SCHRAUBEN:
+        wand += quader(x - bx, x + bx, OBEN, EBENE3_UNTEN, s * bz, s * (B / 2 - RING_WAND / 2))
+        wand -= zyl_z(PILOT / 2, x, y, s * (bz - 1), s * (B / 2 + 1))
     xr = X_HINTEN
     for (name, z, y, br, h, rund) in RING_RUECKWAND:
         if rund:
@@ -474,6 +483,8 @@ def hindernisse():
         h.append((f"Dom {x},{z}", x - 5, x + 5, z - 5, z + 5, 9.0))
     for (x, z) in RING_DOME:
         h.append((f"Röhre/Dom {x},{z}", x - ROHR_R, x + ROHR_R, z - ROHR_R, z + ROHR_R, 23.0))   # Hülse des Rings über dem Dom
+    for (x, y, s) in SB.SCHRAUBEN:
+        h.append((f"Schraubsäule Schutzblech {x:+.0f}/{s:+d}", x - BLECH_SAEULE[0], x + BLECH_SAEULE[0], min(s * BLECH_SAEULE[1], s * B / 2), max(s * BLECH_SAEULE[1], s * B / 2), 23.0))
     for (z0, z1) in STEG_Z:
         h.append((f"Steg {z0:+.0f}", DECK_FUGE - STEG_HINTEN - 3.5, DECK_FUGE + STEG_VORNE, z0, z1, STEG_H))
     return h
@@ -547,6 +558,16 @@ if __name__ == "__main__":
     bauteile = [(n, x0, x1, OBEN, OBEN + hh, z0, z1) for (n, x0, x1, z0, z1, hh) in hindernisse() if not n.startswith(("Röhre", "Steg", "Dom"))]
     bauteile += [(f"Kabel aus Durchbruch {x},{z}", x - lx / 2, x + lx / 2, UNTEN, EBENE3_UNTEN, z - bz / 2, z + bz / 2) for (x, z, lx, bz) in SCHLITZE[GRIFFLOECHER:]]
     zugang_pruefen(schrauben, [("Deck", dv + dh), ("Ring", rv + rh)], bauteile)
+    # Schutzbleche: Schrauben von außen (Kopf in der Senkung des Flanschs), Rad und Schutzblech bleiben dran
+    blech, rad = SB.schutzblech(), SB.rad()
+    bleche = [("Schutzblech", SB.an_rad(blech, ax, s)) for (ax, s) in SB.RAD_ACHSEN]
+    raeder = [("Rad", SB.an_rad(rad, ax, s)) for (ax, s) in SB.RAD_ACHSEN]
+    kopf_z = SB.WAND_Z + SB.FLANSCH_D - SB.KOPF_H
+    schrauben = [(f"Schutzblech x={x:+.0f} {'links' if s > 0 else 'rechts'}", x, y, s * kopf_z, "z", s) for (x, y, s) in SB.SCHRAUBEN]
+    zugang_pruefen(schrauben, [("Ring", rv + rh)] + bleche + raeder, [])
+    for (x, y, s) in SB.SCHRAUBEN:   # Säule liegt ganz in einer Ring-Hälfte, nicht auf der Fuge
+        if abs(x - RING_FUGE) < BLECH_SAEULE[0] + 1:
+            print("  Schraubsäule Schutzblech liegt auf der Fuge des Rings:", x)
     # Selbstprüfung: jede Röhre im Ring muss auf ganzer Höhe mit der Außenwand verbunden sein (CAD-Rechenfehler finden)
     from build123d import Vector
     r, luecken = ring_ganz, []

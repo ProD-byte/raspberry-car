@@ -144,6 +144,21 @@ Jeder Motor braucht ein **eigenes PWM-Paar** des Pico: Je zwei GPIOs teilen sich
 | rot | MP1584 OUT+ | LED-Streifen 5V | 5 V für die LEDs |
 | schwarz | Pico GND (Pin 13) | LED-Streifen GND | Masse LEDs |
 
+### Front- und Rücklicht
+
+Zwei WS2812B-Leisten mit je 8 LEDs (53 × 10 mm) unten in der Vorder- und Rückwand der Haube. Sie hängen in derselben Kette
+hinter den 4 Status-LEDs (Nummern 4–11 vorne, 12–19 hinten). Alle Leitungen angelötet, entlang des Dachs mit Klebesockeln geführt.
+Zusammen bis ca. 1,2 A bei voll Weiß – die Software begrenzt die Helligkeit (`LED_HELL_MAX` in `pico/pins.py`).
+
+| Farbe | Von | Nach | Zweck |
+|---|---|---|---|
+| grün | LED-Streifen DOUT | Frontlicht DIN | Daten weiter zum Frontlicht |
+| rot | LED-Streifen 5V (Ende) | Frontlicht 5V | 5 V weiter |
+| schwarz | LED-Streifen GND (Ende) | Frontlicht GND | Masse weiter |
+| grün | Frontlicht DOUT | Rücklicht DIN | Daten weiter zum Rücklicht |
+| rot | Frontlicht 5V (Ende) | Rücklicht 5V | 5 V weiter |
+| schwarz | Frontlicht GND (Ende) | Rücklicht GND | Masse weiter |
+
 ### USB & Antennen
 
 Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur **0,6 A** ab, solange er nicht weiß, dass sein Netzteil 5 A kann – beim angelöteten USB-C-Stecker vom Pololu weiß er das nicht. Deshalb in Stufe 3 einstellen: `usb_max_current_enable=1` in `/boot/firmware/config.txt` und `PSU_MAX_CURRENT=5000` im EEPROM (`sudo rpi-eeprom-config -e`). Danach einmal den Gesamtstrom am Pololu messen (Pi, AI HAT+, 4G, LiDAR und Display zusammen).

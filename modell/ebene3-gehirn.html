@@ -167,11 +167,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122173657"></script>
+<script src="teile/teile.js?v=20261122181107"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122173657"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122181107"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 3 (Klappdeckel). Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -474,8 +474,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const geo = new THREE.ExtrudeGeometry(sh, { steps: 60, bevelEnabled: false, extrudePath: curve });
       return add(p, geo, std(color, { rough: 0.5 }));
     }
-    const deckelFarbe = (mat) => { mat.color.set(0x5a7fbf).convertSRGBToLinear(); mat.roughness = 0.8; };
-    const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 16) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
+    const deckelFarbe = (mat) => { mat.color.set(0xe6e9ec).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 18) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
     [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)', 'Vorne: Kamera in zwei Nuten hinter dem Fenster, Status-LEDs unter dem Dach, Pololu, Schraubpolster für die Laschen des Rings, oben steht der LiDAR. 80 × 180 mm. Datei: gehaeuse/ebene3/haube_vorne.stl'],
      ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)', 'Pi 5 mit AI HAT+ hängt an 4 Domen unter dem Dach (M2,5 von oben, Köpfe bündig), 4G-Modul und GPS-Antenne in Taschen, hinten das runde Display im Dach und die Scharnier-Lappen. Lüftungsschlitze in den Seiten. 180 × 180 mm. Datei: gehaeuse/ebene3/haube_hinten.stl']].forEach(([datei, name, desc]) => {
       const g = part(L0, name, desc + HAUBE, 0, 0, 0);
@@ -484,8 +484,8 @@ code { font-family: var(--font-mono); font-size: 13px; }
     });
     // Ebene 2 darunter (bleibt stehen, wenn der Deckel aufklappt)
     const unten2 = new THREE.Group(); scene.add(unten2);
-    const e2Farbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
-    ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, e2Farbe));
+    const e2Farbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; }, ringFarbe2 = (mat) => { mat.color.set(0xcfd4d8).convertSRGBToLinear(); mat.roughness = 0.8; };
+    ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, n.includes('ring') ? ringFarbe2 : e2Farbe));
 
     const PI = { x: -8, y: TOP[2] + 5, z: 0 };
     let piFan = null;
@@ -670,7 +670,31 @@ code { font-family: var(--font-mono); font-size: 13px; }
       box(g, 6, 1, 34, 0, 0, 0, 0x111214);
       [-12, -4, 4, 12].forEach((z, k) => box(g, 5, 1.6, 5, 0, 1, z, 0xf4f4f4, { emissive: [0x2fe070, 0x2fe070, 0x2a9cff, 0x2fe070][k], ei: 0.9 }));
       [['5V', -16.2], ['DIN', -14.2], ['GND', -12.2]].forEach(([n, z]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${n}`); });
+      [['GND2', 12.2, 'GND (Ende)'], ['DOUT', 14.2, 'DOUT'], ['5V2', 16.2, '5V (Ende)']].forEach(([n, z, l]) => { box(g, 1.2, 0.3, 1.2, -2.4, 1, z, 0xd8b46a, { metal: 0.8 }); anchor(`LED_${n}`, g, -3.2, 1.4, z, [-1, 0, 0], `LED-Streifen ${l}`); });
     })();
+    // Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm) unten in der Vorder-/Rückwand der Haube (gehaeuse/ebene3_gehirn.py).
+    // LEDs zur Wand, in einer Tasche – außen bleiben 0,8 mm, helles PETG leuchtet hindurch. Kette: Status-LEDs → Frontlicht → Rücklicht.
+    [[1, 'FL', 'Frontlicht', 0xffffff, 'Nummer 4–11 in der Kette. Leuchtet weiß nach vorne (Scheinwerfer), kann auch blinken oder die Farbe zeigen, in die das Auto gleich abbiegt.'],
+     [-1, 'RL', 'Rücklicht', 0xff2a1a, 'Nummer 12–19 in der Kette. Leuchtet rot nach hinten, beim Bremsen heller, beim Rückwärtsfahren weiß.']].forEach(([s, k, nm, farbe, txt]) => {
+      const g = part(L0, `${nm} (WS2812B-Leiste, 8 LEDs)`, `${txt} Platine ca. 51 × 10 mm (3D-Form: Adafruit NeoPixel Stick, die günstigen Nachbauten sind gleich aufgebaut – Maße nach der Lieferung nachmessen), die LEDs zeigen zur Wand und liegen in einer Tasche: außen bleiben 0,8 mm Kunststoff, durch die helles PETG leuchtet (außen eine flache Mulde als Lichtband). Wird bei offener Haube von unten zwischen zwei Pfosten geschoben, eine kleine Nase hält sie. 5 V, GND und Daten angelötet.`, s * 121.1, 90.2, 0);
+      // Platine: echtes CAD-Modell des Adafruit NeoPixel Stick (Nr. 1426, MIT), 50,8 × 10,16 mm, LEDs nach außen (zur Wand)
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      box(ersatz, 1.6, 10, 53, 0, 0, 0, 0x16181a, { rough: 0.6 });
+      cadTeil('neopixel_stick', g, ersatz, (m) => {
+        m.position.set(-25.4, -1.3, 5.08);                       // Mitte der Platine in den Ursprung
+        const w = new THREE.Group(); w.add(m);
+        w.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, 0, 1), V(s, 0, 0), V(0, s, 0)));   // Länge → z, LEDs → zur Wand, Breite → y
+        w.position.x = s * 1.1;                                  // Vorderseite der LEDs bei ±2,4 (liegt in der Tasche der Wand)
+        return w;
+      }, (mat) => { mat.color.set(0x16181a).convertSRGBToLinear(); mat.roughness = 0.6; mat.metalness = 0; });
+      for (let i = 0; i < 8; i++) box(g, 0.3, 5, 5, s * 2.3, 0, -22.225 + i * 6.35, 0xf4f4f4, { emissive: farbe, ei: 0.85 });   // leuchtende LED-Flächen
+      box(g, 0.1, 7.6, 54, s * 3.4, 0, 0, farbe, { emissive: farbe, ei: 0.9 });   // außen: die dünne Wand in der Mulde leuchtet
+      // Lötpunkte an den Enden auf der Rückseite: z > 0 Eingang (DIN), z < 0 Ausgang (DOUT)
+      [['DIN', 24.5, 2.6, 'DIN'], ['5V', 24.5, 0, '5V'], ['GND', 24.5, -2.6, 'GND'], ['DOUT', -24.5, 2.6, 'DOUT'], ['5V2', -24.5, 0, '5V (Ende)'], ['GND2', -24.5, -2.6, 'GND (Ende)']].forEach(([n, z, y, l]) => {
+        box(g, 0.3, 1.6, 1.8, -s * 0.95, y, z, 0xd8b46a, { metal: 0.8 });
+        anchor(`${k}_${n}`, g, -s * 1.2, y, z, [-s, 0, 0], `${nm} ${l}`);
+      });
+    });
 
     // Rundes Touch-Display mit Mikrofonen und Lautsprecher: Waveshare ESP32-S3-Touch-AMOLED-1.75 (Platine ohne Gehäuse).
     // Maße nach der Zeichnung von Waveshare (docs.waveshare.com/ESP32-S3-Touch-AMOLED-1.75): Glas Ø 48,96, sichtbar Ø 43,76,

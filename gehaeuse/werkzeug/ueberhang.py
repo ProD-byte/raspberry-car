@@ -21,7 +21,7 @@ ORDNER = Path(__file__).resolve().parent.parent
 # Datei, Druckrichtung – wie in gehaeuse/README.md
 TEILE = [("ebene1/wanne_vorne.stl", "none"), ("ebene1/wanne_hinten.stl", "none"), ("ebene1/motorbuegel.stl", "+y"),
          ("ebene2/platte_vorne.stl", "none"), ("ebene2/platte_hinten.stl", "none"), ("ebene2/ring_vorne.stl", "none"), ("ebene2/ring_hinten.stl", "none"), ("ebene3/haube_vorne.stl", "flip"), ("ebene3/haube_hinten.stl", "flip"),
-         ("pruefstand/pruefstand.stl", "none")]
+         ("pruefstand/pruefstand.stl", "none"), ("schutzbleche/schutzblech.stl", "+y")]
 STEIL = -0.74          # Flächen mit Normalen-z kleiner als das sind flacher als ca. 45° (nach unten)
 BRUECKE_MAX = 15.0     # längste erlaubte Brücke (mm)
 LOCH_MAX = 10.0        # runde Löcher in senkrechten Wänden bis zu diesem Durchmesser druckt jeder Drucker ohne Stützen

@@ -6,6 +6,7 @@ Fehlt `teile.js` oder ist man offline, zeigt das Modell automatisch die einfache
 
 | Datei | Bauteil | Quelle | Lizenz / Hinweis |
 |---|---|---|---|
+| `neopixel_stick.glb` | WS2812B-Leiste mit 8 LEDs (Front- und Rücklicht) | Adafruit CAD Parts, „1426 8x NeoPixel Stick“: https://github.com/adafruit/Adafruit_CAD_Parts/tree/main/1426%208x%20NeoPixel%20Stick – Datei `1426 8x NeoPixel Stick.step` | MIT (Adafruit Industries). 50,8 × 10,16 × 2,6 mm, ein Körper ohne Farben; im Modell dunkel eingefärbt, die LED-Flächen leuchten darüber. Umgewandelt mit `step2glb.py … 0.05` und `merge_glb.py`. Die günstigen 8-Bit-Leisten (z. B. Joycabin) sind Nachbauten mit gleicher Anordnung. |
 | `pi5.glb` | Raspberry Pi 5 | STEP-Datei „rpi-5 3D STEP – No Graphics small file“ von Raspberry Pi: https://pip.raspberrypi.com/categories/892-raspberry-pi-5 (RP-010083-CA) | MIT (Lizenzdatei liegt bei). Umgewandelt mit `step2glb.py … 0.4 0.9` und `merge_glb.py … --min 0.8 --max 15000` (Lötkugeln unter Chips weggelassen, große Teile vereinfacht), damit es im Browser flüssig läuft: 1,3 MB statt 77 MB. |
 | `bno085.glb` | Adafruit BNO085 (4754) | Offizielles Adafruit-CAD: https://github.com/adafruit/Adafruit_CAD_Parts (`4754 BNO085 STEMMA QT.step`) | MIT |
 | `vl53l1x.glb` | Adafruit VL53L1X (3967) | Offizielles Adafruit-CAD: https://github.com/adafruit/Adafruit_CAD_Parts (`3967 VL5SL1X TOF Sensor.step`) | MIT |

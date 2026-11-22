@@ -157,7 +157,7 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
   - **Status-LEDs** (WS2812-Streifen) vorne in einer flachen Tasche, sie leuchten durch 4 Löcher Ø 3 mm.
   - **Rundes Display** hinten: Das Glas liegt von innen am Dach an und schaut durch ein Loch Ø 44,4 mm (außen angefast), 3 Schnapphaken halten die Platine.
   - **LiDAR LD19** oben auf dem Dach, Kabel durch ein Loch Ø 10 nach innen. Seine Befestigungslöcher kommen nach dem Nachmessen.
-- **Scharniere hinten:** zwei Scharniere außen an der Trennfuge, Achse 5,5 mm hinter der Rückwand und 5 mm über der Fuge. Je Scharnier zwei Lappen an der Haube, einer am Ring von Ebene 2, Achse **M3 × 16** (Gewinde im äußeren Lappen). Das Skript prüft in 10°-Schritten bis 100°, dass beim Aufklappen nichts anstößt.
+- **Scharniere hinten:** zwei Scharniere außen an der Trennfuge, Achse 5,5 mm hinter der Rückwand und 5 mm über der Fuge. Je Scharnier zwei Lappen an der Haube, einer am Ring von Ebene 2, Achse **M3 × 18** (Gewinde im äußeren Lappen). Das Skript prüft in 10°-Schritten bis 100°, dass beim Aufklappen nichts anstößt.
 - **Vorne zwei M3 × 12** waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2.
 - **Kabel:** Die Haube ist unten offen – alle Kabel von Ebene 2 laufen hinten beim Scharnier nach oben, dort knicken sie beim Aufklappen am wenigsten.
 - **Luft:** senkrechte Lüftungsschlitze in beiden Seitenwänden (der AI HAT+ braucht Luft). Unter Pi und Kamera bleiben bis Ebene 2 gut 10 mm frei.
@@ -165,7 +165,24 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
 
 Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufklappen).
 
-**Schrauben für Ebene 3:** 2 × M3 × 16 (Scharniere), 2 × M3 × 12 (vorne), 6 × M3 × 12 (Fuge), 4 × M2,5 × 16 (Pi-Stapel von oben, plus die Abstandshalter des AI HAT+).
+**Schrauben für Ebene 3:** 2 × M3 × 18 (Scharniere), 2 × M3 × 12 (vorne), 6 × M3 × 12 (Fuge), 4 × M2,5 × 16 (Pi-Stapel von oben, plus die Abstandshalter des AI HAT+).
+
+## Schutzbleche (`schutzblech.py` → `schutzbleche/`)
+
+- **Ein Druckteil, 4 × drucken:** passt an jedes Rad, für die rechte Seite einfach um 180° gedreht.
+- Bogen über dem Rad: Innenradius 47 mm (4,5 mm Luft zum 85-mm-Reifen), 2,4 mm dick, von −60° bis +60°; außen ein nach innen gezogener Rand.
+- Befestigt **am Gehäuse-Ring von Ebene 2** (nicht an der Wanne – die bleibt nach unten abnehmbar): 6 mm dicker Flansch, **2 × M3 × 10** von außen in zwei Schraubsäulen innen am Ring (Köpfe bündig). Die Schrauben sitzen 52,8 mm von der Achse – der Schraubendreher kommt am Rad vorbei (geprüft in `ebene2_elektronik.py`).
+- Druck: Flansch-Rückseite aufs Bett, Bogen senkrecht nach oben, ohne Stützen. Farbe nach Wunsch (im Modell orange wie die Kante des Decks).
+
+## Front- und Rücklicht (in `ebene3_gehirn.py`)
+
+- Je eine **WS2812B-Leiste mit 8 LEDs (53 × 10 mm)** unten in der Vorder- und Rückwand der Haube, LEDs zur Wand.
+- Die LEDs liegen in einer Tasche; außen bleiben **0,8 mm** Kunststoff, durch die helles PETG leuchtet (außen eine flache Lichtband-Mulde). Deshalb die Haube in **hellem PETG** (weiß / hellgrau) drucken.
+- Einbau: Haube aufklappen, Leiste von unten zwischen die zwei Pfosten schieben, bis sie oben anschlägt – eine kleine Nase hält sie. Vorne läuft sie unter der Kamera durch.
+
+## Farben (Vorschlag)
+
+Damit das Auto nicht nach Brotdose aussieht: **Wanne dunkel** (Anthrazit / Schwarz), **Elektronik-Deck orange** – seine 3 mm dicke Kante ist von außen der Farbstreifen zwischen Wanne und Ring –, **Ring und Haube hell** (Hellgrau / Weiß, die Haube muss hell sein, damit die Lichter durchscheinen), **Schutzbleche orange**.
 
 ## Befestigung der Bauteile (Löcher für die Platten)
 

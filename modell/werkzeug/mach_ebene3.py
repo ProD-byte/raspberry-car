@@ -111,8 +111,8 @@ rahmen = r"""
       return s;
     }
 __RIBBON__
-    const deckelFarbe = (mat) => { mat.color.set(0x5a7fbf).convertSRGBToLinear(); mat.roughness = 0.8; };
-    const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 16) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
+    const deckelFarbe = (mat) => { mat.color.set(0xe6e9ec).convertSRGBToLinear(); mat.roughness = 0.8; };
+    const HAUBE = ' Klappt hinten an zwei Scharnieren (Achse M3 × 18) nach hinten auf – dann liegt Ebene 2 offen. Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings. Seiten oben schräg nach innen, Dachkanten 45° abgeschrägt. Zwei Hälften, Fuge bei x = 45: innen an Dach und Seiten ein 10 mm breiter Rand, 6 × M3 × 12. Mit dem Dach nach unten drucken, ohne Stützen.';
     [['e3_haube_vorne', 'Klapphaube Ebene 3, vordere Hälfte (Druckteil)', 'Vorne: Kamera in zwei Nuten hinter dem Fenster, Status-LEDs unter dem Dach, Pololu, Schraubpolster für die Laschen des Rings, oben steht der LiDAR. 80 × 180 mm. Datei: gehaeuse/ebene3/haube_vorne.stl'],
      ['e3_haube_hinten', 'Klapphaube Ebene 3, hintere Hälfte (Druckteil)', 'Pi 5 mit AI HAT+ hängt an 4 Domen unter dem Dach (M2,5 von oben, Köpfe bündig), 4G-Modul und GPS-Antenne in Taschen, hinten das runde Display im Dach und die Scharnier-Lappen. Lüftungsschlitze in den Seiten. 180 × 180 mm. Datei: gehaeuse/ebene3/haube_hinten.stl']].forEach(([datei, name, desc]) => {
       const g = part(L0, name, desc + HAUBE, 0, 0, 0);
@@ -121,8 +121,8 @@ __RIBBON__
     });
     // Ebene 2 darunter (bleibt stehen, wenn der Deckel aufklappt)
     const unten2 = new THREE.Group(); scene.add(unten2);
-    const e2Farbe = (mat) => { mat.color.set(0x5f9e95).convertSRGBToLinear(); mat.roughness = 0.8; };
-    ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, e2Farbe));
+    const e2Farbe = (mat) => { mat.color.set(0xd85a30).convertSRGBToLinear(); mat.roughness = 0.8; }, ringFarbe2 = (mat) => { mat.color.set(0xcfd4d8).convertSRGBToLinear(); mat.roughness = 0.8; };
+    ['e2_platte_vorne', 'e2_platte_hinten', 'e2_ring_vorne', 'e2_ring_hinten'].forEach((n) => cadTeil(n, unten2, new THREE.Group(), (m) => { m.traverse((o) => { o.userData.noPick = true; }); return m; }, n.includes('ring') ? ringFarbe2 : e2Farbe));
 """.replace("__SX__", str(SCH_X)).replace("__SY__", str(SCH_Y)).replace("__RIBBON__", "\n".join(rib))
 
 b0 = finde(gz, "    const PI = { x: -8, y: TOP[2] + 5, z: 0 };")

@@ -21,6 +21,11 @@
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände · 40 % Füllung · keine Stützen. Alle 4 auf einmal drucken.',
       richtung: 'Flach auf die große Seite legen.'
     },
+    'Schutzblech (4 × Druckteil)': {
+      datei: 'schutzbleche/schutzblech', anzahl: 4, gramm: 17, filament: PETG + ' Farbe nach Wunsch – im Modell orange als Farbtupfer zur dunklen Wanne.', temp: PETG_TEMP,
+      einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (dünner Bogen, wird dann ganz massiv) · 20 % Füllung · keine Stützen. Alle 4 auf einmal drucken. Schrauben: 2 × M3 × 10 je Blech.',
+      richtung: 'Flansch-Rückseite (die an der Wand anliegt) aufs Bett, der Bogen steht senkrecht nach oben. Grundfläche 86 × 28 mm, 46 mm hoch.'
+    },
     'Prüfstand (Druckteil)': {
       datei: 'pruefstand/pruefstand', anzahl: 1, gramm: 125,
       filament: 'PLA reicht – der Prüfstand ist ein Werkzeug und wird nicht warm.', temp: 'Düse 205–215 °C, Bett 55–60 °C, Lüfter 100 %',

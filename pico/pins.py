@@ -43,9 +43,14 @@ TOF_ADRESSEN = {"vorne": 0x31, "hinten": 0x33}
 ADR_INA226 = 0x40
 ADR_BNO085 = 0x4A
 
-# --- Status-LEDs WS2812 (4 Stück) ---
+# --- LEDs WS2812B: eine Kette an GP28 ---
+# Status-LEDs (4, unter dem Dach) -> Frontlicht (Leiste mit 8 LEDs vorne) -> Rücklicht (Leiste mit 8 LEDs hinten)
 LED_DATA = 28  # GP28 (Pin 34)
-LED_ANZAHL = 4
+LED_ANZAHL = 20
+LED_STATUS = range(0, 4)     # Nummern in der Kette
+LED_FRONT = range(4, 12)
+LED_HECK = range(12, 20)
+LED_HELL_MAX = 0.35  # alle 20 LEDs voll weiß ziehen ca. 1,2 A aus dem MP1584 – in der Software begrenzen
 
 # --- Grenzwerte ---
 # 6-V-Motoren am 2S-Akku (bis 8,4 V): PWM begrenzen, damit die Motoren nicht überlastet werden

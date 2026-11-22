@@ -167,11 +167,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122173657"></script>
+<script src="teile/teile.js?v=20261122181107"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122173657"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122181107"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -526,10 +526,10 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const BESCHR = ' Zusammen tragen sie Motoren, Akku und die Stromversorgung. Die Wanne ist 250 × 180 mm groß und aus zwei Hälften gedruckt; die Fuge liegt quer bei x = 6. Die vordere Hälfte greift mit drei Laschen (an beiden Seitenwänden und in der Mitte) in die hintere, verschraubt mit 6 × M3 (seitlich je 2 × M3 × 8 von außen, Kopf bündig; in der Mitte 2 × M3 × 16 von innen).';
       const g = part(L0, 'Fahrwerk-Wanne vordere Hälfte (Druckteil)', 'Vordere Hälfte der Wanne: Vorderachse mit 2 Motoren, BMS, Sicherung, INA226 und die beiden Verteiler, vorne der Nahsensor. Datei: gehaeuse/ebene1/wanne_vorne.stl.' + BESCHR, 0, 0, 0);
       g.userData.druckteil = 'wanne';
-      cadTeil('e1_wanne_vorne', g, new THREE.Group(), (m) => m);
+      cadTeil('e1_wanne_vorne', g, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x3d4247).convertSRGBToLinear(); mat.roughness = 0.7; });
       const gh = part(L0, 'Fahrwerk-Wanne hintere Hälfte (Druckteil)', 'Hintere Hälfte der Wanne: Hinterachse mit 2 Motoren, der Akku (2 Halter hintereinander quer im Auto), hinten der Nahsensor. Datei: gehaeuse/ebene1/wanne_hinten.stl.' + BESCHR, 0, 0, 0);
       gh.userData.druckteil = 'wanne';
-      cadTeil('e1_wanne_hinten', gh, new THREE.Group(), (m) => m);
+      cadTeil('e1_wanne_hinten', gh, new THREE.Group(), (m) => m, (mat) => { mat.color.set(0x3d4247).convertSRGBToLinear(); mat.roughness = 0.7; });
       const b = part(L0, 'Motorbügel (4 × Druckteil)', 'Drückt den Motor in den Sattel der Wanne. Je 2 × M3-Zylinderkopfschraube, die sich das Gewinde selbst in die Wanne schneiden (Kernloch 2,6 mm). Datei: gehaeuse/ebene1/motorbuegel.stl (4 × drucken)', 0, 0, 0);
       b.userData.druckteil = 'buegel';
       cadTeil('e1_motorbuegel', b, new THREE.Group(), (m) => m);

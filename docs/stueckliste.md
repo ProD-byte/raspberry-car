@@ -46,6 +46,7 @@ Ohne Akku läuft nur der Pico (über USB): Joystick-Seite und Encoder lassen sic
 | ⬜ | 2× USB-Kabel kurz (A auf Micro-USB) | Pico und LiDAR-Adapter | 5 € |
 | 🔎 | Status-Display **Waveshare ESP32-S3-Touch-AMOLED-1.75** (rund, Touch, 2 Mikrofone, Lautsprecher) | Die **einfache Platine ohne Gehäuse** nehmen (nicht „-B“ mit Gehäuse, nicht „-G“ mit GPS), z. B. [Amazon B0F99V6FGF](https://www.amazon.de/dp/B0F99V6FGF). Lautsprecher 8 Ω / 2 W liegt laut Händlern bei – beim Kauf prüfen. Befestigung mit 3 × M2 (Abstandshalter sind auf der Platine) | 40 € |
 | ⬜ | USB-Kabel kurz, USB-C auf USB-A (gewinkelt) | Status-Display → Pi 5 USB 3.0 oben | 5 € |
+| 🔎 | 2× LED-Leiste **WS2812B, 8 LEDs** (Front- und Rücklicht) | Angebot: [Amazon Joycabin B0G648ST2C](https://www.amazon.de/dp/B0G648ST2C) – Größe **„8 Bits (10 Pcs)“** wählen (10 Stück, 8,79 €). Nachbau des Adafruit NeoPixel Stick: 8 LEDs in einer Reihe, Lötpunkte GND/DI/4–7 V/GND und GND/DO/4–7 V/GND an den Enden auf der Rückseite. Achtung: das Maßbild des Händlers nennt 62 × 12 mm, das Original ist 50,8 × 10,2 mm – nach der Lieferung nachmessen und `LICHT_L`/`LICHT_H` in `gehaeuse/ebene3_gehirn.py` anpassen, bevor die Haube gedruckt wird. Original von Adafruit: [B01F7Z7I70](https://www.amazon.de/dp/B01F7Z7I70) (teuer) | ca. 9 € (10 Stück) |
 
 ## Stufe 4 – Orientierung und Karte
 
@@ -83,9 +84,10 @@ Alle Ebenen in derselben Außenform 250 × 180 mm, jede aus zwei Hälften, Räde
 | ⬜ | Elektronik-Deck hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/platte_hinten.stl` | 1 | zugleich Deckel der Wanne: Pico, Kompass, Motorzone hinten, Ladeboard |
 | ⬜ | Gehäuse-Ring vordere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_vorne.stl` | 1 | mit den Laschen für die Schrauben der Klapphaube |
 | ⬜ | Gehäuse-Ring hintere Hälfte (Ebene 2) | `gehaeuse/ebene2/ring_hinten.stl` | 1 | Scharnier, Loch für den Hauptschalter, Ausschnitt für USB-C |
-| ⬜ | Klapphaube vordere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_vorne.stl` | 1 | Kamera, LEDs, Pololu, oben der LiDAR |
-| ⬜ | Klapphaube hintere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_hinten.stl` | 1 | Pi 5 mit AI HAT+, 4G, GPS, rundes Display, Scharnier |
+| ⬜ | Klapphaube vordere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_vorne.stl` | 1 | Kamera, Frontlicht, Status-LEDs, Pololu, oben der LiDAR |
+| ⬜ | Klapphaube hintere Hälfte (Ebene 3) | `gehaeuse/ebene3/haube_hinten.stl` | 1 | Pi 5 mit AI HAT+, 4G, GPS, rundes Display, Rücklicht, Scharnier |
+| ⬜ | Schutzblech | `gehaeuse/schutzbleche/schutzblech.stl` | 4 | Dasselbe Teil an allen vier Rädern (rechts um 180° gedreht). Je 2 × M3 × 10 von außen in die Schraubsäulen des Gehäuse-Rings. Farbe nach Wunsch (im Modell orange) |
 | ⬜ | **Prüfstand** (Werkzeug, kommt nicht ins Auto) | `gehaeuse/pruefstand/pruefstand.stl` | 1 | 112 × 112 mm, ein Teil, ohne Schrauben, ca. 98 cm³. Wie eine Hebebühne: 4 Zapfen rasten in die 4 Kerben unten in der Wanne. Räder hängen frei, zum Testen von Motoren und Software |
 
 Kamerahalter und Ebene 3/4 folgen.
-Schrauben: nur **M3-Zylinderkopf ISO 4762** (Innensechskant 2,5). Für Ebene 1: 8 × M3 × 6, 12 × M3 × 8, **4 × M3 × 45**, 4 × Mutter M3. Die Motorhalterungen aus dem Motor-Set werden nicht gebraucht. Für Ebene 2: 4 × M3 × 8. Messing-Abstandsbolzen sind nicht mehr nötig (Säulen werden mitgedruckt).
+Schrauben: nur **M3-Zylinderkopf ISO 4762** (Innensechskant 2,5). Für Ebene 1: 8 × M3 × 6, 12 × M3 × 8, **4 × M3 × 45**, 4 × Mutter M3. Die Motorhalterungen aus dem Motor-Set werden nicht gebraucht. Für Ebene 2: 4 × M3 × 8. Für die Schutzbleche: 8 × M3 × 10. Messing-Abstandsbolzen sind nicht mehr nötig (Säulen werden mitgedruckt).

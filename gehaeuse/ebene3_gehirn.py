@@ -23,12 +23,14 @@ Was darin hängt (alles am Dach, die Haube wird mit dem Dach nach unten gedruckt
   * Pololu D36V50F5 und das 4G-Modul (Waveshare SIM7600G-H, nur die Platine) in Einklick-Taschen unter dem Dach.
   * GPS-Keramikantenne in einer Tasche unter dem Dach (Kunststoff lässt das Signal durch).
   * Status-LEDs (WS2812-Streifen) vorne unter dem Dach, sie leuchten durch 4 Löcher.
+  * Front- und Rücklicht: je eine WS2812B-Leiste (8 LEDs) unten in Vorder- und Rückwand, LEDs in einer Tasche hinter
+    0,8 mm Wand (helles PETG leuchtet durch), von unten zwischen zwei Pfosten geschoben.
   * Rundes Display (ESP32-S3-Touch-AMOLED-1.75) hinten: Das Glas liegt von innen am Dach an und schaut
     durch ein rundes Loch, 3 Schnapphaken halten die Platine.
   * LiDAR LD19 oben auf dem Dach, Kabel durch ein Loch nach innen (Befestigungslöcher erst nach dem Nachmessen).
 
 Klappen und Verschluss:
-  * Hinten zwei Scharniere außen an der Trennfuge, Achse M3 × 16 (Gewinde im äußeren Lappen der Haube).
+  * Hinten zwei Scharniere außen an der Trennfuge, Achse M3 × 18 (Gewinde im äußeren Lappen der Haube, greift 4,4 mm).
   * Vorne zwei M3 × 12 waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2.
 
 Zwei Druckteile: vordere und hintere Hälfte, Fuge quer bei x = FUGE. An der Fuge hat jede Hälfte innen einen
@@ -79,6 +81,14 @@ TASCHEN = [
 LTE_USB_X = -18.85 - 41.15 - 15.3        # Ende des USB-A-Steckers (hinten)
 LED = (101.0, 0.0, 6.0, 34.0)            # WS2812-Streifen (x, z, Breite, Länge), leuchtet durch 4 Löcher im Dach
 LED_LOECHER = [-12.0, -4.0, 4.0, 12.0]
+# Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm, LEDs zur Wand) unten in der Vorder- und Rückwand.
+# Die LEDs liegen in einer Tasche der Wand, außen bleiben 0,8 mm – helles PETG leuchtet hindurch (außen eine flache Lichtband-Mulde).
+# Die Leiste wird von unten (Haube offen) zwischen zwei Pfosten geschoben; hinten hält sie eine Lippe, unten eine kleine Nase.
+LICHT_L, LICHT_H, LICHT_PCB, LICHT_LED = 53.0, 10.0, 1.6, 1.6
+LICHT_OBEN = UNTEN + 11.2                # 95,2: Oberkante der Leiste (Anschlag in den Pfosten)
+LICHT_Y = LICHT_OBEN - LICHT_H / 2       # 90,2: Mitte der LED-Reihe
+LICHT_TASCHE = (1.0, 26.0, 3.4)          # Tasche in der Wand von innen: Tiefe, halbe Länge, halbe Höhe (LEDs 5 × 5 mm)
+LICHT_MULDE = (0.6, 28.0, 4.5)           # außen: Tiefe, halbe Länge, halbe Höhe (Enden rund)
 DISPLAY = (-92.0, 0.0)                   # Mitte des runden Displays
 DISPLAY_SICHT, DISPLAY_GLAS, DISPLAY_PCB = 44.4, 48.96, 46.0
 DISPLAY_PCB_UNTEN = DACH_UNTEN - 6.9     # Unterseite der Platine (Zeichnung Waveshare)
@@ -211,9 +221,42 @@ def tasche_dach(name, x, z, ix, iz, abstand, wand_h, enden_offen=False):
     return r
 
 
+def licht(s, nur_ausschnitt=False):
+    """Halter für eine WS2812B-Leiste an der Vorder- (s = +1) bzw. Rückwand (s = −1). Gibt (Zugabe, Ausschnitt) zurück,
+    wenn nur_ausschnitt False ist, wird nur die Zugabe (Pfosten) geliefert – der Ausschnitt kommt über licht_ausschnitt()."""
+    xi = s * (X_VORNE - WAND)                      # Wand-Innenseite
+    lippe = xi - s * (LICHT_LED + LICHT_PCB - 0.9 + 0.1)   # LEDs 0,9 mm in der Tasche, Rückseite der Leiste + 0,1 Luft
+    zugabe = None
+    for sz in (1, -1):
+        # Pfosten: von unten bis über die Leiste, oben 45° zur Wand (druckt mit dem Dach nach unten ohne Stützen)
+        prof = Plane.XZ * Polygon((xi + s * 0.5, UNTEN), (lippe - s * 2.0, UNTEN), (lippe - s * 2.0, LICHT_OBEN + 1.8),
+                                  (xi + s * 0.5, LICHT_OBEN + 1.8 + abs(xi + s * 0.5 - (lippe - s * 2.0))), align=None)
+        z0, z1 = sz * (LICHT_L / 2 - 2.0), sz * (LICHT_L / 2 + 3.5)
+        pf = Pos(0, -(z0 + z1) / 2, 0) * extrude(prof.face(), abs(z1 - z0) / 2, both=True)
+        # Platz für die Leiste: von der Lippe bis zur Wand, Ende 0,2 mm Luft, oben Anschlag bei LICHT_OBEN
+        pf -= quader(lippe, xi + s * 0.01, UNTEN - 1, LICHT_OBEN, z0 - sz * 0.1, sz * (LICHT_L / 2 + 0.2))
+        # kleine Nase unten an der Lippe: die Leiste schnappt beim Einschieben darüber
+        pf += quader(lippe, lippe + s * 0.4, LICHT_OBEN - LICHT_H - 0.9, LICHT_OBEN - LICHT_H - 0.3, z0, sz * (LICHT_L / 2 + 0.2))
+        zugabe = pf if zugabe is None else zugabe + pf
+    return zugabe
+
+
+def licht_ausschnitt(s):
+    """Was für ein Licht aus der Haube weg muss: Platz für die Leiste (auch in den Kamera-Pfosten), Tasche in der Wand, Mulde außen."""
+    xi = s * (X_VORNE - WAND)
+    xa = s * X_VORNE
+    lippe = xi - s * (LICHT_LED + LICHT_PCB - 0.9 + 0.1)
+    td, tl, th = LICHT_TASCHE
+    md, ml, mh = LICHT_MULDE
+    a = quader(lippe, xi, UNTEN - 1, LICHT_OBEN, -(LICHT_L / 2 + 0.2), LICHT_L / 2 + 0.2)
+    a += quader(xi - s * 0.01, xi + s * td, LICHT_Y - th, LICHT_Y + th, -tl, tl)
+    a += P(xa + s * 0.01, LICHT_Y, 0) * Rot(0, -90 * s, 0) * extrude(RectangleRounded(2 * mh, 2 * ml, mh - 0.01), md + 0.01, taper=45)   # Rand 45° – druckt sauber
+    return a
+
+
 def scharnier_lappen():
     """Hinten je Scharnier zwei Lappen an der Haube (außen mit Kernloch, innen mit Durchgangsloch),
-    dazwischen der Lappen des Rings. Achse M3 × 16."""
+    dazwischen der Lappen des Rings. Achse M3 × 18 (mit × 16 griffe das Gewinde nur 2,4 mm)."""
     t = None
     for zc in SCH_Z:
         for s in (1, -1):
@@ -297,6 +340,9 @@ def haube():
         teil -= zyl_x(DURCH / 2, VORNE_Y, zc, LASCHE_X1 - 1, X_VORNE + 1)
         teil -= zyl_x(KOPF_D / 2, VORNE_Y, zc, X_VORNE - KOPF_H, X_VORNE + 1)
 
+    for s in (1, -1):              # Licht: Platz für die Leiste freihalten (auch in den Kamera-Pfosten), Tasche + Mulde
+        teil -= licht_ausschnitt(s)
+        teil += licht(s) - quader(-200, 200, UNTEN - 5, UNTEN, -100, 100)   # Pfosten wieder dazu (ohne Platz der Leiste)
     teil = teil & aussen()          # nichts ragt aus der Form
     teil += scharnier_lappen()
     return teil
@@ -392,7 +438,7 @@ def pruefen(haube_teil, ring_teile):
     rechtecke.append(("4G: USB-Stecker + Kabel", LTE_USB_X - 20, -18.85 - 41.15 - LUFT - TWAND, 46.0, 66.0))
     rechtecke.append(("4G: SMA-Buchse", -18.85 + 41.15 + LUFT + TWAND, -18.85 + 41.15 + 9.5, 52.0, 60.0))
     rechtecke.append(("Raspberry Pi 5 + AI HAT+", PI_X - 42.5 - 3, PI_X + 42.5, -28.0, 28.0))
-    rechtecke.append(("Kamera", KAM_X - KAM_T - 3, X_VORNE - WAND, -KAM_B / 2 - 3.5, KAM_B / 2 + 3.5))
+    rechtecke.append(("Kamera", KAM_X - KAM_T - 3, X_VORNE - WAND - 5.0, -KAM_B / 2 - 3.5, KAM_B / 2 + 3.5))   # vorderster Teil der Pfosten: unter der Kamera geht das Frontlicht durch (Höhe geprüft unten)
     lx, lz, lb, ll = LED
     rechtecke.append(("Status-LEDs", lx - lb / 2 - TWAND, lx + lb / 2 + TWAND, lz - ll / 2 - TWAND, lz + ll / 2 + TWAND))
     dx, dz = DISPLAY
@@ -400,6 +446,10 @@ def pruefen(haube_teil, ring_teile):
     rechtecke.append(("Display mit Haken", dx - rr, dx + rr, dz - rr, dz + rr))
     kx, kz, kd = LIDAR_KABEL
     rechtecke.append(("LiDAR-Kabelloch", kx - kd / 2, kx + kd / 2, kz - kd / 2, kz + kd / 2))
+    for s, nm in ((1, "Frontlicht"), (-1, "Rücklicht")):
+        xi = s * (X_VORNE - WAND)
+        x0, x1 = sorted((xi, xi - s * 5.0))
+        rechtecke.append((f"{nm} (Leiste + Pfosten)", x0, x1, -(LICHT_L / 2 + 3.5), LICHT_L / 2 + 3.5))
     rechtecke += [(f"Lasche/Polster {z}", LASCHE_X0 - 0.5, X_VORNE - WAND, z - 7, z + 7) for z in VORNE_Z]
     rechtecke.append(("Flansch hinten (mit Schraubenköpfen)", FUGE - FLANSCH_D - 3.5, FUGE, -B / 2, B / 2))
     rechtecke.append(("Flansch vorne", FUGE, FUGE + FLANSCH_D, -B / 2, B / 2))
@@ -415,7 +465,8 @@ def pruefen(haube_teil, ring_teile):
     print("Überschneidungen:", n)
     # Höhe: alles, was am Dach hängt, bleibt über Ebene 2 (höchstes Teil dort: Pico auf dem Freenove-Board, ca. 79 mm)
     tiefste = {"Pi-Unterseite (mit Lötstellen)": PI_UNTEN - 1.5, "Kamera": KAM_UNTEN - 2.0, "4G-Modul": DACH_UNTEN - 4.0 - 1.6 - 3.0,
-               "Display": DISPLAY_PCB_UNTEN - 3.0}
+               "Display": DISPLAY_PCB_UNTEN - 3.0, "Licht-Leisten": UNTEN + 0.0}
+    print(f"  Frontlicht unter der Kamera: Oberkante Leiste {LICHT_OBEN:.1f}, Kamera-Platine ab {KAM_UNTEN:.1f}, Objektiv-Fenster ab {KAM_OBJ_Y - KAM_FENSTER / 2:.1f}")
     for k, y in tiefste.items():
         print(f"  {k}: tiefster Punkt {y:5.1f} mm (Ebene 2 bis ca. 79 mm, Ring bis 84 mm)")
     return fehler + n
