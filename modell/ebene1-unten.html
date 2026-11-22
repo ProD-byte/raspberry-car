@@ -167,11 +167,11 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122163847"></script>
+<script src="teile/teile.js?v=20261122173657"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122163847"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122173657"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -502,12 +502,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 32 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. Im Modell ist das 65-mm-Rad vergrößert gezeichnet. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
-      g.scale.set(85 / 67.6, 85 / 67.6, 32 / 24.3); g.position.z += s * 3.85;   // 85-mm-Rad (ca. 32 mm breit): 65-mm-Modell vergrößert, Innenseite bleibt
+      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 36 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. 3D-Form: GrabCAD-Modell eines 85-mm-Geländerads (Tanvir Ahmed), Spikes entfernt. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
+      g.position.z += s * 6;   // 85-mm-Rad (36 mm breit): Innenseite bleibt bei |z| = 95,9
       const ersatz = new THREE.Group(); g.add(ersatz);
-      cadTeil('rad', g, ersatz, (m) => {
-        // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen
-        m.rotation.x = -Math.PI / 2; m.position.z = 12.15;
+      ersatz.scale.set(85 / 67.6, 85 / 67.6, 36 / 24.3);   // Ersatzform (wenn das CAD fehlt) auf 85 × 36 mm gestreckt
+      cadTeil('rad85', g, ersatz, (m) => {
+        // CAD (GrabCAD „85mm Anti-skid Shockproof Wheel“, Spikes entfernt, auf Ø 85 skaliert): Achse entlang z, Mitte im Ursprung
         const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
         return w;
       });

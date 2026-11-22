@@ -210,7 +210,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
   </div>
 
   <div class="notes">
-    <p><strong>So rechnet die Simulation:</strong> Gewicht des fertigen Autos ca. 1,9 kg (geschätzt), Schwerpunkt ca. 66 mm über dem Boden, Radstand 160 mm, Spurweite 224 mm, Räder Ø 85 mm, 6-V-Motoren mit Software-Begrenzung. Beim Drehen rutschen die Räder seitlich – je griffiger der Boden (Teppich), desto mehr Schlupf und desto mehr Strom. Das Auto steht immer auf drei oder vier Rädern: Ist der Boden verwunden, hebt ein Rad ab (rot im Feld rechts oben).</p>
+    <p><strong>So rechnet die Simulation:</strong> Gewicht des fertigen Autos ca. 1,9 kg (geschätzt), Schwerpunkt ca. 66 mm über dem Boden, Radstand 160 mm, Spurweite 228 mm, Räder Ø 85 mm, 6-V-Motoren mit Software-Begrenzung. Beim Drehen rutschen die Räder seitlich – je griffiger der Boden (Teppich), desto mehr Schlupf und desto mehr Strom. Das Auto steht immer auf drei oder vier Rädern: Ist der Boden verwunden, hebt ein Rad ab (rot im Feld rechts oben).</p>
     <p><strong>Nahsensoren:</strong> Vorne und hinten je ein VL53L1X, innen hinter einem Fenster, 5° nach oben gekippt, 4 cm über dem Boden. Jeder Sensor misst abwechselnd in zwei Richtungen (per Software verkleinertes Sichtfeld): <span style="color:#3f8cff">oben (+9°)</span> und <span style="color:#e07a1f">unten (−4°)</span>. Treffen beide etwa gleich weit → <strong>Wand</strong>, anhalten. Trifft der untere Strahl etwas, das schräg ansteigt → <strong>Rampe</strong> mit Steigung in Grad, drüberfahren (bis ca. 28°). Steigt es plötzlich an → <strong>Kante</strong>, anhalten, wenn sie höher als ca. 12 mm ist. Mit „Autopilot“ fährt das Auto allein und dreht vor Hindernissen ab.</p>
     <p><strong>Karte (Kästchen rechts unten):</strong> Das Auto zeichnet aus den Treffern der beiden Nahsensoren eine Karte, so wie es der Pico später auch kann. Wo es ist, weiß es nur geschätzt – aus den Encodern (gefahrene Strecke) und dem Kreisel im BNO085 (Drehung). Dieser Kreisel driftet ein wenig (ca. 0,25–0,5° pro Minute), darum weicht der geschätzte Weg (grün) mit der Zeit vom echten (orange) ab. „Raum scannen“ dreht das Auto einmal um sich selbst – wie ein sehr langsamer LiDAR. Mit nur zwei Sensoren entsteht so eine grobe Karte; eine genaue Karte rundum macht später der LiDAR.</p>
     <p><strong>Labyrinth lösen (Micromouse-Prinzip):</strong> Das Auto kennt nur die Größe des Labyrinths (6 × 6 Felder à 50 cm), sein Startfeld und das Zielfeld hinten rechts. In jedem Feld schaut es sich um: Sensor vorne und hinten messen, 90° drehen, nochmal messen – so kennt es alle vier Seiten. Die Wände trägt es in eine Raster-Karte ein (rot im Kästchen). Dann rechnet es mit „Flood-Fill“ für jedes Feld aus, wie viele Schritte es noch bis zum Ziel sind (Zahlen im Kästchen) – unbekannte Seiten zählen dabei erst mal als offen – und fährt ins Nachbarfeld mit der kleineren Zahl. Vor einer Wand stellt es sich auf genau 8 cm Abstand und korrigiert damit seine geschätzte Position. So findet es den Weg, ohne das Labyrinth vorher zu kennen. Genau dieser Ablauf passt später auch auf den Pico.</p>
@@ -227,9 +227,9 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122163847"></script>
+<script src="teile/teile.js?v=20261122173657"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122163847"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261122173657"></script>
 <script>
 // Fahrsimulation: Fahrwerk (Ebene 1) auf Gelände. Einfache, gut nachvollziehbare Physik (keine Physik-Bibliothek):
 // Panzerlenkung mit Schlupf, Auflage auf 3 oder 4 Rädern, Bodenfreiheit, Stufen, Steigung, Kippen, Stromschätzung.
@@ -543,12 +543,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 32 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. Im Modell ist das 65-mm-Rad vergrößert gezeichnet. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
-      g.scale.set(85 / 67.6, 85 / 67.6, 32 / 24.3); g.position.z += s * 3.85;   // 85-mm-Rad (ca. 32 mm breit): 65-mm-Modell vergrößert, Innenseite bleibt
+      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 36 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. 3D-Form: GrabCAD-Modell eines 85-mm-Geländerads (Tanvir Ahmed), Spikes entfernt. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
+      g.position.z += s * 6;   // 85-mm-Rad (36 mm breit): Innenseite bleibt bei |z| = 95,9
       const ersatz = new THREE.Group(); g.add(ersatz);
-      cadTeil('rad', g, ersatz, (m) => {
-        // CAD: Achse entlang y, Außenseite bei y = 0, Nabe bis y = 29,1 → Nabe zum Motor drehen
-        m.rotation.x = -Math.PI / 2; m.position.z = 12.15;
+      ersatz.scale.set(85 / 67.6, 85 / 67.6, 36 / 24.3);   // Ersatzform (wenn das CAD fehlt) auf 85 × 36 mm gestreckt
+      cadTeil('rad85', g, ersatz, (m) => {
+        // CAD (GrabCAD „85mm Anti-skid Shockproof Wheel“, Spikes entfernt, auf Ø 85 skaliert): Achse entlang z, Mitte im Ursprung
         const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
         return w;
       });
@@ -1180,20 +1180,20 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // ===================================================================
     // FAHRZEUG-DATEN (mm, kg, s)
     // ===================================================================
-    // Auto 250 × 180 mm (gehaeuse/ebene1_fahrwerk.py): Achsen bei x = ±80, Räder Ø 85 mm außen (Mitte z = ±112, ca. 32 mm breit)
-    const RAD_R = 42.5, SPUR = 224, RADSTAND = 160, DREHPUNKT_X = 0;   // Räder Ø 85 mm, Mitte bei z = ±112
+    // Auto 250 × 180 mm (gehaeuse/ebene1_fahrwerk.py): Achsen bei x = ±80, Räder Ø 85 mm außen (Mitte z = ±114, 36 mm breit)
+    const RAD_R = 42.5, SPUR = 228, RADSTAND = 160, DREHPUNKT_X = 0;   // Räder Ø 85 mm, Mitte bei z = ±114
     L0.position.y = E2.position.y = E3.position.y = RAD_R - 33.8;   // das Modell hat die Achse bei 33,8 → um 8,7 mm anheben   // Drehpunkt = Mitte zwischen den Achsen
     // Masse geschätzt: 4 Motoren + Räder ca. 480 g, Akku mit Haltern ca. 260 g, Druckteile ca. 800 g (PETG), Elektronik ca. 350 g.
     // Schwerpunkt: Motoren und Akku liegen unten, die Haube oben ist leicht → ca. 58 mm über dem Boden. Nachwiegen, wenn alles da ist!
     const MASSE = 1.9, SP_HOEHE = 66, BODENFREI = 24.7, G = 9.81;
-    const RAEDER = [[80, 112, 'VL'], [80, -112, 'VR'], [-80, 112, 'HL'], [-80, -112, 'HR']];   // x, z (links = +z)
+    const RAEDER = [[80, 114, 'VL'], [80, -114, 'VR'], [-80, 114, 'HL'], [-80, -114, 'HR']];   // x, z (links = +z)
     // Unterkante der Wanne über der Radebene: vorne ab x 116,5 und hinten ab x −116,5 mit 45° hochgezogen (Kufen)
     const unterkante = (lx) => BODENFREI + Math.max(0, lx - 116.5) + Math.max(0, -116.5 - lx);
-    // Umriss für den Anstoß-Test: Wannenrand (x −125 … +125, z ±90) und Außenseiten der Räder (z ±128)
+    // Umriss für den Anstoß-Test: Wannenrand (x −125 … +125, z ±90) und Außenseiten der Räder (z ±132)
     const UMRISS = [];
     for (let x = -125; x <= 125; x += 12.5) UMRISS.push([x, 90], [x, -90]);
     for (let z = -84; z <= 84; z += 12) UMRISS.push([125, z], [-125, z]);
-    for (const [wx] of RAEDER) for (const s of [1, -1]) for (let k = -40; k <= 40; k += 10) UMRISS.push([wx + k, s * 128]);
+    for (const [wx] of RAEDER) for (const s of [1, -1]) for (let k = -40; k <= 40; k += 10) UMRISS.push([wx + k, s * 132]);
     const KIPP_SEITE = Math.atan((SPUR / 2) / SP_HOEHE), KIPP_LAENGS = Math.atan((RADSTAND / 2) / SP_HOEHE);
     // Räder zum Drehen finden (Gruppen mit Namen „Rad …“)
     const radGruppen = L0.children.filter((g) => g.userData.part && /^Rad /.test(g.userData.part.name));
