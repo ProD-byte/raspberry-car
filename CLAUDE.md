@@ -3,7 +3,7 @@
 Dieses Projekt ist ein **Nachbau-Projekt**: ein kleines, vierrädriges Roboterauto, das sich wie eine DJI-Drohne anfühlen soll (Live-Video, Karte, „Folge mir“, „Nach Hause fahren“). Andere sollen es mit gekauften Standardmodulen nachbauen können.
 
 ## Zusammenarbeit
-- **Arbeitsort: `C:\Projekte\raspberry-car`** (lokal). HiDrive ist seit 22.11.2026 per WebDAV als Laufwerk H: verbunden und **nur Sicherung**: `H:\users\tank-1841\Kreativ und Basteln\Elektronik\raspberry-car` – dort nicht arbeiten, keine Terminals mit H: als Arbeitsordner starten, keine Passwörter oder Schlüssel auf H: ablegen. Sichern mit `robocopy "C:\Projekte\raspberry-car" "H:\users\tank-1841\Kreativ und Basteln\Elektronik\raspberry-car" /E /R:10 /W:5 /XD __pycache__` (Exit-Code 1–3 = Erfolg; nichts auf H: löschen ohne Rückfrage).
+- **Arbeitsort: `C:\Projekte\raspberry-car`** (lokal). HiDrive hängt per SSHFS als Laufwerk H: und ist **nur Sicherung**: `H:\Kreativ und Basteln\Elektronik\raspberry-car` (seit 23.11.2026; der WebDAV-Pfad `H:\users\tank-1841\…` gilt nicht mehr) – dort nicht arbeiten, keine Terminals mit H: als Arbeitsordner starten, keine Passwörter oder Schlüssel auf H: ablegen. Sichern mit `robocopy "C:\Projekte\raspberry-car" "H:\Kreativ und Basteln\Elektronik\raspberry-car" /E /R:10 /W:5 /XD __pycache__` (Exit-Code 1–3 = Erfolg; nichts auf H: löschen ohne Rückfrage).
 - Sprache: **Deutsch**, einfach und verständlich erklären. Der Bauherr kann löten (auch SMD), programmiert aber nicht beruflich.
 - Eingekauft wird **Stück für Stück, jeden Monat etwas** (Budget pro Monat oft ~50 €). Immer sagen, was jetzt nötig ist und was warten kann.
 - Vor dem Bestellen Screenshots der gewählten Variante prüfen (Spannung, Encoder, 2S/3S usw.).
