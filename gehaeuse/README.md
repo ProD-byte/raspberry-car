@@ -175,7 +175,7 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
 - **Vorne zwei M3 × 12** waagerecht durch die Vorderwand (Köpfe bündig) in die Laschen des Rings von Ebene 2.
 - **Kabel:** Die Haube ist unten offen – alle Kabel von Ebene 2 laufen hinten beim Scharnier nach oben, dort knicken sie beim Aufklappen am wenigsten.
 - **Luft:** senkrechte Lüftungsschlitze in beiden Seitenwänden (der AI HAT+ braucht Luft). Unter Pi und Kamera bleiben bis Ebene 2 gut 10 mm frei.
-- **Zwei Hälften:** Fuge bei x = +45 (wieder an einer anderen Stelle als Wanne, Deck und Ring). Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand; beide werden mit **6 × M3 × 12** verschraubt (bei aufgeklappter Haube). Fünf Köpfe sitzen hinten, die Schraube links am Dach von vorne – hinter ihr liegt das 4G-Modul.
+- **Zwei Hälften:** Fuge bei x = +45 (wieder an einer anderen Stelle als Wanne, Deck und Ring). Innen hat jede Hälfte an Dach und Seiten einen 10 mm breiten Rand; beide werden mit **6 × M3 × 12** verschraubt (bei aufgeklappter Haube). Fünf Köpfe sitzen hinten, die Schraube links am Dach von vorne – hinter ihr liegt das 4G-Modul. Die Hälften stoßen **ohne Spalt** aneinander, außen läuft eine Rille (1,2 × 0,6 mm) als saubere Linie um die Fuge.
 
 Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufklappen).
 
@@ -222,7 +222,7 @@ Selbst gedruckt statt gekauft (seit 25.11.2026). **4 × dasselbe Rad**: Ø 85 ×
 ## Front- und Rücklicht (in `ebene3_gehirn.py`)
 
 - Je eine **WS2812B-Leiste mit 8 LEDs** unten in der Vorder- und Rückwand der Haube, LEDs zur Wand.
-- Vor den LEDs ein durchgehender Schlitz (50,8 × 2,4 mm, Unterkante nach außen 45° schräg – druckt ohne Stützen) durch die Wand – von außen ein **Lichtband** in einer flachen Blende (76 × 10 mm, 0,6 mm tief). Innen davor liegt eine **Streuscheibe** (`ebene3/streuscheibe.stl`, 2 Stück, 1 mm dick, **Natur- oder Weiß-PETG**), auf die die LEDs drücken. So darf die Haube dunkel sein.
+- Vor den LEDs ein durchgehender Schlitz (50,8 × 2,4 mm, Unterkante nach außen 45° schräg – druckt ohne Stützen) durch die Wand – von außen ein **Lichtband** in einer flachen Blende (76 × 10 mm, 0,4 mm tief, damit neben dem Schlitz 1,0 mm Wand bleiben). Innen davor liegt eine **Streuscheibe** (`ebene3/streuscheibe.stl`, 2 Stück, 1 mm dick, **Natur- oder Weiß-PETG**), auf die die LEDs drücken. So darf die Haube dunkel sein.
 - Einbau: Haube aufklappen, Streuscheibe in die Vertiefung legen, Leiste von unten zwischen die zwei Pfosten schieben, bis sie oben anschlägt – eine kleine Nase hält sie. Vorne läuft sie unter der Kamera durch.
 - Maße der Leiste nach der Lieferung nachmessen (`LICHT_L`, `LICHT_H`) – die Angaben der Händler schwanken.
 

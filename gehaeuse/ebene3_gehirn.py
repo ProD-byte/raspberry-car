@@ -114,7 +114,7 @@ STREU_LUFT = 0.2                         # Luft rundum in der Vertiefung
 LICHT_SCHLITZ = (25.4, 2.4)              # Lichtband: EIN durchgehender Schlitz vor allen 8 LEDs – halbe Länge (z), Höhe innen (y);
                                          # die Unterkante läuft nach außen 45° schräg nach unten (druckt ohne Stützen, Licht fällt etwas nach unten)
 LICHT_TEILUNG = 6.35                     # Abstand der LEDs auf der Leiste
-LICHT_MULDE = (0.6, 38.0, 5.0)           # außen: flache Blende um das Lichtband – Tiefe, halbe Länge, halbe Höhe (Enden rund), endet vor den Schraubenköpfen
+LICHT_MULDE = (0.4, 38.0, 5.0)           # (0,4 tief: neben dem Schlitz bleiben 1,0 mm Wand) außen: flache Blende um das Lichtband – Tiefe, halbe Länge, halbe Höhe (Enden rund), endet vor den Schraubenköpfen
 # Scheinwerfer: zwei weiße 1-W-LEDs auf 20-mm-Alu-Stern vorne links/rechts unter den Eck-Facetten (3D-Form: Adafruit 2530).
 # Der Stern steckt senkrecht in einem Schlitz (von unten eingeschoben, Haube offen), die LED-Kuppel sitzt direkt hinter einem Loch
 # in der Vorderwand, das sich nach außen 60° weitet (wie ein Reflektor; steiler als 45° – druckt ohne Stützen).
@@ -144,7 +144,8 @@ LUEFTUNG_Y = (UNTEN + 3.0, SENKRECHT_BIS + 12.0)
 
 # Teilung in zwei Druckteile
 FUGE = 45.0
-FUGE_SPALT = 0.1
+FUGE_SPALT = 0.0                         # stumpf, ohne Spalt (mit Spalt sah man durch die Fuge)
+FUGE_RILLE = (1.2, 0.6)                  # außen an der Fuge eine Rille: Breite, Tiefe – eine saubere Linie statt einer Lücke
 FLANSCH_D, FLANSCH_TIEFE = 5.9, 10.0     # Dicke (x) je Hälfte, Breite nach innen
 FLANSCH_SCHRAUBEN = [("Dach", 40.0, "vorne"), ("Dach", -40.0, "hinten"), ("Seite", 95.0, "hinten"), ("Seite", 108.0, "hinten")]
 # Dach: z; Seite: y (je links und rechts). „vorne“/„hinten“ = Seite, auf der der Kopf sitzt: dort muss der Schraubendreher
@@ -491,11 +492,15 @@ def teilen(teil):
     hinten = teil & quader(-gross, FUGE - FUGE_SPALT, -gross, gross, -gross, gross)
     profil = flansch_profil(UNTEN, DACH_UNTEN + 0.05)
     fl_v = Pos(FUGE + FUGE_SPALT, 0, 0) * extrude(profil, FLANSCH_D - FUGE_SPALT)
-    if fl_v.bounding_box().min.X < FUGE:
+    if fl_v.bounding_box().min.X < FUGE - 0.01:
         fl_v = Pos(FUGE + FUGE_SPALT, 0, 0) * extrude(profil, -(FLANSCH_D - FUGE_SPALT))
     fl_h = fl_v.mirror(Plane.YZ.offset(FUGE))
     vorne += fl_v & aussen()
     hinten += fl_h & aussen()
+    rb, rt = FUGE_RILLE
+    rille = quader(FUGE - rb / 2, FUGE + rb / 2, -gross, gross, -gross, gross) & (aussen() - form(rt, UNTEN - 1, DACH_OBEN - rt, max(0.5, FASE - rt)))
+    vorne -= rille
+    hinten -= rille
     # Schrauben quer durch beide Flansche (Kopf hinten, Gewinde vorne)
     pos = []
     for (art, w, kopf) in FLANSCH_SCHRAUBEN:
@@ -555,7 +560,7 @@ def pruefen(haube_teil, ring_teile):
     schlimmst = 0.0
     for w in range(0, 101, 10):
         d = drehen(haube_teil, w)
-        v = sum((d & r).volume for r in ring_teile)
+        v = sum(getattr(d & r, "volume", 0.0) or 0.0 for r in ring_teile)   # leere Schnittmenge kann None sein
         schlimmst = max(schlimmst, v)
         if v > 0.5:
             print(f"  Aufklappen {w:3d}°: stößt am Ring an ({v:.1f} mm³)"); fehler += 1
