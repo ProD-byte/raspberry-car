@@ -136,20 +136,66 @@ Jeder Motor braucht ein **eigenes PWM-Paar** des Pico: Je zwei GPIOs teilen sich
 | violett | Pico GP13 (Pin 17) | VL53L1X vorne XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 | violett | Pico GP12 (Pin 16) | VL53L1X hinten XSHUT | XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt |
 
-### Front- und Rücklicht
+### Lichter am Display-ESP32 (Lichtband und Scheinwerfer)
 
-Zwei WS2812B-Leisten mit je 8 LEDs unten in der Vorder- und Rückwand der Haube, eine Kette an GP28 (Nummern 0–7 vorne,
-8–15 hinten). Status-LEDs gibt es nicht mehr – den Zustand zeigt das runde Display. Alle Leitungen angelötet, vom Deck durch
-Durchbruch A nach oben und entlang des Dachs mit Klebesockeln geführt. Zusammen bis ca. 1 A bei voll Weiß – die Software begrenzt die Helligkeit (`LED_HELL_MAX` in `pico/pins.py`).
+Die Lichter steuert **nicht der Pico**, sondern das ESP32-S3 im runden Display (Waveshare ESP32-S3-Touch-AMOLED-1.75). Es sitzt
+selbst in der Haube – die Datenleitungen bleiben dort und sind kurz, der Pico behält GP18 und GP28 frei, und das ESP32 hat
+freie Hardware-PWM für die Scheinwerfer. Was die Lichter zeigen sollen (Bremsen, Blinken, Rückwärts, Scheinwerfer an), schickt
+der Pi 5 über das USB-Kabel ans Display – Lichter sind nicht sicherheitskritisch, ein paar Millisekunden Verzögerung stören nicht.
+
+**Stiftleiste des Displays** (8-polig, 2,54 mm, laut Waveshare-Hardware-Referenz, H2): 1 VBUS · 2 GND · 3 3V3 · 4 RX (GPIO44) ·
+5 TX (GPIO43) · **6 GPIO17** · **7 GPIO18** · **8 GPIO16**. Die GPIOs haben 3,3-V-Pegel und vertragen keine 5 V.
+VBUS und 3V3 **nicht** als Stromquelle für die Lichter nutzen. Lage der Stiftleiste und ob sie bestückt ist, nach der Lieferung prüfen.
+
+**Strom** für die Lichter kommt weiter vom MP1584 (5 V), nicht vom Display und nicht vom Pololu – so bleibt die 5-V-Versorgung
+des Pi frei von LED-Strom. Masse ist überall dieselbe (Akku-Minus); zusätzlich verbindet ein dünner Draht GND des Displays mit
+GND der Lichter, damit die Datensignale einen kurzen Bezug haben.
+
+**Lichtband:** zwei WS2812B-Leisten mit je 8 LEDs unten in Vorder- und Rückwand der Haube, eine Kette (Nummern 0–7 vorne,
+8–15 hinten). Zusammen bis ca. 1 A bei voll Weiß – die Software auf dem Display begrenzt die Helligkeit auf ca. 35 %.
+Das 3,3-V-Datensignal reicht bei WS2812B meist; flackert es, einen 330-Ω-Widerstand in die Datenleitung direkt am Display löten.
+
+**Scheinwerfer:** zwei weiße 1-W-LEDs auf 20-mm-Alu-Stern vorne links und rechts, geschaltet und gedimmt über einen
+MOSFET-Treiber (Adafruit 5648, Einklick-Tasche vorne links unter dem Dach). Je LED ein **15-Ω-Widerstand (1 W)** in der
+Plus-Leitung (angelötet, mit Schrumpfschlauch): an 5 V ca. 150 mA je LED (ca. 0,45 W – bleibt ohne Kühlkörper kühl genug
+für die PETG-Haube). Zusammen ca. 0,3 A aus dem MP1584. Zum Treiber ein 3-poliges JST-PH-Kabel mit offenem Ende
+(Adafruit-Farben: schwarz = GND, rot = V+, weiß = Signal).
 
 | Farbe | Von | Nach | Zweck |
 |---|---|---|---|
-| grün | Pico GP28 (Pin 34) | Frontlicht DIN | Daten (GP28) |
-| rot | MP1584 OUT+ | Frontlicht 5V | 5 V für die Lichter |
-| schwarz | Pico GND (Pin 13) | Frontlicht GND | Masse Lichter |
+| grün | Display GPIO16 (Stiftleiste Pin 8) | Frontlicht DIN | Daten Lichtband |
+| rot | MP1584 OUT+ | Frontlicht 5V | 5 V für das Lichtband (vom Deck durch Durchbruch A nach oben, am Dach mit Klebesockeln) |
+| schwarz | MP1584 OUT− | Frontlicht GND | Masse Lichtband |
+| schwarz (dünn) | Display GND (Stiftleiste Pin 2) | Frontlicht GND | Bezugsmasse für die Datensignale |
 | grün | Frontlicht DOUT | Rücklicht DIN | Daten weiter zum Rücklicht |
 | rot | Frontlicht 5V (Ende) | Rücklicht 5V | 5 V weiter |
 | schwarz | Frontlicht GND (Ende) | Rücklicht GND | Masse weiter |
+| weiß | Display GPIO17 (Stiftleiste Pin 6) | MOSFET-Treiber Signal (JST) | Scheinwerfer schalten / dimmen (PWM) |
+| rot | MP1584 OUT+ | MOSFET-Treiber V+ (JST) | 5 V für die Scheinwerfer |
+| schwarz | MP1584 OUT− | MOSFET-Treiber GND (JST) | Masse |
+| rot | MOSFET-Treiber Klemme + | Scheinwerfer links + | über 15 Ω / 1 W |
+| schwarz | MOSFET-Treiber Klemme − | Scheinwerfer links − | |
+| rot | MOSFET-Treiber Klemme + | Scheinwerfer rechts + | über 15 Ω / 1 W (zwei Adern in einer Zwillings-Aderendhülse) |
+| schwarz | MOSFET-Treiber Klemme − | Scheinwerfer rechts − | (zwei Adern in einer Zwillings-Aderendhülse) |
+
+### Nachtsicht (IR-LEDs)
+
+Vier 5-mm-IR-LEDs (850 nm) vorne in der Haube, je zwei übereinander links und rechts zwischen Kamera und Schraubpolster.
+Sie leuchten für die **NoIR-Kamera** (rechts, an Pi 5 CAM/DISP 1) – für das Auge fast unsichtbar. Geschaltet über einen zweiten
+MOSFET-Treiber (Adafruit 5648, Tasche vorne in der Mitte unter dem Dach) an **GPIO18 des Displays**. Je Seite zwei LEDs in Reihe
+(Kathode der oberen an die Anode der unteren LED löten) mit einem **22-Ω-Widerstand (0,5 W)**: an 5 V ca. 90 mA je Seite,
+zusammen ca. 0,2 A aus dem MP1584. LEDs vor dem Kauf prüfen: **850 nm** (nicht 940 nm), Abstrahlwinkel mindestens ±30°,
+Strom bis 100 mA. Langes Bein = Anode (+).
+
+| Farbe | Von | Nach | Zweck |
+|---|---|---|---|
+| weiß | Display GPIO18 (Stiftleiste Pin 7) | MOSFET-Treiber IR Signal (JST) | IR-Licht schalten / dimmen (PWM) |
+| rot | MP1584 OUT+ | MOSFET-Treiber IR V+ (JST) | 5 V für die IR-LEDs |
+| schwarz | MP1584 OUT− | MOSFET-Treiber IR GND (JST) | Masse |
+| rot | MOSFET-Treiber IR Klemme + | IR-LEDs links + (obere LED) | über 22 Ω / 0,5 W |
+| schwarz | MOSFET-Treiber IR Klemme − | IR-LEDs links − (untere LED) | |
+| rot | MOSFET-Treiber IR Klemme + | IR-LEDs rechts + (obere LED) | über 22 Ω / 0,5 W (zwei Adern in einer Zwillings-Aderendhülse) |
+| schwarz | MOSFET-Treiber IR Klemme − | IR-LEDs rechts − (untere LED) | (zwei Adern in einer Zwillings-Aderendhülse) |
 
 ### USB & Antennen
 
@@ -170,7 +216,8 @@ Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur *
 
 | Art | Von | Nach | Zweck |
 |---|---|---|---|
-| Flachband 22→15 Pin | Camera Module 3 | Pi 5 CAM/DISP 0 | Kamerabild |
+| Flachband 22→15 Pin | Camera Module 3 | Pi 5 CAM/DISP 0 | Kamerabild (Tag) |
+| Flachband 22→15 Pin | Camera Module 3 NoIR | Pi 5 CAM/DISP 1 | Nachtsicht-Bild |
 | Flachband (liegt bei) | AI HAT+ PCIe | Pi 5 PCIe | KI-Beschleuniger |
 
 ## Belegung am Pico (Klemmen auf dem Freenove-Board)
@@ -187,7 +234,7 @@ Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur *
 | 10 | GP7 | Motor vorne links B |
 | 11 | GP8 | Motor hinten links A |
 | 12 | GP9 | Motor hinten links B |
-| 13 | GND | Frontlicht GND |
+| 13 | GND | frei |
 | 14 | GP10 | BNO085 SDA |
 | 15 | GP11 | BNO085 SCL |
 | 16 | GP12 | VL53L1X hinten XSHUT |
@@ -207,7 +254,7 @@ Alle vier USB-Buchsen des Pi 5 sind belegt. Über USB gibt der Pi zusammen nur *
 | 31 | GP26 | Motor hinten rechts A |
 | 32 | GP27 | Motor hinten rechts B |
 | 33 | GND | Motor hinten rechts GND |
-| 34 | GP28 | Frontlicht DIN |
+| 34 | GP28 | frei (die Lichter hängen am Display-ESP32) |
 | 36 | 3V3 | 3,3-V-Verteiler vorne Platz 1 |
 | 38 | GND | MP1584 OUT− |
 | 39 | VSYS | MP1584 OUT+ |

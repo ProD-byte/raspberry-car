@@ -204,11 +204,13 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122185623"></script>
+<script src="teile/teile.js?v=20261126115907"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
+<!-- Einzelansicht: Doppelklick auf ein Bauteil zeigt es allein als 3D-Modell -->
+<script src="teile/einzelansicht.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122185623"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261126115907"></script>
 <script>
 (function () {
   const stage = document.getElementById('stage');
@@ -652,15 +654,16 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 36 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. 3D-Form: GrabCAD-Modell eines 85-mm-Geländerads (Tanvir Ahmed), Spikes entfernt. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
-      g.position.z += s * 6;   // 85-mm-Rad (36 mm breit): Innenseite bleibt bei |z| = 95,9
+      const g = part(L0, 'Rad 85 mm (Druckteil: Felge PETG + Reifen TPU)', 'Selbst gedrucktes Rad Ø 85 × 33,4 mm (gehaeuse/rad.py): Felge aus PETG mit Klemmnabe direkt auf der 4-mm-D-Welle (geschlitzt, 1 × M3 × 16 quer – mit Inbus 2,5 waagerecht von vorne bzw. hinten erreichbar, Rad so drehen, dass die Schraube nach vorne zeigt). Reifen aus TPU 95A mit versetzten Querrillen, innen 12 Nuten für die Rippen der Felge; wird über die äußere Lippe aufgezogen. Viermal dasselbe Rad. Beide Teile mit der Außenseite nach unten drucken, ohne Stützen. Dateien: gehaeuse/rad/felge.stl, gehaeuse/rad/reifen.stl', x, AXLE, s * (83 + MOTOR_Z));
+      g.position.z += s * 6;   // Bezugspunkt |z| = 114 (Rad selbst: 98,5 … 131,9)
       const ersatz = new THREE.Group(); g.add(ersatz);
-      ersatz.scale.set(85 / 67.6, 85 / 67.6, 36 / 24.3);   // Ersatzform (wenn das CAD fehlt) auf 85 × 36 mm gestreckt
-      cadTeil('rad85', g, ersatz, (m) => {
-        // CAD (GrabCAD „85mm Anti-skid Shockproof Wheel“, Spikes entfernt, auf Ø 85 skaliert): Achse entlang z, Mitte im Ursprung
-        const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
+      ersatz.scale.set(85 / 67.6, 85 / 67.6, 33.4 / 24.3); ersatz.position.z = s * 1.2;   // Ersatzform (wenn das Modell fehlt) auf 85 × 33,4 mm gestreckt
+      // Druckteile (gehaeuse/rad.py): Radachse = z, z = Abstand von der Wagenmitte (98,5 … 131,9), im GLB liegt die Achse auf y
+      [['rad_felge', 0xd85a30, 0.6], ['rad_reifen', 0x202224, 0.95]].forEach(([datei, farbe, rau]) => cadTeil(datei, g, ersatz, (m) => {
+        const w = new THREE.Group(); w.add(m); m.rotation.x = Math.PI / 2;
+        w.position.z = -s * 114; if (s < 0) w.rotation.y = Math.PI;
         return w;
-      });
+      }, (mat) => { mat.color.set(farbe).convertSRGBToLinear(); mat.roughness = rau; mat.metalness = 0; }));
       const prof = [[19, -13], [28.5, -13], [31.2, -12.2], [32.5, -10.5], [32.5, 10.5], [31.2, 12.2], [28.5, 13], [19, 13]].map(([r, y]) => new THREE.Vector2(r, y));
       add(ersatz, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
       const n = 30, tread = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 1.2, 20), std(0x18191b, { rough: 0.95 }), n);
@@ -910,7 +913,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
     // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
     (function freenove() {
-      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M3 × 8 verschraubt.', 20, TOP[1] + 4, 0);
+      const g = part(L1, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M2,5 × 8 verschraubt.', 20, TOP[1] + 4, 0);
       const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
       [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
         (m3Schraube(g, x, 1.6 + 3, z, 8, false).userData.nurImAuto = true));
@@ -1125,12 +1128,13 @@ code { font-family: var(--font-mono); font-size: 13px; }
     })();
     ribbon(L2, [V(PI.x + 37.5, HAT_Y + 3.2, 1.75), V(PI.x + 47, HAT_Y + 3, 1.75), V(PI.x + 47, PI.y + 8, 1.75), V(PI.x + 41.8, PI.y + 3.6, 1.75)], 16, 0xb8752b)
       .userData.part = { name: 'PCIe-Flachbandkabel: AI HAT+ → Pi 5 PCIe', desc: 'Liegt dem AI HAT+ bei. Verbindet den KI-Chip mit dem schnellen PCIe-Anschluss des Pi 5.' };
-    (function camera() {
+    [[15, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera (120°) mit Autofokus für das Live-Video am Tag. Sitzt links der beiden Kameras', 'CAM/DISP 0'],
+     [-15, 'Raspberry Pi Camera Module 3 NoIR Wide (Nachtsicht)', 'Dieselbe Weitwinkelkamera, aber ohne Infrarot-Sperrfilter: sieht das unsichtbare Licht der IR-LEDs und liefert so im Dunkeln ein schwarz-weißes Bild. Tagsüber wären ihre Farben rosa und blass – darum gibt es zwei Kameras. Sitzt rechts', 'CAM/DISP 1']].forEach(([kz, kname, ktext, kport]) => {
       // Kamera Modul 3 Wide: Platine 25 × 23,9 mm senkrecht in den zwei Nuten des Klappdeckels (Vorderseite bei x = 73,6,
       // Unterkante 4 mm über dem Boden), Objektiv 14,4 mm über der Unterkante – schaut durch das Fenster in der Vorderwand.
-      const g = part(L2, 'Raspberry Pi Camera Module 3 Wide', 'Weitwinkelkamera (120°) mit Autofokus für das Live-Video. Wird von oben in zwei Nuten an der Vorderwand des Klappdeckels geschoben, ohne Schrauben; das Objektiv schaut durch ein großes, außen angefastes Fenster. Das Flachbandkabel (22 auf 15 Pin) geht unten heraus zum Anschluss CAM/DISP 0 am Pi 5.', 112.6, 92 + 11.95, 0);
+      const g = part(L2, kname, `${ktext}. Wird bei offener Haube von unten in zwei Nuten an der Vorderwand geschoben, ohne Schrauben; das Objektiv schaut durch ein eigenes, außen angefastes Fenster. Das Flachbandkabel (22 auf 15 Pin) geht unten heraus zum Anschluss ${kport} am Pi 5.`, 112.6, 92 + 11.95, kz);
       const ersatz = new THREE.Group(); g.add(ersatz);
-      const ct = canvasTex(25, 23.9, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, 'Camera Module 3', w / 2, h - 3, 1.8, { align: 'center' }); });
+      const ct = canvasTex(25, 23.9, 12, (c, w, h) => { c.fillStyle = '#2b7a3d'; c.fillRect(0, 0, w, h); [[2, 2], [w - 2, 2], [2, h - 2], [w - 2, h - 2]].forEach(([x, y]) => hole(c, x, y, 1.1)); silk(c, kz > 0 ? 'Camera Module 3' : 'Camera Module 3 NoIR', w / 2, h - 3, 1.8, { align: 'center' }); });
       const cs = std(0x23663a);
       add(ersatz, new THREE.BoxGeometry(1, 23.9, 25), [std(0xffffff, { map: ct }), cs, cs, cs, cs, cs], 0.5, 0, 0);
       rbox(ersatz, 4.5, 8.5, 8.5, 3.2, 2.47 - 4.25, 0, 0x151617, { rough: 0.5, r: 0.8 });
@@ -1140,9 +1144,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
         m.applyMatrix4(new THREE.Matrix4().set(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1));
         return m;
       });
-    })();
-    ribbon(L2, [V(112.2, 92.5, 0), V(100, 90.5, 2), V(70, 92, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
+    });
+    ribbon(L2, [V(112.2, 92.5, 15), V(100, 90.5, 12), V(70, 92, 10), V(40, PI.y + 6, -15), V(PI.x - 6, PI.y + 6, -15), V(PI.x - 12, PI.y + 4.0, -15)], 13, 0xc58a3a)
       .userData.part = { name: 'Kamerakabel: Camera Module 3 → Pi 5 CAM/DISP 0', desc: 'Flachbandkabel 22 auf 15 Pin (beim Pi 5 nötig). Kontakte zeigen zur Platine.' };
+    // Zweiter Anschluss des Pi 5 (CAM/DISP 1) liegt neben CAM/DISP 0 – Lage im Modell nur ungefähr
+    ribbon(L2, [V(112.2, 92.5, -15), V(100, 90.0, -17), V(70, 91.5, -20), V(40, PI.y + 5, -22), V(PI.x - 12, PI.y + 5, -22), V(PI.x - 18, PI.y + 3.6, -22)], 13, 0xc58a3a)
+      .userData.part = { name: 'Kamerakabel: Camera Module 3 NoIR → Pi 5 CAM/DISP 1', desc: 'Zweites Flachbandkabel 22 auf 15 Pin für die Nachtsicht-Kamera. Kontakte zeigen zur Platine. Der Pi 5 hat zwei Kamera-Anschlüsse – beide Kameras laufen gleichzeitig.' };
     (function pololu() {
       const g = part(L2, 'Pololu D36V50F5 (5 V, 5,5 A)', 'Eigene, kräftige 5-V-Versorgung für Pi 5 und alles daran. VIN/GND vom Verteiler auf Ebene 1 (Kabel hinten am Scharnier hoch), VOUT/GND über einen kurzen USB-C-Stecker in den Pi. Sitzt vorne rechts im Klappdeckel in einer Einklick-Tasche, nah an der USB-C-Buchse des Pi.', 68, LEVEL[3], -45); g.rotation.x = Math.PI;   // hängt unter dem Dach
       const names = ['EN', 'VIN', 'GND', 'GND', 'VOUT', 'PG'];
@@ -1228,13 +1235,14 @@ code { font-family: var(--font-mono); font-size: 13px; }
       anchor(`ANT_${k}`, g, -21.4, 0.5, 0, [-1, 0, 0], `LTE-Antenne ${nm}`);
     });
     // Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm) unten in der Vorder-/Rückwand der Haube (gehaeuse/ebene3_gehirn.py).
-    // LEDs zur Wand, drücken auf eine Streuscheibe (Natur-PETG), davor 8 Pixel-Fenster in der Wand. Kette: GP28 → Frontlicht → Rücklicht.
+    // LEDs zur Wand, drücken auf eine Streuscheibe (Natur-PETG), davor ein durchgehendes Lichtband (Schlitz) in der Wand. Kette: Display-ESP32 GPIO16 → Frontlicht → Rücklicht.
+    const LICHT = { FL: [], RL: [], SW: [], IR: [], streu: {} };   // leuchtende Flächen je LED – die Fahrsimulation schaltet sie (Tagfahr-, Brems-, Blinklicht, Scheinwerfer)
     [[1, 'FL', 'Frontlicht', 0xffffff, 'Nummer 0–7 in der Kette. Leuchtet weiß nach vorne (Scheinwerfer), kann auch blinken oder die Farbe zeigen, in die das Auto gleich abbiegt.'],
      [-1, 'RL', 'Rücklicht', 0xff2a1a, 'Nummer 8–15 in der Kette. Leuchtet rot nach hinten, beim Bremsen heller, beim Rückwärtsfahren weiß.']].forEach(([s, k, nm, farbe, txt]) => {
-      const g = part(L3, `${nm} (WS2812B-Leiste, 8 LEDs)`, `${txt} Platine ca. 51 × 10 mm (3D-Form: Adafruit NeoPixel Stick, die günstigen Nachbauten sind gleich aufgebaut – Maße nach der Lieferung nachmessen), die LEDs zeigen zur Wand und drücken auf eine 1 mm dünne Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG). Davor hat die Wand 8 kleine Fenster, eins je LED – von außen eine leuchtende Pixel-Linie in einer flachen Mulde. Wird bei offener Haube von unten zwischen zwei Pfosten geschoben, eine kleine Nase hält sie. 5 V, GND und Daten angelötet.`, s * 120.2, 90.2, 0);
+      const g = part(L3, `${nm} (WS2812B-Leiste, 8 LEDs)`, `${txt} Platine ca. 51 × 10 mm (3D-Form: Adafruit NeoPixel Stick, die günstigen Nachbauten sind gleich aufgebaut – Maße nach der Lieferung nachmessen), die LEDs zeigen zur Wand und drücken auf eine 1 mm dünne Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG). Davor hat die Wand einen durchgehenden Schlitz – von außen ein leuchtendes Lichtband in einer flachen dunklen Blende. Wird bei offener Haube von unten zwischen zwei Pfosten geschoben, eine kleine Nase hält sie. 5 V, GND und Daten angelötet.`, s * 120.2, 90.2, 0);
       // Platine: echtes CAD-Modell des Adafruit NeoPixel Stick (Nr. 1426, MIT), 50,8 × 10,16 mm, LEDs nach außen (zur Wand)
       const ersatz = new THREE.Group(); g.add(ersatz);
-      box(ersatz, 1.6, 10, 53, 0, 0, 0, 0x16181a, { rough: 0.6 });
+      box(ersatz, 1.6, 10, 53, 0, -5, 0, 0x16181a, { rough: 0.6 });
       cadTeil('neopixel_stick', g, ersatz, (m) => {
         m.position.set(-25.4, -1.3, 5.08);                       // Mitte der Platine in den Ursprung
         const w = new THREE.Group(); w.add(m);
@@ -1242,17 +1250,73 @@ code { font-family: var(--font-mono); font-size: 13px; }
         w.position.x = s * 1.1;                                  // Vorderseite der LEDs bei ±2,4 (liegt in der Tasche der Wand)
         return w;
       }, (mat) => { mat.color.set(0x16181a).convertSRGBToLinear(); mat.roughness = 0.6; mat.metalness = 0; });
-      for (let i = 0; i < 8; i++) box(g, 0.3, 5, 5, s * 2.3, 0, -22.225 + i * 6.35, 0xf4f4f4, { emissive: farbe, ei: 0.85 });   // leuchtende LED-Flächen
-      const st = part(g, 'Streuscheibe (2 × Druckteil)', 'Dünne Platte 53,8 × 8,8 × 1 mm aus Natur- oder Weiß-PETG: liegt innen in der Vertiefung vor den 8 Pixel-Fenstern, die LED-Leiste drückt sie an. Verteilt das Licht, damit jedes Fenster gleichmäßig leuchtet und man die LEDs nicht als Punkte sieht. Datei: gehaeuse/ebene3/streuscheibe.stl', s * 2.85, 0, 0);
+      for (let i = 0; i < 8; i++) {   // je LED: leuchtende LED-Fläche und ein Stück Lichtband davor. Nummer i = Platz in der Leiste ab dem Eingang (DIN, z > 0 = links)
+        const z = (3.5 - i) * 6.35;
+        const led = box(g, 0.3, 5, 5, s * 2.3, -2.5, z, 0xf4f4f4, { emissive: farbe, ei: 0.85 });
+        const band = box(g, 0.1, 2.0, 6.2, s * 3.75, -1.1, z, farbe, { emissive: farbe, ei: 0.95 });   // mitten im Schlitz (−1,55 … +1,2), etwas kleiner – berührt keine Wand (kein Flackern)
+        LICHT[k].push({ led, band });
+      }
+      const st = part(g, 'Streuscheibe (2 × Druckteil)', 'Dünne Platte 53,8 × 8,8 × 1 mm aus Natur- oder Weiß-PETG: liegt innen in der Vertiefung vor dem Lichtband, die LED-Leiste drückt sie an. Verteilt das Licht, damit das Band gleichmäßig leuchtet und man die LEDs nicht als Punkte sieht. Datei: gehaeuse/ebene3/streuscheibe.stl', s * 2.85, 0, 0);
       st.userData.druckteil = 'e3';
-      box(st, 0.9, 8.6, 53.6, 0, 0, 0, 0xf2f0ea,   // 0,1 mm kleiner als die echte Scheibe: keine Fläche liegt genau auf einer Fläche der Haube (sonst flackert es)
+      LICHT.streu[k] = box(st, 0.9, 8.6, 53.6, 0, -4.3, 0, 0xf2f0ea,   // 0,1 mm kleiner als die echte Scheibe: keine Fläche liegt genau auf einer Fläche der Haube (sonst flackert es)
           { emissive: farbe, ei: 0.35, rough: 0.9 });
-      for (let i = 0; i < 8; i++) box(g, 0.1, 2.6, 4.2, s * 3.75, 0, (i - 3.5) * 6.35, farbe, { emissive: farbe, ei: 0.95 });   // die 8 Pixel-Fenster leuchten: Fläche mitten im Fenster, etwas kleiner – berührt keine Wand (kein Flackern)
       // Lötpunkte an den Enden auf der Rückseite: z > 0 Eingang (DIN), z < 0 Ausgang (DOUT)
       [['DIN', 24.5, 2.6, 'DIN'], ['5V', 24.5, 0, '5V'], ['GND', 24.5, -2.6, 'GND'], ['DOUT', -24.5, 2.6, 'DOUT'], ['5V2', -24.5, 0, '5V (Ende)'], ['GND2', -24.5, -2.6, 'GND (Ende)']].forEach(([n, z, y, l]) => {
         box(g, 0.3, 1.6, 1.8, -s * 0.95, y, z, 0xd8b46a, { metal: 0.8 });
         anchor(`${k}_${n}`, g, -s * 1.2, y, z, [-s, 0, 0], `${nm} ${l}`);
       });
+    });
+
+    // Scheinwerfer: zwei weiße 1-W-LEDs auf 20-mm-Alu-Stern vorne links/rechts (gehaeuse/ebene3_gehirn.py: SW_Z = 64, SW_Y = 96,
+    // Vorderseite des Sterns bei x = 116,45), von unten in Schlitze geschoben; Licht durch ein Loch, das sich nach außen 60° weitet.
+    // Geschaltet über einen MOSFET-Treiber (Adafruit 5648) an GPIO17 des Display-ESP32, je LED ein 15-Ω-Widerstand (1 W) in der Plus-Leitung.
+    [[1, 'SWL', 'links'], [-1, 'SWR', 'rechts']].forEach(([sz, k, nm]) => {
+      const g = part(L3, `Scheinwerfer ${nm} (1-W-LED weiß auf 20-mm-Stern)`, 'Echter Scheinwerfer für die Kamera im Dunkeln: kaltweiße 1-W-LED auf einem 20-mm-Alu-Stern, mit 15-Ω-Widerstand an 5 V ca. 150 mA – rund 50 Lumen je Seite, fünfmal so viel wie das ganze Lichtband. Breiter Lichtkegel (120°), passt zur Weitwinkel-Kamera. Der Stern wird bei offener Haube von unten in einen Schlitz geschoben und rastet über eine kleine Nase; Rückseite offen, damit er kühl bleibt. Davor ein Loch in der Wand, das sich nach außen weitet wie ein Reflektor. 3D-Form: Adafruit 3-W-LED auf Stern (Nr. 2530, MIT) – der weiße Stern sieht gleich aus. Die Lötpunkte + und − sitzen vorne auf dem Stern.', 116.45, 96, sz * 64);
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      cylX(ersatz, 10, -1.2, 0, 0, 0, 0xd9dadc, { metal: 0.7, rough: 0.35 });
+      cadTeil('scheinwerfer_led', g, ersatz, (m) => {
+        const w = new THREE.Group(); w.add(m);
+        w.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(V(0, 0, 1), V(1, 0, 0), V(0, 1, 0)));   // Stern in der y/z-Ebene, LED nach vorne (+x)
+        return w;
+      });
+      LICHT.SW.push(cylX(g, 3.0, 6.4, 6.5, 0, 0, 0xffffff, { emissive: 0xfff6e8, ei: 0.9 }));   // leuchtende Fläche im Loch der Wand (Innenseite der Wand bei 6,15, berührt keine Wand)
+      [['P', 6.5, '+'], ['M', -6.5, '−']].forEach(([n, z, l]) => anchor(`${k}_${n}`, g, 0.3, -0.9, z, [0, -1, 0], `Scheinwerfer ${nm} ${l}`));
+    });
+    (function mosfet() {
+      const g = part(L3, 'MOSFET-Treiber Adafruit 5648 (Scheinwerfer)', 'Schaltet die beiden Scheinwerfer: Das ESP32-S3 im runden Display gibt an GPIO17 ein 3,3-V-Signal, der MOSFET (AO3406) schaltet die 5 V – bis 1,5 A, hier nur ca. 0,3 A. Gedimmt wird mit PWM (LEDC des ESP32). Eingang: 3-poliger JST-PH-Stecker (V+, GND, Signal), Ausgang: Schraubklemme + / −. Hängt vorne links in einer Einklick-Tasche unter dem Dach, Bauteile nach unten. Platine 25,4 × 17,8 mm. 3D-Form: Adafruit-CAD (MIT).', 78, LEVEL[3], 60); g.rotation.x = Math.PI;   // hängt unter dem Dach
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      box(ersatz, 25.4, 1.6, 17.8, 0, 0.8, 0, 0x16181a);
+      cadTeil('mosfet_treiber', g, ersatz, (m) => { m.position.set(-12.7, 0, 8.89); return m; });
+      anchor('MOS_SIG', g, -13.2, 3.4, 2.25, [-1, 0, 0], 'MOSFET-Treiber Signal (JST)');
+      anchor('MOS_V+', g, -13.2, 3.4, 0.25, [-1, 0, 0], 'MOSFET-Treiber V+ (JST)');
+      anchor('MOS_GND', g, -13.2, 3.4, -1.75, [-1, 0, 0], 'MOSFET-Treiber GND (JST)');
+      anchor('MOS_OUT+', g, 12.0, 3.4, 2.0, [1, 0, 0], 'MOSFET-Treiber Klemme +');
+      anchor('MOS_OUT-', g, 12.0, 3.4, -2.0, [1, 0, 0], 'MOSFET-Treiber Klemme −');
+    })();
+    (function mosfetIR() {   // zweiter, gleicher Treiber für die IR-LEDs (gehaeuse/ebene3_gehirn.py: Tasche bei x = 85, z = 0)
+      const g = part(L3, 'MOSFET-Treiber Adafruit 5648 (IR-LEDs)', 'Schaltet die vier IR-LEDs der Nachtsicht: Signal vom ESP32-S3 im runden Display (GPIO18), der MOSFET schaltet die 5 V – hier ca. 0,2 A. Gleicher Treiber wie für die Scheinwerfer. Hängt vorne in der Mitte in einer Einklick-Tasche unter dem Dach, Bauteile nach unten. 3D-Form: Adafruit-CAD (MIT).', 85, LEVEL[3], 0); g.rotation.x = Math.PI;
+      const ersatz = new THREE.Group(); g.add(ersatz);
+      box(ersatz, 25.4, 1.6, 17.8, 0, 0.8, 0, 0x16181a);
+      cadTeil('mosfet_treiber', g, ersatz, (m) => { m.position.set(-12.7, 0, 8.89); return m; });
+      anchor('MOS2_SIG', g, -13.2, 3.4, 2.25, [-1, 0, 0], 'MOSFET-Treiber IR Signal (JST)');
+      anchor('MOS2_V+', g, -13.2, 3.4, 0.25, [-1, 0, 0], 'MOSFET-Treiber IR V+ (JST)');
+      anchor('MOS2_GND', g, -13.2, 3.4, -1.75, [-1, 0, 0], 'MOSFET-Treiber IR GND (JST)');
+      anchor('MOS2_OUT+', g, 12.0, 3.4, 2.0, [1, 0, 0], 'MOSFET-Treiber IR Klemme +');
+      anchor('MOS2_OUT-', g, 12.0, 3.4, -2.0, [1, 0, 0], 'MOSFET-Treiber IR Klemme −');
+    })();
+    // IR-LEDs: je Seite zwei 5-mm-LEDs (850 nm) übereinander bei z = ±35, y = 101 und 111, Spitze bündig mit der Vorderwand (x = 125),
+    // von innen eingesteckt (Kragen bei x = 117,4). Beide in Reihe mit einem 22-Ω-Widerstand → ca. 90 mA.
+    [[1, 'IRL', 'links'], [-1, 'IRR', 'rechts']].forEach(([sz, k, nm]) => {
+      const g = part(L3, `IR-LEDs ${nm} (2 × 5 mm, 850 nm)`, 'Infrarot-Licht für die Nachtsicht-Kamera: zwei 5-mm-LEDs mit 850 nm, für Menschen fast unsichtbar (sie glimmen nur schwach dunkelrot), für die NoIR-Kamera hell. Von innen durch den Block in die Wand gesteckt, bis der Kragen anschlägt, mit einem Tropfen Heißkleber gesichert. Beide LEDs in Reihe mit einem 22-Ω-Widerstand (ca. 90 mA). Vor dem Kauf auf 850 nm und einen breiten Abstrahlwinkel (mind. ±30°) achten.', 0, 0, 0);
+      [101, 111].forEach((y) => {
+        cylX(g, 2.9, 116.4, 117.4, y, sz * 35, 0x2c2633, { rough: 0.3 });                     // Kragen
+        cylX(g, 2.5, 117.4, 123.0, y, sz * 35, 0x2c2633, { rough: 0.25 });                    // Körper
+        const kuppe = add(g, new THREE.SphereGeometry(2.5, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), std(0x3a2f3c, { rough: 0.2, emissive: 0x000000 }), 123.0, y, sz * 35, [0, 0, -Math.PI / 2]);
+        LICHT.IR.push(kuppe);
+        [-1, 1].forEach((d) => cylX(g, 0.25, 104, 116.4, y + d * 1.27, sz * 35, 0xc9cdd1, { metal: 0.9, seg: 8 }));   // Beinchen nach innen
+      });
+      anchor(`${k}_P`, g, 104, 112.27, sz * 35, [-1, 0, 0], `IR-LEDs ${nm} + (obere LED)`);
+      anchor(`${k}_M`, g, 104, 99.73, sz * 35, [-1, 0, 0], `IR-LEDs ${nm} − (untere LED)`);
     });
 
     // Rundes Touch-Display mit Mikrofonen und Lautsprecher: Waveshare ESP32-S3-Touch-AMOLED-1.75 (Platine ohne Gehäuse).
@@ -1278,6 +1342,12 @@ code { font-family: var(--font-mono); font-size: 13px; }
       const schirm = std(0x000000, { emissive: 0xffffff, ei: 1, rough: 0.15 }); schirm.emissiveMap = bild;   // leuchtet selbst
       add(g, new THREE.CircleGeometry(21.88, 72), schirm, 0, 10.42, 0, [-Math.PI / 2, 0, Math.PI / 2]);
       anchor('DISP_USB', g, 24.4, 1.6, 0, [1, 0, 0], 'Status-Display USB-C');
+      // 8-polige Stiftleiste (Waveshare HARDWARE_REFERENCE, H2): 1 VBUS, 2 GND, 3 3V3, 4 RX, 5 TX, 6 GPIO17, 7 GPIO18, 8 GPIO16.
+      // Genaue Lage auf der Platine nach der Lieferung prüfen – hier am Rand gegenüber der USB-C-Buchse. Die Lichter hängen hier dran.
+      [['GND', -5.08, 'GND (Stiftleiste Pin 2)'], ['G17', -2.54, 'GPIO17 (Stiftleiste Pin 6)'], ['G18', 0, 'GPIO18 (Stiftleiste Pin 7)'], ['G16', 2.54, 'GPIO16 (Stiftleiste Pin 8)']].forEach(([n, z, l]) => {
+        box(g, 2.5, 2.5, 2.5, -19.5, 1.0, z, 0x1a1a1a);
+        anchor(`DISP_${n}`, g, -19.5, 0.8, z, [0, -1, 0], `Status-Display ${l}`);
+      });
     })();
 
     // =====================================================================
@@ -1407,12 +1477,27 @@ code { font-family: var(--font-mono); font-size: 13px; }
     [['V', 17], ['H', 16]].forEach(([k, p]) => W('Sensorbus I²C', `P${p}`, `T${k}_X`, 'violett', 0.4, k === 'H' ? 'C' : 'B', 'XSHUT: schaltet den Sensor beim Start einzeln an, damit jeder eine eigene Adresse bekommt'));
 
     // LEDs
-    W('Front- und Rücklicht', 'P34', 'FL_DIN', 'gruen', 0.4, 'A', 'Daten (GP28)');
+    W('Front- und Rücklicht', 'DISP_G16', 'FL_DIN', 'gruen', 0.4, null, 'Daten vom Display-ESP32 (GPIO16) – bleibt in der Haube');
     W('Front- und Rücklicht', 'MP_OUT+', 'FL_5V', 'rot', 0.5, 'A', '5 V für die Lichter');
-    W('Front- und Rücklicht', 'P13', 'FL_GND', 'schwarz', 0.5, 'A', 'Masse Lichter');
+    W('Front- und Rücklicht', 'MP_OUT-', 'FL_GND', 'schwarz', 0.5, 'A', 'Masse Lichter');
     W('Front- und Rücklicht', 'FL_DOUT', 'RL_DIN', 'gruen', 0.4, null, 'Daten weiter zum Rücklicht');
     W('Front- und Rücklicht', 'FL_5V2', 'RL_5V', 'rot', 0.5, null, '5 V weiter');
     W('Front- und Rücklicht', 'FL_GND2', 'RL_GND', 'schwarz', 0.5, null, 'Masse weiter');
+    W('Front- und Rücklicht', 'DISP_GND', 'FL_GND', 'schwarz', 0.3, null, 'Bezugsmasse für die Datensignale vom Display (dünn, fließt kaum Strom)');
+    W('Scheinwerfer', 'DISP_G17', 'MOS_SIG', 'weiss', 0.4, null, 'Schalten / Dimmen vom Display-ESP32 (GPIO17, PWM) – bleibt in der Haube');
+    W('Scheinwerfer', 'MP_OUT+', 'MOS_V+', 'rot', 0.5, 'A', '5 V für die Scheinwerfer (JST-PH-Kabel)');
+    W('Scheinwerfer', 'MP_OUT-', 'MOS_GND', 'schwarz', 0.5, 'A', 'Masse Scheinwerfer (JST-PH-Kabel)');
+    W('Scheinwerfer', 'MOS_OUT+', 'SWL_P', 'rot', 0.5, null, '+ zum Scheinwerfer links – 15-Ω-Widerstand (1 W) in der Leitung');
+    W('Scheinwerfer', 'MOS_OUT-', 'SWL_M', 'schwarz', 0.5, null, '− vom Scheinwerfer links');
+    W('Scheinwerfer', 'MOS_OUT+', 'SWR_P', 'rot', 0.5, null, '+ zum Scheinwerfer rechts – 15-Ω-Widerstand (1 W) in der Leitung');
+    W('Scheinwerfer', 'MOS_OUT-', 'SWR_M', 'schwarz', 0.5, null, '− vom Scheinwerfer rechts');
+    W('Nachtsicht (IR-LEDs)', 'DISP_G18', 'MOS2_SIG', 'weiss', 0.4, null, 'IR-Licht schalten / dimmen vom Display-ESP32 (GPIO18, PWM)');
+    W('Nachtsicht (IR-LEDs)', 'MP_OUT+', 'MOS2_V+', 'rot', 0.5, 'A', '5 V für die IR-LEDs (JST-PH-Kabel)');
+    W('Nachtsicht (IR-LEDs)', 'MP_OUT-', 'MOS2_GND', 'schwarz', 0.5, 'A', 'Masse IR-LEDs (JST-PH-Kabel)');
+    W('Nachtsicht (IR-LEDs)', 'MOS2_OUT+', 'IRL_P', 'rot', 0.4, null, '+ zu den IR-LEDs links – 22-Ω-Widerstand in der Leitung');
+    W('Nachtsicht (IR-LEDs)', 'MOS2_OUT-', 'IRL_M', 'schwarz', 0.4, null, '− von den IR-LEDs links');
+    W('Nachtsicht (IR-LEDs)', 'MOS2_OUT+', 'IRR_P', 'rot', 0.4, null, '+ zu den IR-LEDs rechts – 22-Ω-Widerstand in der Leitung');
+    W('Nachtsicht (IR-LEDs)', 'MOS2_OUT-', 'IRR_M', 'schwarz', 0.4, null, '− von den IR-LEDs rechts');
 
     // USB & Antennen
     W('USB & Antennen', 'PICO_USB', 'PI_U2L', 'grau', 1.6, 'C', 'Pico ↔ Pi: Befehle und Messwerte');
@@ -1494,7 +1579,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       if (!host) return;
       const groups = {};
       WIRES.forEach((wd) => (groups[wd.grp] = groups[wd.grp] || []).push(wd));
-      const ribbonRows = [['Camera Module 3', 'Pi 5 CAM/DISP 0', 'Flachband 22→15 Pin', 0xc58a3a, 'Kamerabild'], ['AI HAT+ PCIe', 'Pi 5 PCIe', 'Flachband (liegt bei)', 0xb8752b, 'KI-Beschleuniger']];
+      const ribbonRows = [['Camera Module 3', 'Pi 5 CAM/DISP 0', 'Flachband 22→15 Pin', 0xc58a3a, 'Kamerabild'], ['Camera Module 3 NoIR', 'Pi 5 CAM/DISP 1', 'Flachband 22→15 Pin', 0xc58a3a, 'Nachtsicht-Bild'], ['AI HAT+ PCIe', 'Pi 5 PCIe', 'Flachband (liegt bei)', 0xb8752b, 'KI-Beschleuniger']];
       const hex = (n) => '#' + n.toString(16).padStart(6, '0');
       const frag = document.createDocumentFragment();
       Object.entries(groups).forEach(([g, rows]) => {
@@ -1719,12 +1804,15 @@ code { font-family: var(--font-mono); font-size: 13px; }
         info.append(b, s);
         const druck = window.rcDruckInfo && window.rcDruckInfo(found.userData.part.name);
         if (druck) info.append(druck);
+        if (window.rcModellKnopf) info.append(window.rcModellKnopf(found));
         selBox.setFromObject(found); selBox.visible = true;
       } else {
         info.innerHTML = hint();
         selBox.visible = false;
       }
     });
+
+    renderer.domElement.addEventListener('dblclick', () => { if (sel && window.rcEinzelansicht) window.rcEinzelansicht(sel); });   // Doppelklick: Bauteil allein als Modell
 
     const slider = document.getElementById('explode');
     slider.addEventListener('input', () => { explode = slider.value / 100; applyLayout(); });

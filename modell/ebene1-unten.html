@@ -167,11 +167,13 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122185623"></script>
+<script src="teile/teile.js?v=20261126115907"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
+<!-- Einzelansicht: Doppelklick auf ein Bauteil zeigt es allein als 3D-Modell -->
+<script src="teile/einzelansicht.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122185623"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261126115907"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 1. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 1, hier mit ändern.
@@ -502,15 +504,16 @@ code { font-family: var(--font-mono); font-size: 13px; }
       ['M1', 'M2', 'GND', 'VCC', 'A', 'B'].forEach((n, i) => anchor(`M${key}_${n}`, g, -3.75 + 1.5 * i, 15, s * 6, [0, 1, 0], `Motor ${nm} ${n}`));
     }
     function wheel(x, s) {
-      const g = part(L0, 'Rad 85 mm (Gummi, mit Sechskant-Kupplung)', 'Gummirad Ø 85 mm (ca. 36 mm breit) mit Sechskant-Kupplung für die 4-mm-D-Welle – mehr Bodenfreiheit als das 65-mm-Rad aus dem Motor-Set. 3D-Form: GrabCAD-Modell eines 85-mm-Geländerads (Tanvir Ahmed), Spikes entfernt. Sitzt über eine Kupplung auf der 4-mm-Welle des Motors.', x, AXLE, s * (83 + MOTOR_Z));
-      g.position.z += s * 6;   // 85-mm-Rad (36 mm breit): Innenseite bleibt bei |z| = 95,9
+      const g = part(L0, 'Rad 85 mm (Druckteil: Felge PETG + Reifen TPU)', 'Selbst gedrucktes Rad Ø 85 × 33,4 mm (gehaeuse/rad.py): Felge aus PETG mit Klemmnabe direkt auf der 4-mm-D-Welle (geschlitzt, 1 × M3 × 16 quer – mit Inbus 2,5 waagerecht von vorne bzw. hinten erreichbar, Rad so drehen, dass die Schraube nach vorne zeigt). Reifen aus TPU 95A mit versetzten Querrillen, innen 12 Nuten für die Rippen der Felge; wird über die äußere Lippe aufgezogen. Viermal dasselbe Rad. Beide Teile mit der Außenseite nach unten drucken, ohne Stützen. Dateien: gehaeuse/rad/felge.stl, gehaeuse/rad/reifen.stl', x, AXLE, s * (83 + MOTOR_Z));
+      g.position.z += s * 6;   // Bezugspunkt |z| = 114 (Rad selbst: 98,5 … 131,9)
       const ersatz = new THREE.Group(); g.add(ersatz);
-      ersatz.scale.set(85 / 67.6, 85 / 67.6, 36 / 24.3);   // Ersatzform (wenn das CAD fehlt) auf 85 × 36 mm gestreckt
-      cadTeil('rad85', g, ersatz, (m) => {
-        // CAD (GrabCAD „85mm Anti-skid Shockproof Wheel“, Spikes entfernt, auf Ø 85 skaliert): Achse entlang z, Mitte im Ursprung
-        const w = new THREE.Group(); w.add(m); if (s < 0) w.rotation.y = Math.PI;
+      ersatz.scale.set(85 / 67.6, 85 / 67.6, 33.4 / 24.3); ersatz.position.z = s * 1.2;   // Ersatzform (wenn das Modell fehlt) auf 85 × 33,4 mm gestreckt
+      // Druckteile (gehaeuse/rad.py): Radachse = z, z = Abstand von der Wagenmitte (98,5 … 131,9), im GLB liegt die Achse auf y
+      [['rad_felge', 0xd85a30, 0.6], ['rad_reifen', 0x202224, 0.95]].forEach(([datei, farbe, rau]) => cadTeil(datei, g, ersatz, (m) => {
+        const w = new THREE.Group(); w.add(m); m.rotation.x = Math.PI / 2;
+        w.position.z = -s * 114; if (s < 0) w.rotation.y = Math.PI;
         return w;
-      });
+      }, (mat) => { mat.color.set(farbe).convertSRGBToLinear(); mat.roughness = rau; mat.metalness = 0; }));
       const prof = [[19, -13], [28.5, -13], [31.2, -12.2], [32.5, -10.5], [32.5, 10.5], [31.2, 12.2], [28.5, 13], [19, 13]].map(([r, y]) => new THREE.Vector2(r, y));
       add(ersatz, new THREE.LatheGeometry(prof, 56), std(0x202224, { rough: 0.95 }), 0, 0, 0, [Math.PI / 2, 0, 0]);
       const n = 30, tread = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 1.2, 20), std(0x18191b, { rough: 0.95 }), n);
@@ -741,6 +744,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
         b.type = 'button'; b.textContent = g.userData.part.name; b.setAttribute('aria-pressed', 'false');
         b.addEventListener('click', () => waehlen(sel === g ? null : g));
         b._teil = g; knoepfe.push(b); li.append(b); ul.append(li);
+        b.addEventListener('dblclick', () => { if (window.rcEinzelansicht) window.rcEinzelansicht(g); });   // Doppelklick in der Liste: als Modell
       });
       box.append(ul); document.getElementById('teile').append(box);
     });
@@ -760,6 +764,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       info.append(b, s);
       const druck = window.rcDruckInfo && window.rcDruckInfo(g.userData.part.name);
       if (druck) info.append(druck);
+      if (window.rcModellKnopf) info.append(window.rcModellKnopf(g));
       selBox.setFromObject(g); selBox.visible = g.visible;
     }
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -786,6 +791,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       }
       waehlen(found);
     });
+    renderer.domElement.addEventListener('dblclick', () => { if (sel && window.rcEinzelansicht) window.rcEinzelansicht(sel); });   // Doppelklick: Bauteil allein als Modell
 
     // ---------- Bedienung ----------
     const rot = document.getElementById('rotate');

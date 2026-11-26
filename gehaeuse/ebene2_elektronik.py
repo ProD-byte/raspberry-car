@@ -54,8 +54,7 @@ UNTEN = 58.0                             # liegt direkt auf dem Wannenrand (Deck
 DICKE = 3.0
 OBEN = UNTEN + DICKE                     # Oberkante Platte (TOP[1] im Modell)
 
-PILOT = 2.6                              # Kernloch M3 (schneidet selbst)
-DURCH = 3.4                              # Durchgangsloch M3
+from loecher import PILOT_HOCH, PILOT_QUER, DURCH_HOCH, DURCH_QUER, M25_PILOT_HOCH   # M3-Löcher je Filament und Druckrichtung (loecher.py)
 KOPF_D, KOPF_H = 6.5, 3.1                # Senkung: Zylinderkopf schließt bündig ab
 DOM_D = 10.0                             # Schraubdom: (10 − 2,6)/2 = 3,7 mm Material
 
@@ -158,20 +157,20 @@ def platte():
     # Dome über den Säulen der Wanne: Kernloch von unten, 11 mm tief und oben geschlossen (die M3 × 45 kommt von unten durch die Wanne)
     for (x, z) in WANNE_DOME:
         teil += zyl_y(DOM_D / 2, x, z, OBEN - 0.1, OBEN + 9)
-        teil -= zyl_y(PILOT / 2, x, z, UNTEN - 0.1, UNTEN + 11)
+        teil -= zyl_y(PILOT_HOCH / 2, x, z, UNTEN - 0.1, UNTEN + 11)
 
     # Dome für den Ring: Dom auf der Platte, Kernloch 11 mm tief
     for (x, z) in RING_DOME:
         teil += zyl_y(DOM_D / 2, x, z, OBEN - 0.1, OBEN + 8)
-        teil -= zyl_y(PILOT / 2, x, z, UNTEN + 0.1, OBEN + 8.1)
+        teil -= zyl_y(PILOT_HOCH / 2, x, z, UNTEN + 0.1, OBEN + 8.1)
 
-    # Freenove-Board: 4 Dome oben (Platz für Lötstellen), Kernloch 6,5 mm tief (M3 × 8 greift 6,4 mm)
+    # Freenove-Board: 4 Dome oben (Platz für Lötstellen), Kernloch M2,5 6,5 mm tief (M2,5 × 8 greift 6,4 mm)
     fx, fz = FREENOVE
     for sx in (1, -1):
         for sz in (1, -1):
             x, z = fx + sx * FREENOVE_LOCH[0], fz + sz * FREENOVE_LOCH[1]
             teil += zyl_y(DOM_D / 2, x, z, OBEN - 0.1, OBEN + FREENOVE_DOM_H)
-            teil -= zyl_y(PILOT / 2, x, z, UNTEN + 0.5, OBEN + FREENOVE_DOM_H + 0.1)
+            teil -= zyl_y(M25_PILOT_HOCH / 2, x, z, UNTEN + 0.5, OBEN + FREENOVE_DOM_H + 0.1)
 
     # Einklick-Taschen
     for (name, x, z, ix, iz, nase_h, wand_h, offen) in TASCHEN:
@@ -240,7 +239,6 @@ EBENE3_UNTEN = 84.0                      # Unterkante Ebene 3 (LEVEL[2] im Model
 # Ausschnitte von der Unterkante aus: (Seite, Mitte, Breite, Höhe) – Seite "hinten"/"vorne"/"links"/"rechts"
 RING_OBEN_AUSSCHNITTE = [("hinten", 60.0, 13.5, 8.0)]   # USB-C des Ladeboards: so groß, dass der Stecker-Griff (bis 13,5 × 8 mm) hineinpasst und voll einrastet
 USB_FASE = 1.0                                          # außen 45° angefast – der Stecker findet leichter hinein
-LADE_ECKE_R = 4.0                                       # innere Ecke des Rings hinten links enger gerundet (sonst 7,6), damit das Ladeboard bündig an die Wand passt
 USB_SENKE = 1.5                                         # im Deck darunter eine flache Mulde, damit auch dicke Stecker-Griffe Platz haben
 # Löcher in der Rückwand des Rings (x = −120): (Name, z, y-Mitte, Breite, Höhe, rund?)
 RING_Y_MITTE = (OBEN + EBENE3_UNTEN) / 2
@@ -264,6 +262,18 @@ RING_RUECKWAND = [
 ]
 
 
+def rohr_bohrung(x, z, y0, y1, r0):
+    """Alles, was aus einer Röhre des Rings herausgeschnitten wird: Durchgangsloch, Senkung oben, unten Platz für den Dom."""
+    t = zyl_y(DURCH_HOCH / 2, x, z, y0 - 1, y1 + 1)
+    t += zyl_y(KOPF_D / 2, x, z, y1 - KOPF_H, y1 + 1)   # oben: M3 × 20 in den Dom des Decks, Kopf bündig (Deckel liegt darüber)
+    if r0 > y0:   # innen unten: Platz für den Dom der Platte (0,3 mm Luft rundum, 0,2 mm oben)
+        t += zyl_y(DOM_D / 2 + 0.3, x, z, y0 - 1, r0 + 0.2)
+        # Brücken-Trick: der Ring wird aufrecht gedruckt, die Decke der Aussparung hat ein Loch
+        t += quader(x - DOM_D / 2 - 0.3, x + DOM_D / 2 + 0.3, r0 + 0.19, r0 + 0.5, z - DURCH_HOCH / 2, z + DURCH_HOCH / 2)
+        t += quader(x - DURCH_HOCH / 2, x + DURCH_HOCH / 2, r0 + 0.49, r0 + 0.8, z - DURCH_HOCH / 2, z + DURCH_HOCH / 2)
+    return t
+
+
 def ring(y0, y1, rohre, ausschnitte, rohr_ab=None):
     """Seitenwand mit der Außenform der Platten. rohre: Röhren mit Durchgangsloch M3, mit der Außenwand verbunden.
     rohr_ab: Höhe, bis zu der unten ein Dom der Platte in die Röhre ragt. Röhre und Verbindung gehen trotzdem bis
@@ -271,11 +281,6 @@ def ring(y0, y1, rohre, ausschnitte, rohr_ab=None):
     h = y1 - y0
     wand = Pos(XM, 0, y0) * extrude(RectangleRounded(L, B, R_ECKE), h)
     wand -= Pos(XM, 0, y0 - 1) * extrude(RectangleRounded(L - 2 * RING_WAND, B - 2 * RING_WAND, R_ECKE - RING_WAND), h + 2)
-    # Hinten links (Ladeboard) ist die innere Ecke enger gerundet: Platz für die Platine direkt an der Rückwand
-    xi, zi, r = X_HINTEN + RING_WAND, B / 2 - RING_WAND, LADE_ECKE_R
-    ecke = quader(xi, xi + R_ECKE, y0 - 1, y1 + 1, zi - R_ECKE, zi)
-    ecke -= quader(xi - 1, xi + r, y0 - 2, y1 + 2, zi - r, zi + 1) - zyl_y(r, xi + r, zi - r, y0 - 3, y1 + 3)
-    wand -= ecke
     r0 = rohr_ab if rohr_ab is not None else y0
     aussenform = Pos(XM, 0, y0 - 1) * extrude(RectangleRounded(L, B, R_ECKE), h + 2)
     for (x, z) in rohre:
@@ -292,13 +297,7 @@ def ring(y0, y1, rohre, ausschnitte, rohr_ab=None):
         if bis_ende < bis_seite or bis_ende < 15:
             saeule += quader(x, xw, y0, y1, z - b, z + b)
         wand += saeule & aussenform            # nichts ragt außen aus dem Ring heraus
-        wand -= zyl_y(DURCH / 2, x, z, y0 - 1, y1 + 1)
-        wand -= zyl_y(KOPF_D / 2, x, z, y1 - KOPF_H, y1 + 1)   # oben: M3 × 20 in den Dom des Decks, Kopf bündig (Deckel liegt darüber)
-        if r0 > y0:   # innen unten: Platz für den Dom der Platte (0,3 mm Luft rundum, 0,2 mm oben)
-            wand -= zyl_y(DOM_D / 2 + 0.3, x, z, y0 - 1, r0 + 0.2)
-            # Brücken-Trick: der Ring wird aufrecht gedruckt, die Decke der Aussparung hat ein Loch
-            wand -= quader(x - DOM_D / 2 - 0.3, x + DOM_D / 2 + 0.3, r0 + 0.19, r0 + 0.5, z - DURCH / 2, z + DURCH / 2)
-            wand -= quader(x - DURCH / 2, x + DURCH / 2, r0 + 0.49, r0 + 0.8, z - DURCH / 2, z + DURCH / 2)
+        wand -= rohr_bohrung(x, z, y0, y1, r0)
     for (seite, m, breite, hoch) in ausschnitte:
         if seite in ("hinten", "vorne"):
             xs = X_HINTEN if seite == "hinten" else X_VORNE
@@ -321,7 +320,7 @@ def ring_klappdeckel():
         keil = Plane.XZ * Polygon((X_HINTEN + 0.5, EBENE3_UNTEN - 11.5), (X_HINTEN + 0.5, EBENE3_UNTEN), (X_HINTEN - 0.3, EBENE3_UNTEN),
                                   (X_HINTEN - 0.3, SCH_Y), (SCH_X, SCH_Y), (SCH_X - SCH_R, EBENE3_UNTEN - 0.5), align=None)
         lappen += Pos(0, -zc, 0) * extrude(keil.face(), SCH_RING_B / 2, both=True)
-        lappen -= zyl_z(DURCH / 2, SCH_X, SCH_Y, zc - SCH_RING_B, zc + SCH_RING_B)
+        lappen -= zyl_z(DURCH_QUER / 2, SCH_X, SCH_Y, zc - SCH_RING_B, zc + SCH_RING_B)
         t = lappen if t is None else t + lappen
     xi = X_VORNE - RING_WAND
     for zc in VORNE_Z:
@@ -329,7 +328,7 @@ def ring_klappdeckel():
         prof = Plane.XZ * Polygon((xi + 0.5, EBENE3_UNTEN - 23.0), (xi + 0.5, EBENE3_UNTEN), (LASCHE_X1, EBENE3_UNTEN), (LASCHE_X1, LASCHE_OBEN),
                                   (LASCHE_X0, LASCHE_OBEN), (LASCHE_X0, EBENE3_UNTEN - 10.0), align=None)
         lasche = Pos(0, -zc, 0) * extrude(prof.face(), b, both=True)
-        lasche -= zyl_x(PILOT / 2, VORNE_Y, zc, LASCHE_X0 - 1, LASCHE_X1 + 1)
+        lasche -= zyl_x(PILOT_QUER / 2, VORNE_Y, zc, LASCHE_X0 - 1, LASCHE_X1 + 1)
         t += lasche
     return t
 
@@ -344,7 +343,10 @@ def ring_oben():
     bx, bz = BLECH_SAEULE
     for (x, y, s) in SB.SCHRAUBEN:
         wand += quader(x - bx, x + bx, OBEN, EBENE3_UNTEN, s * bz, s * (B / 2 - RING_WAND / 2))
-        wand -= zyl_z(PILOT / 2, x, y, s * (bz - 1), s * (B / 2 + 1))
+        wand -= zyl_z(PILOT_QUER / 2, x, y, s * (bz - 1), s * (B / 2 + 1))
+    # Die Säulen vorne (x = 107) reichen bis an die Eck-Röhren: deren Senkung und Dom-Aussparung noch einmal frei schneiden
+    for (x, z) in RING_DOME:
+        wand -= rohr_bohrung(x, z, OBEN, EBENE3_UNTEN, OBEN + 8)
     xr = X_HINTEN
     for (name, z, y, br, h, rund) in RING_RUECKWAND:
         if rund:
@@ -399,16 +401,27 @@ def teilen_deck(teil):
         hinten += quader(DECK_FUGE - STEG_HINTEN, DECK_FUGE - DECK_SPALT, OBEN - 0.1, OBEN + STEG_H, z0, z1)
     ys = OBEN + STEG_SCHRAUBE_Y
     for z in STEG_SCHRAUBEN:
-        hinten -= zyl_x(DURCH / 2, ys, z, DECK_FUGE - STEG_HINTEN - 1, DECK_FUGE + 1)
-        vorne -= zyl_x(PILOT / 2, ys, z, DECK_FUGE - 1, DECK_FUGE + STEG_VORNE + 1)
+        hinten -= zyl_x(DURCH_QUER / 2, ys, z, DECK_FUGE - STEG_HINTEN - 1, DECK_FUGE + 1)
+        vorne -= zyl_x(PILOT_QUER / 2, ys, z, DECK_FUGE - 1, DECK_FUGE + STEG_VORNE + 1)
     return vorne, hinten
 
 
+RING_FUGE_FASE = 0.6                     # außen an der Fuge je 0,6 mm × 45° – eine saubere Linie statt einer Lücke
+RING_LASCHE = (5.0, 1.6)                 # innen an der vorderen Hälfte: Streifen 5 mm über die Fuge, 1,6 mm dick – man sieht nicht durch
+
+
 def teilen_ring(teil):
-    """Ring → (vordere, hintere Hälfte), stumpf gestoßen. Jede Hälfte ist mit eigenen Röhren ans Deck geschraubt."""
+    """Ring → (vordere, hintere Hälfte), stumpf gestoßen (ohne Spalt). Jede Hälfte ist mit eigenen Röhren ans Deck geschraubt.
+    Innen hat die vordere Hälfte an beiden Seitenwänden einen Streifen, der hinter die hintere Hälfte greift."""
     gross = 400.0
-    vorne = teil & quader(RING_FUGE + DECK_SPALT, gross, -gross, gross, -gross, gross)
-    hinten = teil & quader(-gross, RING_FUGE - DECK_SPALT, -gross, gross, -gross, gross)
+    vorne = teil & quader(RING_FUGE, gross, -gross, gross, -gross, gross)
+    hinten = teil & quader(-gross, RING_FUGE, -gross, gross, -gross, gross)
+    lb, ld = RING_LASCHE
+    zi = B / 2 - RING_WAND
+    for s in (1, -1):
+        vorne += quader(RING_FUGE - lb, RING_FUGE + 0.5, OBEN, EBENE3_UNTEN - 1.0, s * (zi - ld), s * zi)
+        fase = Pos(RING_FUGE, 0, s * B / 2) * Rot(0, 45, 0) * Box(RING_FUGE_FASE * 1.414, 400, RING_FUGE_FASE * 1.414)
+        vorne -= fase; hinten -= fase
     return vorne, hinten
 
 

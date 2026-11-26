@@ -33,6 +33,21 @@ In der Wanne liegt alles, was schwer ist oder mit dem Akku zu tun hat: 4 Motoren
 
 **Druckeinstellungen:** PETG empfohlen (verträgt die Wärme von Motoren und Akku besser), PLA geht auch. **4 Wände/Perimeter** (damit die Schrauben gut greifen), 25 % Füllung, 0,2 mm Schichthöhe. Die Empfehlung für jedes einzelne Druckteil (Filament, Temperaturen, Wände, Füllung, Druckrichtung, Download) steht auch in den 3D-Ansichten: Druckteil antippen.
 
+**Lochmaße je Filament:** Die M3-Löcher hängen vom Filament und von der Druckrichtung ab. Sie stehen zentral in `loecher.py`, eingestellt ist zurzeit **PLA**. Die Werte stammen aus der Lochprobe `m3_lochprobe.py`:
+
+| Filament | Kernloch hoch | Kernloch quer | Durchgangsloch hoch | Durchgangsloch quer |
+|---|---|---|---|---|
+| PLA (getestet 25.11.2026, **6 Wände**) | 3,1 mm | 2,8 mm | 3,8 mm | 3,6 mm |
+| PETG (vorläufig, Test steht noch aus) | 2,6 mm | 2,6 mm | 3,4 mm | 3,4 mm |
+
+- **Hoch** heißt: das Loch steht beim Druck senkrecht. **Quer** heißt: es liegt beim Druck waagerecht.
+- Druckst du mit PETG, stelle `FILAMENT = "PETG"` ein und erzeuge die Teile neu.
+- Die Durchgangslöcher für PLA sind aus den Kernlöchern abgeleitet, so dass die Schraube locker durchgeht.
+- **Die Wandanzahl zählt:** Die PLA-Werte gelten für Teile mit **6 Wänden**, so wurden Lochprobe und Teile gedruckt. Mehr Wände machen den Ring um das Loch massiver, die Schraube geht dann schwerer rein. Druckst du mit anderer Wandanzahl, drucke vorher die Lochprobe mit derselben Einstellung.
+- **Kleine Schrauben** bekommen denselben Zuschlag, sie sind nicht eigens getestet:
+  - M2,5 in PLA ist **getestet (25.11.2026)**: Kernloch 2,5 hoch / 2,3 quer. Das Durchgangsloch ist daraus abgeleitet: 3,2 hoch / 3,1 quer, der Pi-Stapel nutzt 3,2. PETG vorläufig: Kernloch 2,1, Durchgangsloch 2,8.
+  - M2 für Display und Ladeboard (dort gibt es noch keine Löcher): PLA Kernloch 2,2 hoch / 1,9 quer und Durchgangsloch 2,8 hoch / 2,6 quer, PETG 1,7 / 2,4.
+
 **Schrauben erreichbar – geprüft:** Jedes Ebenen-Skript prüft, ob man die Schrauben an den Fugen mit einem Schraubendreher erreicht (gedachter Schraubendreher Ø 6 × 60 mm ab dem Kopf, er darf weder Druckteile noch Bauteile treffen). Wanne: seitlich von außen, in der Mitte von innen durch die Gasse zwischen Akku und INA226. Ausgabe „Schraubendreher-Zugang – Probleme: 0“.
 
 **Druckbar ohne Stützen – geprüft:** `python werkzeug/ueberhang.py` prüft alle Druckteile in ihrer Druckrichtung. Erlaubt sind nur Flächen, die mindestens 45° steil sind, kurze Brücken (waagerecht, an zwei Seiten aufliegend, höchstens 15 mm – z. B. die Decke eines Schlitzes) und die Oberseite kleiner runder Löcher in senkrechten Wänden bis Ø 10 mm (Wellenlöcher, Schraub-Langlöcher, Schalterloch) – die schafft jeder Drucker. Ergebnis: alle Teile „ohne Stützen druckbar“. Nach jeder Änderung an einem Druckteil neu laufen lassen.
@@ -92,7 +107,7 @@ Das Deck ist der **Deckel der Wanne** (liegt auf dem Wannenrand bei 58 mm). Dar�
 | `ebene2/ring_vorne.stl` | 1 | 141 × 180 × 36 mm | **aufrecht** (Unterkante aufs Bett) | Ohne Stützen. Vorne die zwei Laschen für die Schrauben des Klappdeckels (unten 45°-Schräge). |
 | `ebene2/ring_hinten.stl` | 1 | 119 × 180 × 33 mm | **aufrecht** | Ohne Stützen. Scharnier-Lappen hinten (unten 45°-Schräge), USB-C-Ausschnitt und Loch für den Hauptschalter. |
 
-**Zwei Hälften:** Das **Deck** ist bei x = +58 geteilt (zwischen Freenove-Board und vorderer Motorzone). An der Fuge steht auf jeder Hälfte ein 10 mm hoher Steg (außen, zwischen den Grifflöchern frei); die Stege werden mit **2 × M3 × 10** quer verschraubt (Kopf hinten, Gewinde im vorderen Steg; bei z = −54 und +64, dahinter ist für den Schraubendreher frei). Der **Ring** ist bei x = −16,5 geteilt, also weit weg von der Fuge des Decks. Jede Ring-Hälfte hat eigene Hülsen und ist mit eigenen **M3 × 20** von oben auf das Deck geschraubt (vorne in den Ecken, hinten an der Rückwand und je zwei an der Fuge des Rings). So überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings. Die Fuge der Wanne liegt wieder woanders (x = +6).
+**Zwei Hälften:** Das **Deck** ist bei x = +58 geteilt (zwischen Freenove-Board und vorderer Motorzone). An der Fuge steht auf jeder Hälfte ein 10 mm hoher Steg (außen, zwischen den Grifflöchern frei); die Stege werden mit **2 × M3 × 10** quer verschraubt (Kopf hinten, Gewinde im vorderen Steg; bei z = −54 und +64, dahinter ist für den Schraubendreher frei). Der **Ring** ist bei x = −16,5 geteilt, also weit weg von der Fuge des Decks. Jede Ring-Hälfte hat eigene Hülsen und ist mit eigenen **M3 × 20** von oben auf das Deck geschraubt (vorne in den Ecken, hinten an der Rückwand und je zwei an der Fuge des Rings). So überbrückt der Ring die Fuge des Decks und das Deck die Fuge des Rings. Die Ring-Hälften stoßen **ohne Spalt** aneinander. Außen hat die Fuge eine kleine Fase (0,6 mm, sieht wie eine gewollte Linie aus). Innen greift die vordere Hälfte an beiden Seitenwänden mit einem Streifen (5 × 1,6 mm) hinter die hintere, so sieht man nicht durch. Die Fuge der Wanne liegt wieder woanders (x = +6).
 
 **Aufteilung in Zonen** – alles gut erreichbar, nichts liegt kreuz und quer:
 
@@ -118,7 +133,7 @@ Das Deck ist der **Deckel der Wanne** (liegt auf dem Wannenrand bei 58 mm). Dar�
 Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Stegen), und dass man die Schrauben an der Fuge mit einem Schraubendreher erreicht. Module mit Lötanschlüssen (DRV8833, MP1584, Ladeboard) klickt man zum Löten heraus – ihre Kabel bekommen dafür ein paar Zentimeter Reserve.
 
 **Was darauf sitzt**
-- **Freenove-Board mit Pico 2 W** vorne in der Mitte (x = 20) auf 4 gedruckten Domen (4 mm hoch), 4 × **M3 × 8**. Die Klemmen-Reihen zeigen zu den Seiten.
+- **Freenove-Board mit Pico 2 W** vorne in der Mitte (x = 20) auf 4 gedruckten Domen (4 mm hoch), 4 × **M2,5 × 8** (Ausnahme von „nur M3“; Kernloch M2,5 aus `loecher.py`). Die Klemmen-Reihen zeigen zu den Seiten.
 - **Einklick-Taschen** für alle Module ohne Löcher: 2 × DRV8833, MP1584, BNO085, 2 × WAGO 221-415 (3,3 V) und das Ladeboard. Passgenauer Rahmen (0,3 mm Luft), Rastnasen als Keil, eine Kerbe zum Heraushebeln.
 - **Grifflöcher** (28 × 20 mm, mit 2 mm hohem Rand) genau über jedem Motorstecker – bei der breiten Wanne liegen die beiden Stecker einer Achse 60 mm auseinander, deshalb vier Grifflöcher.
 - **DRV8833** je Achse mittig zwischen den beiden Grifflöchern. OUT1/OUT2 = linker Motor, OUT3/OUT4 = rechter Motor dieser Achse.
@@ -126,7 +141,7 @@ Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Steg
 - **BNO085 (Kompass)** hinten in der Mitte (x = −35): ca. 12 cm von Durchbruch C und von den Verteilern in der Wanne, ca. 5 cm vom hinteren Motor. Darunter liegt in der Wanne (4 cm tiefer) der Akku – ob sein Strom stört, zeigt erst ein Test mit dem echten Auto (BNO085 kalibrieren und beim Fahren beobachten).
 - **MP1584** rechts hinter dem Freenove-Board (x = −24), ca. 6 cm vom Kompass. Er sitzt bewusst nicht vor der rechten Schraube an der Deck-Fuge, damit dort der Schraubendreher Platz hat.
 - **Kabelwege nach unten in die Wanne:** die vier Grifflöcher (Motorkabel, XSHUT der Nahsensoren), **D** links vor dem Pico (Daten vom INA226), **S** hinten rechts (Leitungen zum Hauptschalter), **B** hinten links (BMS → Ladeboard), **C** vorne rechts (x = 40, z = −68: Plus und Minus von den Verteilern – immer paarweise nebeneinander).
-- **Ladeboard DDTCCRUB 2S** hinten links (z = 60): Die Platine liegt **bündig an der Innenseite der Rückwand**, die USB-C-Buchse steckt im Ausschnitt der Wand (13,5 × 8 mm, außen angefast) und sitzt nur 1 mm hinter der Außenseite. Die innere Ecke des Rings ist dort enger gerundet.
+- **Ladeboard DDTCCRUB 2S** hinten links (z = 60): Die Platine liegt **bündig an der Innenseite der Rückwand**, die USB-C-Buchse steckt im Ausschnitt der Wand (13,5 × 8 mm, außen angefast) und sitzt nur 1 mm hinter der Außenseite. Die Ecke des Rings ist dort normal gerundet. Die frühere enger gerundete Innenecke machte die Wand nur 0,1 mm dünn und ist seit 26.11.2026 weg.
 - **Rückwand des Gehäuse-Rings:** in Fahrtrichtung rechts der **Hauptschalter** (runder Taster Ø 12 mm, Loch Ø 12,2 mm, z = −55), links die **USB-C-Buchse** des Ladeboards (z = +60). Reihenfolge beim Zusammenbau: erst das Ladeboard einklicken, dann den Ring aufsetzen.
 - Die Kabellängen vom Motorstecker werden nach dem Neubau neu ausgemessen.
 
@@ -138,7 +153,7 @@ Außerdem prüft es, dass nichts über der Fuge des Decks liegt (außer den Steg
 
 Alle Kernlöcher haben mindestens **3,5 mm Material** rundum. Die Lage aller Taschen, Dome und Durchbrüche prüft das Skript selbst auf Überschneidungen (Ausgabe „Überschneidungen: 0“).
 
-**Schrauben für Ebene 2:** 4 × M3 × 8 (Freenove-Board), 2 × M3 × 10 (Stege an der Fuge des Decks), 8 × M3 × 20 (Ring aufs Deck). Die Schrauben zur Wanne zählen bei Ebene 1.
+**Schrauben für Ebene 2:** 4 × M2,5 × 8 (Freenove-Board), 2 × M3 × 10 (Stege an der Fuge des Decks), 8 × M3 × 20 (Ring aufs Deck). Die Schrauben zur Wanne zählen bei Ebene 1.
 
 ## Ebene 3 – Gehirn mit Dach, Klapphaube (`ebene3_gehirn.py` → `ebene3/`)
 
@@ -149,7 +164,7 @@ Die oberste Ebene ist eine **Haube**: Seitenwände und Dach in einem, **unten of
 | `ebene3/haube_vorne.stl` | 1 | 80 × 180 × 37 mm | **Dach nach unten** (aufs Bett) | Ohne Stützen. Kamera, Frontlicht, Pololu, Schraubpolster vorne. |
 | `ebene3/haube_hinten.stl` | 1 | 180 × 180 × 37 mm (mit Scharnier-Lappen) | **Dach nach unten** | Ohne Stützen. Pi-Dome, 4G- und GPS-Tasche, Display, Scharnier-Lappen (mit 45°-Keil). |
 
-- **Form:** Vorder- und Rückwand senkrecht (vorne das Kamerafenster, hinten das Scharnier). Die Seiten sind unten 12 mm senkrecht und laufen dann schräg nach innen (oben je 7 mm schmaler), alle Dachkanten sind 45° abgeschrägt. Höhe 84 → 121 mm, mit LiDAR ca. 155 mm.
+- **Form:** Vorder- und Rückwand senkrecht (vorne das Kamerafenster, hinten das Scharnier). Die Seiten sind unten 12 mm senkrecht und laufen dann schräg nach innen (oben je 7 mm schmaler), alle Dachkanten sind 45° abgeschrägt. An den 4 oberen Ecken sitzt je eine große schräge Dreiecksfläche (**Facette**, vom Dach bis 4 mm über die Unterkante) – kantig wie die Schutzbleche; so steil (≥ 45°), dass die Haube weiter ohne Stützen druckt. Höhe 84 → 121 mm, mit LiDAR ca. 155 mm.
 - **Alles hängt am Dach** (beim Druck wachsen die Halter vom Bett nach oben – keine Stützen):
   - **Raspberry Pi 5** mit Active Cooler und AI HAT+: Der Stapel hängt an 4 Domen. **M2,5 × 16 von oben** durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei), Köpfe bündig im Dach (Senkung mit Brücken-Trick). Unten hält der Pi mit den beiliegenden Schrauben. Ausnahme von „nur M3“, weil die Löcher des Pi nur 2,7 mm groß sind.
   - **Kamera Modul 3 Wide** vorne in zwei Nuten, von unten einschieben bis sie über eine kleine Nase schnappt. Fenster Ø 18 mm (gerade Kante unten), außen angefast.
@@ -173,12 +188,58 @@ Im 3D-Modell: `modell/ebene3-gehirn.html` (Werkstatt-Ansicht mit Regler zum Aufk
 - Befestigt **am Gehäuse-Ring von Ebene 2** (nicht an der Wanne – die bleibt nach unten abnehmbar): 6 mm dicker Flansch, **2 × M3 × 10** von außen in zwei Schraubsäulen innen am Ring (Köpfe bündig). Die Schultern zeigen genau auf die Schrauben – der Schraubendreher kommt außen am Bogen und am Rad vorbei (geprüft in `ebene2_elektronik.py`).
 - Druck: Flansch-Rückseite aufs Bett, Bogen senkrecht nach oben, ohne Stützen. **Orange.**
 
+## Räder (`rad.py` → `rad/`)
+
+Selbst gedruckt statt gekauft (seit 25.11.2026). **4 × dasselbe Rad**: Ø 85 × 33,4 mm, Innenseite 8,5 mm neben der Wanne.
+
+- **Felge** (`rad/felge.stl`, **PETG**, Orange, ca. 50 g):
+  - **Klemmnabe** direkt auf der 4-mm-D-Welle: D-Bohrung, geschlitzt, **1 × M3 × 16** quer. Der Kopf liegt auf der einen Seite, das Gewinde schneidet sich in die andere Hälfte.
+  - Die Nabe ragt nach innen über den Reifen hinaus. Darum kommt man mit dem **Inbus 2,5 waagerecht von vorne bzw. hinten** an die Schraube: Rad drehen, bis sie nach vorne zeigt.
+  - Vor der Wand nur ein dünner Kragen (Ø 8,8), weil dort die Köpfe der Motorschrauben sitzen. Die Welle steckt 8,5 mm in der Nabe.
+  - Außen eine Scheibe mit 6 Fenstern, am Rand zwei Lippen und 12 Rippen, damit der Reifen nicht durchrutscht.
+- **Reifen** (`rad/reifen.stl`, **TPU 95A**, ca. 46 g):
+  - Versetzte Querrillen als Profil, innen 12 Nuten für die Rippen.
+  - Er ist 0,2 mm enger als die Felge und wird über die äußere Lippe aufgezogen.
+  - Langsam drucken (20–30 mm/s), 3 Wände, 20 % Füllung. Mehr Füllung macht den Reifen härter.
+- **Druck:** beide Teile mit der Außenseite nach unten, ohne Stützen.
+- **Reifenprofile** (alle ohne Stützen druckbar, gleiche Felge):
+
+  | Datei | Profil | Wofür |
+  |---|---|---|
+  | `reifen.stl` | **quer** (Standard): versetzte Querrillen | Allrounder für drinnen |
+  | `reifen_glatt.stl` | **glatt**: 3 umlaufende V-Rillen | leise, viel Auflage: Fliesen, Parkett, Tisch |
+  | `reifen_pfeil.stl` | **pfeil**: V-Rillen wie beim Traktor | Gras, Erde |
+  | `reifen_stollen.stl` | **stollen**: Blöcke | Teppich, Kies, Rasen – greift am stärksten |
+
+  - Druckbar sind sie, weil die Querrillen beim Druck senkrecht stehen, die umlaufenden Rillen V-förmig mit 45° sind und die schrägen Rillen höchstens 30° geneigt.
+  - **Pfeil:** Die rechten Räder sind um 180° gedreht, ihr Pfeil zeigt deshalb andersherum. Für gleiche Richtung auf beiden Seiten 2 Reifen im Slicer spiegeln.
+- **Wellenprobe** (`wellenprobe.py` → `lochprobe/wellenprobe.stl`): 7 D-Löcher von 4,0 bis 4,6 mm, senkrecht wie in der Felge. Probe auf die Motorwelle stecken und das beste Loch in `rad.py` als `BOHRUNG` eintragen.
+- **Prüfungen im Skript:** Kragen und Nabe bleiben frei von den Motorschrauben, und der Inbus kommt am Reifen vorbei. Ergebnis: „Probleme: 0“.
+- **Welle nachmessen**, wenn die Motoren da sind: `WELLE_D` und `WELLE_FLACH` in `rad.py` anpassen. Laut Datenblatt Ø 4,0 mm und 3,5 mm über die Fläche.
+- Die D-Bohrung ist je nach Filament etwas größer (`loecher.py`). Die Klemme zieht sie zu.
+- **Garten:** Für 100-mm-Räder `R_AUSSEN` ändern. Dann müssen aber auch die Schutzbleche größer werden.
+
 ## Front- und Rücklicht (in `ebene3_gehirn.py`)
 
 - Je eine **WS2812B-Leiste mit 8 LEDs** unten in der Vorder- und Rückwand der Haube, LEDs zur Wand.
-- Vor jeder LED ein kleines Fenster (4,6 × 3 mm) durch die Wand – von außen eine **Pixel-Linie** in einer flachen Mulde. Innen davor liegt eine **Streuscheibe** (`ebene3/streuscheibe.stl`, 2 Stück, 1 mm dick, **Natur- oder Weiß-PETG**), auf die die LEDs drücken. So darf die Haube dunkel sein.
+- Vor den LEDs ein durchgehender Schlitz (50,8 × 2,4 mm, Unterkante nach außen 45° schräg – druckt ohne Stützen) durch die Wand – von außen ein **Lichtband** in einer flachen Blende (76 × 10 mm, 0,6 mm tief). Innen davor liegt eine **Streuscheibe** (`ebene3/streuscheibe.stl`, 2 Stück, 1 mm dick, **Natur- oder Weiß-PETG**), auf die die LEDs drücken. So darf die Haube dunkel sein.
 - Einbau: Haube aufklappen, Streuscheibe in die Vertiefung legen, Leiste von unten zwischen die zwei Pfosten schieben, bis sie oben anschlägt – eine kleine Nase hält sie. Vorne läuft sie unter der Kamera durch.
 - Maße der Leiste nach der Lieferung nachmessen (`LICHT_L`, `LICHT_H`) – die Angaben der Händler schwanken.
+
+## Scheinwerfer (in `ebene3_gehirn.py`)
+
+- Zwei weiße **1-W-LEDs auf 20-mm-Alu-Stern** vorne links und rechts (z = ±64 mm, 12 mm über der Unterkante der Haube), unter den Eck-Facetten.
+- Jeder Stern steckt senkrecht in einem **Schlitz**, der unten offen ist: Haube aufklappen, Stern mit der LED nach vorne von unten einschieben, bis er oben anschlägt – eine kleine Nase hält ihn. Mitte und Rückseite des Halters sind offen (Luft an den Stern, Platz für die Lötstellen + und − vorne auf dem Stern). Vorher die Kabel anlöten.
+- Die LED-Kuppel sitzt direkt hinter einem Loch (Ø 6,4 mm innen), das sich nach außen um 60° weitet – wie ein kleiner Reflektor, und ohne Stützen druckbar.
+- Der **MOSFET-Treiber** (Adafruit 5648) klickt vorne links in eine Tasche unter dem Dach, Bauteile nach unten; Stecker und Schraubklemme liegen an den offenen Enden der Tasche.
+- Das Skript prüft, dass Stern, LED-Sockel und Kuppel die Haube nicht berühren und sich von unten einschieben lassen.
+- Sternmaße nach der Lieferung nachmessen (`SW_STERN`: Breite, Höhe, Dicke) – Sterne gibt es 1,0–1,6 mm dick.
+
+## Nachtsicht (in `ebene3_gehirn.py`)
+
+- **Zwei Kameras** nebeneinander in der Vorderwand (z = ±15 mm), jede in zwei Nuten und mit eigenem Fenster: links die Tag-Kamera, rechts die NoIR-Kamera. Der mittlere Pfosten gehört beiden – jede Platine hat ihre eigene Nut darin. Beide von unten einschieben, bis die kleine Nase einrastet.
+- **IR-LEDs:** je Seite ein Block (z = ±35 mm) mit zwei Bohrungen übereinander (y = 101 und 111). Die 5-mm-LED von innen durchstecken, bis ihr Kragen in der Senkung anschlägt – die Spitze ist dann bündig mit der Außenfläche. Mit einem Tropfen Heißkleber sichern.
+- Der zweite **MOSFET-Treiber** klickt vorne in der Mitte in eine Tasche unter dem Dach (vor dem LiDAR-Kabelloch).
 
 ## Farben (Rover-Design)
 
@@ -195,7 +256,7 @@ Lochabstände sind Mitte zu Mitte. Quelle steht dabei – mit dem Messschieber a
 
 | Bauteil | Platine | Löcher | Lochabstand | Schraube | Quelle |
 |---|---|---|---|---|---|
-| Freenove Breakout Board (FNK0081) | 63 × 57 mm | 4 an den Ecken | **58 × 52 mm** | M3 (Messingbolzen) | offizielle mechanische Zeichnung CB8101 v1.1 von Freenove |
+| Freenove Breakout Board (FNK0081) | 63 × 57 mm | 4 an den Ecken | **58 × 52 mm** | M2,5 (laut Zeichnung M3 – wir nehmen M2,5) | offizielle mechanische Zeichnung CB8101 v1.1 von Freenove |
 | Raspberry Pi 5 (8 GB) | 85 × 56 mm | 4, Ø 2,7 mm | **58 × 49 mm** | M2,5 | offizielle STEP-Datei und mechanische Zeichnung von Raspberry Pi |
 | Raspberry Pi Pico 2 W | 51 × 21 mm | 4, Ø 2,1 mm | **47 × 11,4 mm** | – (steckt im Freenove-Board) | STEP-Datei von Raspberry Pi, deckt sich mit dem Datenblatt |
 | Ladeboard DDTCCRUB 2S | 18 × 37 mm (mit USB-C 38,4 mm) | 4, Ø 2,4 mm | **14 × 33 mm** | M2 | BAT/GND-Ende aus der GrabCAD-Datei; die 2 Löcher am USB-Ende fehlen dort und sind gespiegelt angenommen → **nachmessen** |

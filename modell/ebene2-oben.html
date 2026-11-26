@@ -173,11 +173,13 @@ code { font-family: var(--font-mono); font-size: 13px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <!-- Echte CAD-Modelle (aus STEP umgewandelt, siehe teile/QUELLEN.md) -->
-<script src="teile/teile.js?v=20261122185623"></script>
+<script src="teile/teile.js?v=20261126115907"></script>
 <!-- Druck-Infos (Filament, Einstellungen, Download) für die Druckteile -->
 <script src="teile/druckteile.js"></script>
+<!-- Einzelansicht: Doppelklick auf ein Bauteil zeigt es allein als 3D-Modell -->
+<script src="teile/einzelansicht.js"></script>
 <!-- Nur lokal vorhanden (nicht im Git), z. B. GrabCAD-Modelle. Fehlt die Datei, gibt es Ersatzteile. -->
-<script src="teile/lokal/teile-lokal.js?v=20261122185623"></script>
+<script src="teile/lokal/teile-lokal.js?v=20261126115907"></script>
 <script>
 // Werkstatt-Ansicht: nur Ebene 2. Die Bauteile sind dieselben wie in raspberry-car-3d.html
 // (gleiche Maße und Positionen) – ändert sich dort etwas an Ebene 2, hier mit ändern.
@@ -589,7 +591,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
     // innen die Buchsenleisten für den Pico (Abstand 17,78 mm), außen daneben Stiftleisten, dazwischen GPIO-Status-LEDs.
     // Unter dem Pico 5 Inverter-Chips 74HC04, die die LEDs treiben.
     (function freenove() {
-      const g = part(L0, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M3 × 8 verschraubt.', 20, TOP[1] + 4, 0);
+      const g = part(L0, 'Freenove Breakout Board für Pico', 'Führt alle 40 Pins des Pico auf Schraubklemmen (Raster 2,54 mm) und zeigt jeden GPIO mit einer LED an. Platine 63 × 57 mm, 4 Löcher im Abstand 58 × 52 mm (offizielle Zeichnung von Freenove). Reihe zur linken Seite Pin 1–20, zur rechten Seite Pin 40–21. Jedes Kabel mit Aderendhülse. Sitzt in der Mitte des Decks, die Klemmen-Reihen zeigen zu den Seiten – dort ist 10 mm mehr Platz als nötig, um Kabel mit Aderendhülse einzuführen. Auf 4 gedruckten Domen (4 mm), mit 4 × M2,5 × 8 verschraubt.', 20, TOP[1] + 4, 0);
       const BW = 63, BD = 57, LOCH_X = 29, LOCH_Z = 26, pinX = (i) => -24.13 + 2.54 * i;
       [[-LOCH_X, -LOCH_Z], [LOCH_X, -LOCH_Z], [-LOCH_X, LOCH_Z], [LOCH_X, LOCH_Z]].forEach(([x, z]) =>
         (m3Schraube(g, x, 1.6 + 3, z, 8, false)));
@@ -794,6 +796,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
         b.type = 'button'; b.textContent = g.userData.part.name; b.setAttribute('aria-pressed', 'false');
         b.addEventListener('click', () => waehlen(sel === g ? null : g));
         b._teil = g; knoepfe.push(b); li.append(b); ul.append(li);
+        b.addEventListener('dblclick', () => { if (window.rcEinzelansicht) window.rcEinzelansicht(g); });   // Doppelklick in der Liste: als Modell
       });
       box.append(ul); document.getElementById('teile').append(box);
     });
@@ -813,6 +816,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       info.append(b, s);
       const druck = window.rcDruckInfo && window.rcDruckInfo(g.userData.part.name);
       if (druck) info.append(druck);
+      if (window.rcModellKnopf) info.append(window.rcModellKnopf(g));
       selBox.setFromObject(g); selBox.visible = g.visible;
     }
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -839,6 +843,7 @@ code { font-family: var(--font-mono); font-size: 13px; }
       }
       waehlen(found);
     });
+    renderer.domElement.addEventListener('dblclick', () => { if (sel && window.rcEinzelansicht) window.rcEinzelansicht(sel); });   // Doppelklick: Bauteil allein als Modell
 
     // ---------- Bedienung ----------
     const rot = document.getElementById('rotate');

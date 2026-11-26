@@ -47,7 +47,7 @@ FLANSCH_RA = 58.5                        # Außenradius des Flanschs
 FLANSCH_Y = (61.2, 83.8)                 # nur am Gehäuse-Ring (Deck-Oberkante 61, Haube ab 84)
 FLANSCH_X = 32.0                         # ± um die Achse (vorne endet der Flansch vor der Rundung der Ecke bei x = 113)
 
-PILOT, DURCH = 2.6, 3.4
+from loecher import DURCH_HOCH   # liegt beim Druck auf der Seite: das Schraubloch steht senkrecht (loecher.py)
 KOPF_D, KOPF_H = 6.5, 3.1                # Senkung: Zylinderkopf schließt bündig ab
 SCHRAUBE_DX = 27.0                       # Schrauben bei Achse ± 27 mm in x …
 SCHRAUBE_Y = 79.2                        # … und auf y = 79,2 (52,8 mm von der Achse)
@@ -117,7 +117,7 @@ def schutzblech():
     # Schraubenlöcher mit Senkung (Kopf bündig)
     for k in (-1, 1):
         x = RAD_X + k * SCHRAUBE_DX
-        teil -= zyl_z(DURCH / 2, x, SCHRAUBE_Y, WAND_Z - 1, WAND_Z + FLANSCH_D + 1)
+        teil -= zyl_z(DURCH_HOCH / 2, x, SCHRAUBE_Y, WAND_Z - 1, WAND_Z + FLANSCH_D + 1)
         teil -= zyl_z(KOPF_D / 2, x, SCHRAUBE_Y, WAND_Z + FLANSCH_D - KOPF_H, WAND_Z + FLANSCH_D + 1)
     return teil
 
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     print(f"Schraube {rs:.1f} mm von der Achse: Kopf-Rand {rs - KOPF_D / 2:.1f} > Bogen außen {BOGEN_RA:.1f}:", "ja" if rs - KOPF_D / 2 > BOGEN_RA else "NEIN")
     for k in (-1, 1):
         x = RAD_X + k * SCHRAUBE_DX
-        rand_ = min(x - (RAD_X - FLANSCH_X), (RAD_X + FLANSCH_X) - x, FLANSCH_Y[1] - SCHRAUBE_Y) - DURCH / 2
+        rand_ = min(x - (RAD_X - FLANSCH_X), (RAD_X + FLANSCH_X) - x, FLANSCH_Y[1] - SCHRAUBE_Y) - DURCH_HOCH / 2
         print(f"  Schraube x = {x:.0f}: Material bis zum Flanschrand {rand_:.1f} mm")
     print("vorne endet der Flansch bei x =", RAD_X + FLANSCH_X, "(Rundung der Ecke beginnt bei 113)")
     print(f"Schraube M3 × {SCHRAUBE_L:.0f}: greift {SCHRAUBE_L - (FLANSCH_D - KOPF_H):.1f} mm in Ringwand + Säule")

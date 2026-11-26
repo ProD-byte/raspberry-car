@@ -35,7 +35,7 @@ Aufbau:
     Auto umdrehen, 4 Schrauben lösen, Wanne ab – alles darüber bleibt zusammen.
 
 Schrauben: nur M3-Zylinderkopf (ISO 4762). In Kunststoff schneiden sie ihr
-Gewinde selbst (Kernloch PILOT). Rund um jedes Kernloch mindestens 3,5 mm Material.
+Gewinde selbst (Kernloch PILOT_HOCH / PILOT_QUER aus loecher.py). Rund um jedes Kernloch mindestens 3,5 mm Material.
 """
 from pathlib import Path
 import math
@@ -63,10 +63,9 @@ MOTOR_R = 12.5
 LOCH_MIN, LOCH_MAX = 7.7, 8.5           # M3-Gewinde im Getriebe ±7,7 … ±8,5 (waagerecht)
 LAGER_D = 8.0
 
-PILOT = 2.6
-DURCH = 3.4
+from loecher import PILOT_HOCH, PILOT_QUER, DURCH_HOCH, DURCH_QUER   # M3-Löcher je Filament (loecher.py)
 KOPF_D, KOPF_H = 6.5, 3.1               # Senkung: Kopf bündig
-DOM_D = PILOT + 2 * 3.7                 # 10 mm
+DOM_D = 10.0                            # Schraubdom Ø 10
 
 BUEGEL_Z = STIRN - 12.0                 # Motorbügel 12 mm innen von der Stirnseite
 SATTEL_Z = STIRN - 37.0                 # zweiter Sattel unter dem Motor
@@ -236,8 +235,8 @@ def senkung_unten(x, z, sitz, y_unten):
     """Senkung für einen Zylinderkopf von unten (beim Druck unten) mit Brücken-Trick: über der Senkung erst ein
     Schlitz, dann ein Quadrat in Lochbreite (je 0,3 mm) – so überbrückt der Drucker die Decke ohne Stützen."""
     t = zyl_y(KOPF_D / 2, x, z, y_unten, sitz)
-    t += quader(x - KOPF_D / 2, x + KOPF_D / 2, sitz - 0.01, sitz + 0.3, z - DURCH / 2, z + DURCH / 2)
-    t += quader(x - DURCH / 2, x + DURCH / 2, sitz + 0.29, sitz + 0.6, z - DURCH / 2, z + DURCH / 2)
+    t += quader(x - KOPF_D / 2, x + KOPF_D / 2, sitz - 0.01, sitz + 0.3, z - DURCH_HOCH / 2, z + DURCH_HOCH / 2)
+    t += quader(x - DURCH_HOCH / 2, x + DURCH_HOCH / 2, sitz + 0.29, sitz + 0.6, z - DURCH_HOCH / 2, z + DURCH_HOCH / 2)
     return t
 
 
@@ -297,11 +296,11 @@ def wanne():
             teil += quader(mx - 14, mx + 14, BODEN_OBEN, ACHSE, s * SATTEL_Z - 2, s * SATTEL_Z + 2)
             teil -= zyl_z(MOTOR_R + 0.2, mx, ACHSE, s * (STIRN - MOTOR_LANG), s * STIRN)
             for k in (-BUEGEL_LOCH, BUEGEL_LOCH):
-                teil -= zyl_y(PILOT / 2, mx + k, zb, ACHSE - 10, ACHSE + 0.1)
+                teil -= zyl_y(PILOT_HOCH / 2, mx + k, zb, ACHSE - 10, ACHSE + 0.1)
             teil -= zyl_z(LAGER_D / 2, mx, ACHSE, s * (STIRN - 1), s * (STIRN + WAND + 1))
             for k in (-1, 1):
                 teil -= langloch_z(mx + k * (LOCH_MIN + LOCH_MAX) / 2, ACHSE, s * (STIRN - 1), s * (STIRN + WAND + 1),
-                                   LOCH_MAX - LOCH_MIN, DURCH)
+                                   LOCH_MAX - LOCH_MIN, DURCH_QUER)
 
     # Säulen bis zum Rand, Schraube von unten (Kopf bündig im Boden)
     for (x, z) in SAEULEN:
@@ -309,13 +308,13 @@ def wanne():
         # Rippe von der Säule bis in die Stirnwand: volle Höhe, damit die Säule fest mit der Außenwand verbunden ist
         xw = X_VORNE - WAND / 2 if x > XM else X_HINTEN + WAND / 2
         teil += quader(x, xw, BODEN_OBEN - 0.1, RAND, z - RIPPE / 2, z + RIPPE / 2)
-        teil -= zyl_y(DURCH / 2, x, z, BODEN_UNTEN - 1, RAND + 1)
+        teil -= zyl_y(DURCH_HOCH / 2, x, z, BODEN_UNTEN - 1, RAND + 1)
 
     # Akkuhalter: Sockel + Senkung von unten
     akku_loecher = [(AKKU_X, sz * AKKU_Z + k * AKKU_LOCH) for sz in (1, -1) for k in (1, -1)]
     for (x, z) in akku_loecher:
         teil += zyl_y(5.5, x, z, BODEN_OBEN - 0.1, BODEN_OBEN + AKKU_SOCKEL)
-        teil -= zyl_y(DURCH / 2, x, z, BODEN_UNTEN - 1, BODEN_OBEN + AKKU_SOCKEL + 1)
+        teil -= zyl_y(DURCH_HOCH / 2, x, z, BODEN_UNTEN - 1, BODEN_OBEN + AKKU_SOCKEL + 1)
         teil -= senkung_unten(x, z, BODEN_UNTEN + KOPF_H, BODEN_UNTEN - 1)
 
     # Taschen für die Stromversorgung
@@ -395,7 +394,7 @@ def wanne():
     for (x, z) in SAEULEN:
         sitz = max(unterkante(x + d / 10) for d in range(-33, 34)) + KOPF_H
         teil -= senkung_unten(x, z, sitz, BODEN_UNTEN - 10)
-        teil -= zyl_y(DURCH / 2, x, z, BODEN_UNTEN - 10, RAND + 1)
+        teil -= zyl_y(DURCH_HOCH / 2, x, z, BODEN_UNTEN - 10, RAND + 1)
 
     # Zierrillen an den Seiten
     for s in (1, -1):
@@ -439,13 +438,13 @@ def teilen(teil):
     xs = (LASCHE_BIS + FUGE) / 2
     for s in (1, -1):
         for y in SEITE_Y:
-            hinten -= zyl_z(DURCH / 2, xs, y, s * (SEITE_Z0 - 1), s * (B / 2 + 1))
+            hinten -= zyl_z(DURCH_QUER / 2, xs, y, s * (SEITE_Z0 - 1), s * (B / 2 + 1))
             hinten -= zyl_z(KOPF_D / 2, xs, y, s * (B / 2 - KOPF_H), s * (B / 2 + 1))
-            vorne -= zyl_z(PILOT / 2, xs, y, s * (SEITE_Z0 - LASCHE_D - 1), s * (SEITE_Z0 + 1))
+            vorne -= zyl_z(PILOT_QUER / 2, xs, y, s * (SEITE_Z0 - LASCHE_D - 1), s * (SEITE_Z0 + 1))
     zb = mt / 2 + LASCHE_LUFT + MITTE_BLOCK
     for x in MITTE_X:
-        hinten -= zyl_z(DURCH / 2, x, MITTE_Y, 0, zb + 1)
-        vorne -= zyl_z(PILOT / 2, x, MITTE_Y, -mt / 2 - 1, mt / 2 + 1)
+        hinten -= zyl_z(DURCH_QUER / 2, x, MITTE_Y, 0, zb + 1)
+        vorne -= zyl_z(PILOT_QUER / 2, x, MITTE_Y, -mt / 2 - 1, mt / 2 + 1)
     return vorne, hinten
 
 
@@ -490,7 +489,7 @@ def motorbuegel(mx=MOTOR_X, s=1):
     fuesse -= zyl_z(r_i, mx, ACHSE, zm - d, zm + d)
     teil = bogen + fuesse
     for k in (-BUEGEL_LOCH, BUEGEL_LOCH):
-        teil -= zyl_y(DURCH / 2, mx + k, zm, ACHSE - 1, ACHSE + 4)
+        teil -= zyl_y(DURCH_QUER / 2, mx + k, zm, ACHSE - 1, ACHSE + 4)
     return teil
 
 

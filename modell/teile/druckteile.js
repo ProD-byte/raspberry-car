@@ -26,6 +26,13 @@
       einstellungen: 'Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (dünner Bogen, wird dann ganz massiv) · 20 % Füllung · keine Stützen. Alle 4 auf einmal drucken. Schrauben: 2 × M3 × 10 je Blech.',
       richtung: 'Flansch-Rückseite (die an der Wand anliegt) aufs Bett, der Bogen steht senkrecht nach oben. Grundfläche 86 × 28 mm, 46 mm hoch.'
     },
+    'Rad 85 mm (Druckteil: Felge PETG + Reifen TPU)': {
+      datei: 'rad/felge', anzahl: 4, gramm: 50,
+      filament: 'Felge: PETG (wird in der Sonne nicht weich), Farbe Orange wie die Schutzbleche. Reifen: TPU 95A (Datei rad/reifen.stl, ca. 46 g je Reifen; andere Profile: rad/reifen_glatt, reifen_pfeil, reifen_stollen) – Düse 220–230 °C, Bett 40–50 °C, langsam drucken (20–30 mm/s), Rückzug klein.',
+      temp: PETG_TEMP + ' (Felge)',
+      einstellungen: 'Felge: Düse 0,4 mm · Schicht 0,2 mm · 4 Wände (Klemmnabe, die Schraube schneidet ihr Gewinde selbst) · 30 % Füllung · keine Stützen. Reifen: 3 Wände · 20 % Füllung (Gyroid) – weicher Reifen, mehr Füllung macht ihn härter. Je Rad 1 × M3 × 16 für die Klemmnabe.',
+      richtung: 'Beide Teile mit der Außenseite nach unten (Felge: die Scheibe mit den 6 Fenstern), ohne Stützen. Ø 85 mm, 41 bzw. 32 mm hoch. Reifen über die äußere Lippe auf die Felge ziehen, die Nuten auf die Rippen.'
+    },
     'Streuscheibe (2 × Druckteil)': {
       datei: 'ebene3/streuscheibe', anzahl: 2, gramm: 1,
       filament: 'PETG in Natur (transparent) oder Weiß – das Licht muss hindurch. Nicht in der dunklen Farbe der Haube drucken.', temp: PETG_TEMP,

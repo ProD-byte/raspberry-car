@@ -66,5 +66,4 @@ Die Motorleitungen (OUT1–OUT4) und die Stromversorgung der DRV8833 kommen erst
 ## Später
 - Sensoren lesen: INA226 (Akku), BNO085 (Lage)
 - Akkuspannung: unter 6,8 V warnen, unter 6,4 V abschalten (Werte stehen schon in `pins.py`)
-- Front- und Rücklicht WS2812B (16 LEDs an GP28)
 - Befehle vom Pi 5 über USB annehmen (Stufe 3)

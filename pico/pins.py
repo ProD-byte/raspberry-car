@@ -37,19 +37,15 @@ TOF_XSHUT = {
     "hinten": 12,        # GP12 (Pin 16)
 }
 TOF_ADRESSEN = {"vorne": 0x31, "hinten": 0x33}
-# GP18 (Pin 24) und GP19 (Pin 25) sind frei – nicht für PWM nutzen, sie teilen sich den Kanal mit GP2/GP3
 
 # Feste I²C-Adressen
 ADR_INA226 = 0x40
 ADR_BNO085 = 0x4A
 
-# --- LEDs WS2812B: eine Kette an GP28 ---
-# Frontlicht (Leiste mit 8 LEDs vorne) -> Rücklicht (Leiste mit 8 LEDs hinten). Den Status zeigt das runde Display.
-LED_DATA = 28  # GP28 (Pin 34)
-LED_ANZAHL = 16
-LED_FRONT = range(0, 8)      # Nummern in der Kette
-LED_HECK = range(8, 16)
-LED_HELL_MAX = 0.35  # alle 16 LEDs voll weiß ziehen ca. 1 A aus dem MP1584 – in der Software begrenzen
+# --- Lichter: NICHT am Pico ---
+# Lichtband (2 × 8 WS2812B) und Scheinwerfer hängen am ESP32-S3 im runden Display (GPIO16 = Lichtband, GPIO17 = Scheinwerfer),
+# siehe docs/verdrahtung.md „Lichter am Display-ESP32“. Der Pi 5 sagt dem Display, was die Lichter zeigen sollen.
+# Frei am Pico: GP0, GP1, GP18, GP19, GP28 (GP18/GP19 nicht für Hardware-PWM – sie teilen sich den Kanal mit GP2/GP3).
 
 # --- Grenzwerte ---
 # 6-V-Motoren am 2S-Akku (bis 8,4 V): PWM begrenzen, damit die Motoren nicht überlastet werden

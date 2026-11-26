@@ -14,18 +14,24 @@ Form (gegen die „Brotdose“):
   * Vorder- und Rückwand senkrecht (vorne das Kamerafenster, hinten das Scharnier).
   * Die Seitenwände sind unten 12 mm senkrecht und laufen dann schräg nach innen (oben je 7 mm schmaler).
   * Alle Kanten des Dachs 45° abgeschrägt.
+  * An den 4 oberen Ecken je eine große schräge Dreiecksfläche (Facette) – kantig wie die Schutzbleche.
 
 Was darin hängt (alles am Dach, die Haube wird mit dem Dach nach unten gedruckt – ohne Stützen):
   * Raspberry Pi 5 mit Active Cooler und AI HAT+: Der Stapel hängt an 4 Domen unter dem Dach.
     M2,5 von oben durch Dach, Dom und AI HAT+ in die 16-mm-Abstandshalter (liegen dem HAT bei),
     Köpfe bündig im Dach. Unten hält der Pi mit den beiliegenden Schrauben an den Abstandshaltern.
-  * Kamera Modul 3 Wide vorne in zwei Nuten, schaut durch ein Fenster in der Vorderwand.
+  * Zwei Kameras vorne nebeneinander in Nuten, jede schaut durch ein eigenes Fenster in der Vorderwand: links die
+    Tag-Kamera (Camera Module 3 Wide), rechts die Nachtsicht (Camera Module 3 NoIR Wide).
+  * Nachtsicht-Licht: je Seite zwei 5-mm-IR-LEDs (850 nm) zwischen Kamera und Schraubpolster, von innen eingesteckt;
+    ein zweiter MOSFET-Treiber unter dem Dach schaltet sie.
   * Pololu D36V50F5 und das 4G-Modul (Waveshare SIM7600G-H, nur die Platine) in Einklick-Taschen unter dem Dach.
   * GPS-Keramikantenne in einer Tasche unter dem Dach (Kunststoff lässt das Signal durch).
-  * Front- und Rücklicht: je eine WS2812B-Leiste (8 LEDs) unten in Vorder- und Rückwand, vor jeder LED ein Pixel-Fenster,
-    innen eine Streuscheibe (eigenes Druckteil, Natur-PETG), Leiste von unten zwischen zwei Pfosten geschoben.
+  * Front- und Rücklicht: je eine WS2812B-Leiste (8 LEDs) unten in Vorder- und Rückwand, davor ein durchgehender Leuchtschlitz (Lichtband)
+    in einer flachen Blende, innen eine Streuscheibe (eigenes Druckteil, Natur-PETG), Leiste von unten zwischen zwei Pfosten geschoben.
   * Rundes Display (ESP32-S3-Touch-AMOLED-1.75) hinten: Das Glas liegt von innen am Dach an und schaut
     durch ein rundes Loch, 3 Schnapphaken halten die Platine.
+  * Zwei Scheinwerfer (weiße 1-W-LED auf 20-mm-Stern) vorne links und rechts, von unten in Schlitze geschoben;
+    der MOSFET-Treiber (Adafruit 5648), der sie schaltet, in einer Einklick-Tasche unter dem Dach.
   * LiDAR LD19 oben auf dem Dach, Kabel durch ein Loch nach innen (Befestigungslöcher erst nach dem Nachmessen).
 
 Klappen und Verschluss:
@@ -38,7 +44,7 @@ Zwei Druckteile: vordere und hintere Hälfte, Fuge quer bei x = FUGE. An der Fug
 import math
 from pathlib import Path
 from build123d import (Box, Cylinder, Cone, Rot, Rectangle, RectangleRounded, Pos, Plane, Polygon, Axis, extrude,
-                       export_stl, export_step, Vector)
+                       export_stl, export_step, Vector, Keep, Sphere)
 
 import ebene2_elektronik as e2
 
@@ -52,7 +58,12 @@ DACH_OBEN = DACH_UNTEN + DACH_D          # 121
 SENKRECHT_BIS = UNTEN + 12.0             # Seitenwände bis hier senkrecht, dann schräg
 EINZUG = 7.0                             # oben je Seite so viel schmaler
 FASE = 3.0                               # 45°-Fase an allen Dachkanten
-PILOT, DURCH, KOPF_D, KOPF_H = e2.PILOT, e2.DURCH, e2.KOPF_D, e2.KOPF_H
+# Facetten an den 4 oberen Ecken (Design „Rover dunkel“): je eine schräge Dreiecksfläche durch drei Punkte (x, y, z) –
+# vorne am Dach (z = ±ECKE_DACH_Z), seitlich am Dach (x = ±ECKE_DACH_X) und unten an der Ecke (y = ECKE_UNTEN).
+# So steil, dass die Haube (Dach nach unten gedruckt) ohne Stützen druckbar bleibt (Fläche ≥ 45° gegen die Waagerechte).
+ECKE_DACH_Z, ECKE_DACH_X, ECKE_UNTEN = 50.0, 85.0, 88.0
+KOPF_D, KOPF_H = e2.KOPF_D, e2.KOPF_H
+from loecher import PILOT_QUER, DURCH_QUER   # Haube wird mit dem Dach nach unten gedruckt: alle M3-Löcher liegen quer
 
 # Raspberry Pi 5 + AI HAT+ (hängt am Dach), Löcher 58 × 49, USB/Ethernet nach hinten
 PI_X = -8.0
@@ -60,7 +71,8 @@ PI_LOECHER = [(PI_X - 19, 24.5), (PI_X - 19, -24.5), (PI_X + 39, 24.5), (PI_X + 
 PI_UNTEN = UNTEN + 3.0 + 5.0             # 92: Unterseite der Pi-Platine (wie im 3D-Modell)
 HAT_OBEN = PI_UNTEN + 1.3 + 16.0 + 1.6   # 110,9: Oberseite des AI HAT+
 PI_DOM_D = 6.5
-M25_DURCH, M25_KOPF_D, M25_KOPF_H = 2.8, 5.0, 2.6
+M25_KOPF_D, M25_KOPF_H = 5.0, 2.6
+from loecher import M25_DURCH_HOCH as M25_DURCH   # M2,5 durchs Dach: steht beim Druck senkrecht (loecher.py)
 
 # Kamera Modul 3 Wide (25 × 24 mm, 1 mm dick): Platine senkrecht, Objektiv nach vorne, von unten in zwei Nuten
 KAM_B, KAM_H, KAM_T = 25.0, 24.0, 1.0
@@ -69,6 +81,16 @@ KAM_OBEN = DACH_UNTEN - 2.0              # Oberkante der Platine
 KAM_UNTEN = KAM_OBEN - KAM_H
 KAM_OBJ_Y = KAM_UNTEN + 14.5             # Mitte Objektiv
 KAM_FENSTER = 18.0
+# Zwei Kameras nebeneinander (gleiche Größe): links die Tag-Kamera (Camera Module 3 Wide), rechts die Nachtsicht
+# (Camera Module 3 NoIR Wide, ohne IR-Sperrfilter). Name, Mitte z. Zwischen beiden ein gemeinsamer Pfosten.
+KAMERAS = [("Kamera (Tag)", 15.0), ("Nachtsicht-Kamera (NoIR)", -15.0)]
+# IR-LEDs für die Nachtsicht: je Seite zwei 5-mm-LEDs (850 nm) übereinander, zwischen Kamera und Schraubpolster.
+# Die LED wird von innen durch einen Block in die Wand gesteckt, bis der Kragen anschlägt (Spitze bündig mit der Außenfläche),
+# und mit einem Tropfen Heißkleber gesichert.
+IR_Z, IR_Y = 35.0, (101.0, 111.0)        # Mitte z (= ±IR_Z), Höhen der beiden LEDs
+IR_LOCH, IR_KRAGEN = 5.2, 6.2            # Bohrung für den LED-Körper Ø 5, Senkung für den Kragen Ø 5,8
+IR_LAENGE = 7.6                          # Kragen-Vorderseite bis Spitze (5-mm-LED: 8,6 mm hoch, Kragen 1 mm)
+IR_BLOCK = (4.5, 8.7)                    # Block: halbe Breite (z), Tiefe ab der Wand-Außenseite (x)
 
 # Einklick-Taschen unter dem Dach: Name, x, z, Innenmaß x, Innenmaß z, Abstand Platine–Dach, Wandhöhe
 LUFT, TWAND, NASE = 0.3, 1.6, 0.6
@@ -76,20 +98,34 @@ TASCHEN = [
     ("Pololu D36V50F5", 68.0, -45.0, 25.4, 25.4, 0.0, 4.0),
     ("4G-Modul SIM7600G-H", -18.85, 56.1, 82.3, 40.2, 4.0, 7.2, True),   # Platine; Bauteile der Rückseite (3,7 mm) zeigen zum Dach
     ("GPS-Antenne", -80.0, -55.0, 25.0, 25.0, 0.0, 6.0),
+    ("MOSFET-Treiber (Scheinwerfer)", 78.0, 60.0, 25.4, 17.78, 0.0, 4.0, True),   # Adafruit 5648: Bauteile nach unten, Stecker/Klemme an den offenen Enden
+    ("MOSFET-Treiber (IR-LEDs)", 85.0, 0.0, 25.4, 17.78, 0.0, 4.0, True),        # zweiter Adafruit 5648 für die Nachtsicht-LEDs
 ]
 LTE_USB_X = -18.85 - 41.15 - 15.3        # Ende des USB-A-Steckers (hinten)
 # Front- und Rücklicht: je eine WS2812B-Leiste mit 8 LEDs (53 × 10 mm, LEDs zur Wand) unten in der Vorder- und Rückwand.
-# Rover-Design (dunkle Haube): vor jeder LED ein kleines Fenster durch die Wand („Pixel-Linie“), innen davor eine 1 mm dünne
-# Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG), auf die die LEDs drücken. Außen eine flache Mulde um die Pixel-Reihe.
+# Rover-Design (dunkle Haube): vor den LEDs ein durchgehender Schlitz durch die Wand („Lichtband“), innen davor eine 1 mm dünne
+# Streuscheibe (eigenes Druckteil aus Natur-/Weiß-PETG), auf die die LEDs drücken. Außen eine flache Blende um das Lichtband.
 # Die Leiste wird von unten (Haube offen) zwischen zwei Pfosten geschoben; hinten hält sie eine Lippe, unten eine kleine Nase.
 LICHT_L, LICHT_H, LICHT_PCB, LICHT_LED = 53.0, 10.0, 1.6, 1.6
 LICHT_OBEN = UNTEN + 11.2                # 95,2: Oberkante der Leiste (Anschlag in den Pfosten)
 LICHT_Y = LICHT_OBEN - LICHT_H / 2       # 90,2: Mitte der LED-Reihe
 STREU = (1.0, 26.9, 4.4)                 # Streuscheibe (eigenes Druckteil, Natur-/Weiß-PETG): Dicke, halbe Länge, halbe Höhe
 STREU_LUFT = 0.2                         # Luft rundum in der Vertiefung
-LICHT_PIXEL = (4.6, 3.0)                 # 8 Fenster durch die Wand, eins vor jeder LED: Breite (z) × Höhe (y) – oben/unten nur 4,6 mm Brücke
+LICHT_SCHLITZ = (25.4, 2.4)              # Lichtband: EIN durchgehender Schlitz vor allen 8 LEDs – halbe Länge (z), Höhe innen (y);
+                                         # die Unterkante läuft nach außen 45° schräg nach unten (druckt ohne Stützen, Licht fällt etwas nach unten)
 LICHT_TEILUNG = 6.35                     # Abstand der LEDs auf der Leiste
-LICHT_MULDE = (0.4, 28.0, 4.5)           # außen: flache Mulde um die Pixel-Reihe – Tiefe, halbe Länge, halbe Höhe (Enden rund)
+LICHT_MULDE = (0.6, 38.0, 5.0)           # außen: flache Blende um das Lichtband – Tiefe, halbe Länge, halbe Höhe (Enden rund), endet vor den Schraubenköpfen
+# Scheinwerfer: zwei weiße 1-W-LEDs auf 20-mm-Alu-Stern vorne links/rechts unter den Eck-Facetten (3D-Form: Adafruit 2530).
+# Der Stern steckt senkrecht in einem Schlitz (von unten eingeschoben, Haube offen), die LED-Kuppel sitzt direkt hinter einem Loch
+# in der Vorderwand, das sich nach außen 60° weitet (wie ein Reflektor; steiler als 45° – druckt ohne Stützen).
+# Rückseite und Mitte bleiben offen: Luft an den Stern, Platz für die Lötstellen vorne.
+SW_Z, SW_Y = 64.0, 96.0                  # Mitte der LED (z = ±SW_Z); weiter außen stößt der Stern an die Eck-Facette, die Schiene innen geht in das Polster über
+SW_STERN = (20.0, 20.63, 1.6)            # Stern: Breite (z), Höhe (y), Dicke (Adafruit-CAD 1,2 mm, echte Sterne meist 1,5–1,6)
+SW_LED_H = 5.95                          # LED-Sockel 7 × 8 × 3,2 + Kuppel Ø 5,5: so weit steht sie vor dem Stern
+SW_VORNE = X_VORNE - WAND - 0.2 - SW_LED_H   # Vorderseite des Sterns: Kuppel endet 0,2 mm vor der Innenseite der Wand –
+                                             # so lässt sich der Stern von unten einschieben, das Licht geht durch das Loch
+SW_LOCH = 3.2                            # Lochradius innen (Kuppel Ø 5,5 direkt dahinter)
+SW_REFLEKTOR = 60.0                      # Öffnungswinkel des Lochs gegen die Achse
 DISPLAY = (-92.0, 0.0)                   # Mitte des runden Displays
 DISPLAY_SICHT, DISPLAY_GLAS, DISPLAY_PCB = 44.4, 48.96, 46.0
 DISPLAY_PCB_UNTEN = DACH_UNTEN - 6.9     # Unterseite der Platine (Zeichnung Waveshare)
@@ -163,11 +199,31 @@ def seitenprofil(innen, y0, y1, fase):
     return (Plane.XZ * Polygon(*pts, align=None)).face()
 
 
+def ecken_ebenen(innen=0.0):
+    """Die 4 Facetten-Ebenen an den oberen Ecken (als build123d-Plane, Normale nach außen), um innen mm nach innen versetzt."""
+    ebenen = []
+    for sx in (1, -1):
+        for sz in (1, -1):
+            a = Vector(sx * X_VORNE, DACH_OBEN, sz * ECKE_DACH_Z)
+            b = Vector(sx * ECKE_DACH_X, DACH_OBEN, sz * (B / 2 - EINZUG))
+            c = Vector(sx * X_VORNE, ECKE_UNTEN, sz * B / 2)
+            n = (b - a).cross(c - a).normalized()
+            if n.X * sx < 0:
+                n = -n
+            o = a - n * innen
+            # Modell (x, y, z) → CAD (x, −z, y)
+            ebenen.append(Plane(origin=(o.X, -o.Z, o.Y), z_dir=(n.X, -n.Z, n.Y)))
+    return ebenen
+
+
 def form(innen, y0, y1, fase):
     drauf = Pos(XM, 0, y0) * extrude(RectangleRounded(L - 2 * innen, B - 2 * innen, max(1.0, R_ECKE - innen)), y1 - y0)
     quer = extrude(frontprofil(innen, y0, y1, fase), L, both=True)
     laengs = extrude(seitenprofil(innen, y0, y1, fase), B, both=True)
-    return drauf & quer & laengs
+    k = drauf & quer & laengs
+    for e in ecken_ebenen(innen):
+        k = k.split(e, keep=Keep.BOTTOM)
+    return k
 
 
 def aussen():
@@ -246,26 +302,63 @@ def licht(s, nur_ausschnitt=False):
 
 
 def licht_ausschnitt(s):
-    """Was für ein Licht aus der Haube weg muss: Platz für die Leiste (auch in den Kamera-Pfosten), Tasche in der Wand, Mulde außen."""
+    """Was für ein Licht aus der Haube weg muss: Platz für die Leiste (auch in den Kamera-Pfosten), Tasche in der Wand, Lichtband-Schlitz, Blende außen."""
     xi = s * (X_VORNE - WAND)
     xa = s * X_VORNE
     lippe = xi - s * (LICHT_LED + LICHT_PCB + 0.1)
     sd, sl, sh = STREU
     md, ml, mh = LICHT_MULDE
-    pb, ph = LICHT_PIXEL
+    bl, bh = LICHT_SCHLITZ
     a = quader(lippe, xi, UNTEN - 1, LICHT_OBEN, -(LICHT_L / 2 + 0.2), LICHT_L / 2 + 0.2)
     # Vertiefung für die Streuscheibe (von innen)
     a += quader(xi - s * 0.01, xi + s * sd, LICHT_Y - sh - STREU_LUFT, LICHT_Y + sh + STREU_LUFT, -sl - STREU_LUFT, sl + STREU_LUFT)
-    # 8 Pixel-Fenster durch den Rest der Wand
-    for i in range(8):
-        zc = (i - 3.5) * LICHT_TEILUNG
-        a += quader(xi + s * (sd - 0.01), xa + s * 1.0, LICHT_Y - ph / 2, LICHT_Y + ph / 2, zc - pb / 2, zc + pb / 2)
+    # Lichtband: ein Schlitz durch den Rest der Wand, Unterkante nach außen 45° abfallend
+    x0, x1 = xi + s * (sd - 0.01), xa + s * 1.0
+    tief = abs(x1 - x0)
+    prof = Plane.XZ * Polygon((x0, LICHT_Y - bh / 2), (x0, LICHT_Y + bh / 2), (x1, LICHT_Y + bh / 2), (x1, LICHT_Y - bh / 2 - tief), align=None)
+    a += extrude(prof.face(), bl, both=True)
     a += P(xa + s * 0.01, LICHT_Y, 0) * Rot(0, -90 * s, 0) * extrude(RectangleRounded(2 * mh, 2 * ml, mh - 0.01), md + 0.01, taper=45)   # Rand 45° – druckt sauber
     return a
 
 
+def scheinwerfer():
+    """Halter für die zwei Scheinwerfer-Sterne an der Vorderwand. Gibt (Zugabe, Ausschnitt) zurück."""
+    xi = X_VORNE - WAND
+    xs = SW_VORNE                            # Vorderseite des Sterns
+    xh = xs - SW_STERN[2] - 0.3              # Rückseite des Schlitzes
+    xb = xh - 2.0                            # Rückseite des Halters
+    hz, hy = SW_STERN[0] / 2 + 0.25, SW_STERN[1] / 2 + 0.25
+    rand = 2.5                               # Schiene außen am Stern
+    griff = 1.6                              # so weit greifen die Schienen über den Rand des Sterns
+    y_oben = SW_Y + hy
+    zugabe = ausschnitt = None
+    for sz in (1, -1):
+        zc = sz * SW_Z
+        # Block von unten bis über den Stern, oben 45° zur Wand (druckt mit dem Dach nach unten ohne Stützen)
+        prof = Plane.XZ * Polygon((xi + 0.5, UNTEN), (xb, UNTEN), (xb, y_oben + 2.0), (xi + 0.5, y_oben + 2.0 + (xi + 0.5 - xb)), align=None)
+        h = Pos(0, -zc, 0) * extrude(prof.face(), hz + rand, both=True)
+        h -= quader(xh, xs, UNTEN - 1, y_oben, zc - hz, zc + hz)                                   # Schlitz, unten offen
+        h -= quader(xs - 0.01, xi + 0.01, UNTEN - 1, y_oben, zc - hz + griff, zc + hz - griff)        # vorne offen: LED, Lötstellen
+        h -= quader(xb - 1, xh + 0.01, UNTEN - 1, y_oben, zc - hz + griff, zc + hz - griff)           # hinten offen: Luft
+        for s in (1, -1):                    # kleine Nasen unten an den hinteren Schienen: der Stern schnappt darüber
+            z0, z1 = sorted((zc + s * (hz - griff), zc + s * hz))
+            h += quader(xh - 0.01, xh + 0.4, SW_Y - SW_STERN[1] / 2 - 0.7, SW_Y - SW_STERN[1] / 2 - 0.1, z0, z1)
+        # Loch in der Vorderwand: innen r = SW_LOCH, nach außen um SW_REFLEKTOR° geweitet
+        r1 = SW_LOCH + (WAND + 0.2) * math.tan(math.radians(SW_REFLEKTOR))
+        loch = P(xi - 0.1 + (WAND + 0.2) / 2, SW_Y, zc) * Rot(0, 90, 0) * Cone(SW_LOCH, r1, WAND + 0.2)
+        zugabe = h if zugabe is None else zugabe + h
+        ausschnitt = loch if ausschnitt is None else ausschnitt + loch
+    return zugabe, ausschnitt
+
+
+def sternform(zc):
+    """Umriss des Alu-Sterns (etwa): Kreis Ø 20,6 geschnitten mit 20 mm Breite – die Ecken des Rechtecks hat der Stern nicht."""
+    kreis = P(SW_VORNE - SW_STERN[2] / 2, SW_Y, zc) * Rot(0, 90, 0) * Cylinder(SW_STERN[1] / 2, SW_STERN[2])
+    return kreis & quader(SW_VORNE - SW_STERN[2] - 1, SW_VORNE + 1, SW_Y - 20, SW_Y + 20, zc - SW_STERN[0] / 2, zc + SW_STERN[0] / 2)
+
+
 def streuscheibe():
-    """Streuscheibe für ein Licht (2 Stück drucken, Natur- oder Weiß-PETG): liegt innen in der Vertiefung vor den Pixel-Fenstern.
+    """Streuscheibe für ein Licht (2 Stück drucken, Natur- oder Weiß-PETG): liegt innen in der Vertiefung vor dem Lichtband.
     Modelliert an der Vorderwand."""
     sd, sl, sh = STREU
     xi = X_VORNE - WAND
@@ -287,7 +380,7 @@ def scharnier_lappen():
             keil = Plane.XZ * Polygon((SCH_X - SCH_R, SCH_Y), (X_HINTEN + 0.5, SCH_Y), (X_HINTEN + 0.5, SCH_Y + lauf), align=None)
             lappen += Pos(0, -(z0 + z1) / 2, 0) * extrude(keil.face(), SCH_LAPPEN_B / 2, both=True)
             aussen_liegend = abs(z1) > abs(z0)
-            lappen -= zyl_z((PILOT if aussen_liegend else DURCH) / 2, SCH_X, SCH_Y, z0 - s, z1 + s)
+            lappen -= zyl_z((PILOT_QUER if aussen_liegend else DURCH_QUER) / 2, SCH_X, SCH_Y, z0 - s, z1 + s)
             t = lappen if t is None else t + lappen
     return t
 
@@ -305,23 +398,41 @@ def haube():
     for t in TASCHEN:
         teil += tasche_dach(*t)
 
-    # Kamera: zwei Pfosten an der Vorderwand, vom Dach bis unter die Platine, Nut von unten offen
+    # Kameras: je zwei Pfosten an der Vorderwand, vom Dach bis unter die Platine, Nut von unten offen
+    # (die inneren Pfosten beider Kameras liegen in der Mitte zusammen – jede Kamera hat ihre eigene Nut darin)
     xi = X_VORNE - WAND
-    for s in (1, -1):
-        z0, z1 = s * (KAM_B / 2 - 1.5), s * (KAM_B / 2 + 3.5)
-        pfosten = quader(KAM_X - KAM_T - 3.0, xi + 0.5, KAM_UNTEN - 2.0, DACH_UNTEN + 0.1, z0, z1)
-        pfosten -= quader(KAM_X - KAM_T - 0.15, KAM_X + 0.15, KAM_UNTEN - 3.0, KAM_OBEN, z0 - s * 0.1, s * (KAM_B / 2 + 0.3))
-        # kleine Nase unten in der Nut: die Platine schnappt beim Einschieben darüber
-        pfosten += quader(KAM_X - KAM_T - 0.15, KAM_X - KAM_T + 0.25, KAM_UNTEN - 1.2, KAM_UNTEN - 0.4, z0 - s * 0.05, s * (KAM_B / 2 + 0.3))
-        teil += pfosten
+    for (_n, zc) in KAMERAS:
+        for s in (1, -1):
+            z0, z1 = zc + s * (KAM_B / 2 - 1.5), zc + s * (KAM_B / 2 + 3.5)
+            pfosten = quader(KAM_X - KAM_T - 3.0, xi + 0.5, KAM_UNTEN - 2.0, DACH_UNTEN + 0.1, z0, z1)
+            # kleine Nase unten in der Nut: die Platine schnappt beim Einschieben darüber
+            pfosten += quader(KAM_X - KAM_T - 0.15, KAM_X - KAM_T + 0.25, KAM_UNTEN - 1.2, KAM_UNTEN - 0.4, z0 - s * 0.05, zc + s * (KAM_B / 2 + 0.3))
+            teil += pfosten
+    for (_n, zc) in KAMERAS:        # Nuten erst danach schneiden: der Pfosten der anderen Kamera darf sie nicht füllen
+        for s in (1, -1):
+            z0 = zc + s * (KAM_B / 2 - 1.5)
+            nut = quader(KAM_X - KAM_T - 0.15, KAM_X + 0.15, KAM_UNTEN - 3.0, KAM_OBEN, z0 - s * 0.1, zc + s * (KAM_B / 2 + 0.3))
+            teil -= nut - quader(KAM_X - KAM_T - 0.15, KAM_X - KAM_T + 0.25, KAM_UNTEN - 1.2, KAM_UNTEN - 0.4, -100, 100)   # Nasen bleiben
     # Fenster: rund mit gerader Kante unten (beim Druck liegt das Dach auf dem Bett – unten im Auto ist beim Druck oben), außen angefast
     r = KAM_FENSTER / 2
     pts = [(r * math.cos(math.radians(d)), KAM_OBJ_Y + r * math.sin(math.radians(d))) for d in range(-45, 226, 5)]
     fen = Plane.YZ * Polygon(*pts, align=None)
-    teil -= Pos(X_VORNE - WAND / 2, 0, 0) * extrude(fen.face(), WAND, both=True)
-    # Fase außen in derselben Form wie das Fenster (rund mit gerader Kante unten), 1,5 mm breit, 45°
-    fase = P(X_VORNE + 0.01, KAM_OBJ_Y, 0) * Rot(0, -90, 0) * Cone(r + 1.51, r, 1.51, align=None)   # runde 45°-Fase, nach innen enger
-    teil -= fase & quader(X_VORNE - 3, X_VORNE + 1, KAM_OBJ_Y - r * math.sin(math.radians(45)), KAM_OBJ_Y + r + 3, -r - 3, r + 3)   # unten bleibt die gerade Kante
+    for (_n, zc) in KAMERAS:
+        teil -= Pos(X_VORNE - WAND / 2, -zc, 0) * extrude(fen.face(), WAND, both=True)
+        # Fase außen in derselben Form wie das Fenster (rund mit gerader Kante unten), 1,5 mm breit, 45°
+        fase = P(X_VORNE + 0.01, KAM_OBJ_Y, zc) * Rot(0, -90, 0) * Cone(r + 1.51, r, 1.51, align=None)   # runde 45°-Fase, nach innen enger
+        teil -= fase & quader(X_VORNE - 3, X_VORNE + 1, KAM_OBJ_Y - r * math.sin(math.radians(45)), KAM_OBJ_Y + r + 3, zc - r - 3, zc + r + 3)   # unten bleibt die gerade Kante
+
+    # IR-LEDs (Nachtsicht): Block von der Wand bis unters Dach, darin je LED Bohrung + Senkung für den Kragen
+    for sz in (1, -1):
+        zc = sz * IR_Z
+        hb, tief = IR_BLOCK
+        teil += quader(X_VORNE - tief, xi + 0.5, min(IR_Y) - 5.0, DACH_UNTEN + 0.1, zc - hb, zc + hb)
+        for y in IR_Y:
+            kragen_x = X_VORNE - IR_LAENGE
+            teil -= zyl_x(IR_LOCH / 2, y, zc, kragen_x - 0.01, X_VORNE + 1)
+            teil -= zyl_x(IR_KRAGEN / 2, y, zc, X_VORNE - tief - 1, kragen_x)
+            teil -= P(X_VORNE + 0.01, y, zc) * Rot(0, -90, 0) * Cone(IR_LOCH / 2 + 0.8, IR_LOCH / 2, 0.8, align=None)   # kleine Fase außen
 
     # Display: rundes Sichtloch im Dach (außen angefast), 3 Schnapphaken halten die Platine von unten
     dx, dz = DISPLAY
@@ -350,12 +461,17 @@ def haube():
                                   (xi + 0.5, VORNE_Y + 7.0 + POLSTER_DICKE + 0.5), align=None)
         teil += Pos(0, -zc, 0) * extrude(prof.face(), 7, both=True)
         teil -= quader(LASCHE_X0 - 0.5, LASCHE_X1 + 0.5, UNTEN - 1, LASCHE_OBEN + 0.5, zc - LASCHE_B / 2 - 0.5, zc + LASCHE_B / 2 + 0.5)
-        teil -= zyl_x(DURCH / 2, VORNE_Y, zc, LASCHE_X1 - 1, X_VORNE + 1)
+        teil -= zyl_x(DURCH_QUER / 2, VORNE_Y, zc, LASCHE_X1 - 1, X_VORNE + 1)
         teil -= zyl_x(KOPF_D / 2, VORNE_Y, zc, X_VORNE - KOPF_H, X_VORNE + 1)
 
-    for s in (1, -1):              # Licht: Platz für die Leiste freihalten (auch in den Kamera-Pfosten), Tasche + Mulde
+    for s in (1, -1):              # Licht: Platz für die Leiste freihalten (auch in den Kamera-Pfosten), Tasche, Lichtband, Blende
         teil -= licht_ausschnitt(s)
         teil += licht(s) - quader(-200, 200, UNTEN - 5, UNTEN, -100, 100)   # Pfosten wieder dazu (ohne Platz der Leiste)
+    sw_zu, sw_weg = scheinwerfer()  # Scheinwerfer: Halter dazu, Loch mit Reflektor-Weitung weg
+    teil += sw_zu - quader(-200, 200, UNTEN - 5, UNTEN, -100, 100)
+    teil -= sw_weg
+    for zc in VORNE_Z:              # Platz für die Laschen des Rings bleibt frei (die innere Schiene grenzt an das Polster)
+        teil -= quader(LASCHE_X0 - 0.5, LASCHE_X1 + 0.5, UNTEN - 1, LASCHE_OBEN + 0.5, zc - LASCHE_B / 2 - 0.5, zc + LASCHE_B / 2 + 0.5)
     teil = teil & aussen()          # nichts ragt aus der Form
     teil += scharnier_lappen()
     return teil
@@ -390,11 +506,11 @@ def teilen(teil):
                 pos.append((w, s * (halbbreite(w, WAND) - FLANSCH_TIEFE / 2), kopf))
     for (y, z, kopf) in pos:
         if kopf == "hinten":     # Kopf am hinteren Flansch, Gewinde im vorderen
-            hinten -= zyl_x(DURCH / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
-            vorne -= zyl_x(PILOT / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
+            hinten -= zyl_x(DURCH_QUER / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
+            vorne -= zyl_x(PILOT_QUER / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
         else:
-            vorne -= zyl_x(DURCH / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
-            hinten -= zyl_x(PILOT / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
+            vorne -= zyl_x(DURCH_QUER / 2, y, z, FUGE - 0.5, FUGE + FLANSCH_D + 1)
+            hinten -= zyl_x(PILOT_QUER / 2, y, z, FUGE - FLANSCH_D - 1, FUGE + 0.5)
     return vorne, hinten, pos
 
 
@@ -451,7 +567,10 @@ def pruefen(haube_teil, ring_teile):
     rechtecke.append(("4G: USB-Stecker + Kabel", LTE_USB_X - 20, -18.85 - 41.15 - LUFT - TWAND, 46.0, 66.0))
     rechtecke.append(("4G: SMA-Buchse", -18.85 + 41.15 + LUFT + TWAND, -18.85 + 41.15 + 9.5, 52.0, 60.0))
     rechtecke.append(("Raspberry Pi 5 + AI HAT+", PI_X - 42.5 - 3, PI_X + 42.5, -28.0, 28.0))
-    rechtecke.append(("Kamera", KAM_X - KAM_T - 3, X_VORNE - WAND - 5.3, -KAM_B / 2 - 3.5, KAM_B / 2 + 3.5))   # vorderster Teil der Pfosten: unter der Kamera geht das Frontlicht durch (Höhe geprüft unten)
+    for (n, zc) in KAMERAS:    # beide Kameras zusammen mit dem gemeinsamen Pfosten in der Mitte als ein Rechteck je Kamera
+        rechtecke.append((n, KAM_X - KAM_T - 3, X_VORNE - WAND - 5.3, zc - KAM_B / 2 - (3.5 if zc < 0 else 0.0), zc + KAM_B / 2 + (3.5 if zc > 0 else 0.0)))
+    for sz in (1, -1):
+        rechtecke.append((f"IR-LEDs {'links' if sz > 0 else 'rechts'}", X_VORNE - IR_BLOCK[1], X_VORNE - WAND, sz * IR_Z - IR_BLOCK[0] + 1.0, sz * IR_Z + IR_BLOCK[0] - 1.0))   # vorderster Teil der Pfosten: unter der Kamera geht das Frontlicht durch (Höhe geprüft unten)
     dx, dz = DISPLAY
     rr = DISPLAY_PCB / 2 + 2.0
     rechtecke.append(("Display mit Haken", dx - rr, dx + rr, dz - rr, dz + rr))
@@ -461,6 +580,9 @@ def pruefen(haube_teil, ring_teile):
         xi = s * (X_VORNE - WAND)
         x0, x1 = sorted((xi, xi - s * 5.3))
         rechtecke.append((f"{nm} (Leiste + Pfosten)", x0, x1, -(LICHT_L / 2 + 3.5), LICHT_L / 2 + 3.5))
+    for sz in (1, -1):
+        xb = SW_VORNE - SW_STERN[2] - 2.3
+        rechtecke.append((f"Scheinwerfer {'links' if sz > 0 else 'rechts'} (Stern im Schlitz)", xb, X_VORNE - WAND, sz * SW_Z - SW_STERN[0] / 2 - 0.25, sz * SW_Z + SW_STERN[0] / 2 + 0.25))
     rechtecke += [(f"Lasche/Polster {z}", LASCHE_X0 - 0.5, X_VORNE - WAND, z - 7, z + 7) for z in VORNE_Z]
     rechtecke.append(("Flansch hinten (mit Schraubenköpfen)", FUGE - FLANSCH_D - 3.5, FUGE, -B / 2, B / 2))
     rechtecke.append(("Flansch vorne", FUGE, FUGE + FLANSCH_D, -B / 2, B / 2))
@@ -491,7 +613,7 @@ if __name__ == "__main__":
     pruefen(vorne + hinten, ring_teile)
     for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten)):
         print(f"{name}: {len(t.solids())} Körper", "(gut)" if len(t.solids()) == 1 else "– NICHT zusammenhängend!")
-    print("Hälften durchdringen sich:", "nein" if (vorne & hinten).volume < 0.5 else "JA")
+    print("Hälften durchdringen sich:", "nein" if getattr(vorne & hinten, "volume", 0.0) < 0.5 else "JA")
     # Schraubendreher-Zugang zu den Schrauben an der Fuge (Haube aufgeklappt – alles, was am Dach hängt, ist mit im Weg)
     schr = [(f"Fuge y={y:.0f} z={z:+.0f} (Kopf {kopf})", FUGE - FLANSCH_D if kopf == "hinten" else FUGE + FLANSCH_D, y, z, "x", -1 if kopf == "hinten" else 1)
             for (y, z, kopf) in schrauben]
@@ -500,11 +622,30 @@ if __name__ == "__main__":
                 ("4G-USB-Stecker", LTE_USB_X, -18.85 - 41, DACH_UNTEN - 9, DACH_UNTEN - 2, 46, 66),
                 ("Pololu", 68 - 15, 68 + 15, DACH_UNTEN - 10, DACH_UNTEN, -45 - 15, -45 + 15),
                 ("GPS-Antenne", -80 - 14, -80 + 14, DACH_UNTEN - 7, DACH_UNTEN, -55 - 14, -55 + 14),
-                ("Kamera", KAM_X - KAM_T - 4, X_VORNE - WAND, KAM_UNTEN - 3, DACH_UNTEN, -17, 17),
+                ("Kameras", KAM_X - KAM_T - 4, X_VORNE - WAND, KAM_UNTEN - 3, DACH_UNTEN, -32, 32),
+                ("MOSFET-Treiber IR", 85 - 15, 85 + 15, DACH_UNTEN - 7, DACH_UNTEN, -11, 11),
+                ("MOSFET-Treiber", 78 - 15, 78 + 15, DACH_UNTEN - 7, DACH_UNTEN, 60 - 11, 60 + 11),
                 ("Display", DISPLAY[0] - 26, DISPLAY[0] + 26, DISPLAY_PCB_UNTEN - 3, DACH_UNTEN, -26, 26)]
     zugang_pruefen(schr, [("Haube", vorne + hinten)], bauteile)
     sc = streuscheibe()
-    print("Streuscheibe passt in die Vertiefung (berührt die Haube nicht):", "ja" if (sc & (vorne + hinten)).volume < 0.01 else "NEIN")
+    print("Streuscheibe passt in die Vertiefung (berührt die Haube nicht):", "ja" if getattr(sc & (vorne + hinten), "volume", 0.0) < 0.01 else "NEIN")
+    # Scheinwerfer: Stern, LED-Sockel und Kuppel dürfen die Haube nicht berühren
+    sw_frei = True
+    for sz in (1, -1):
+        zc = sz * SW_Z
+        stern = sternform(zc)
+        sockel = quader(SW_VORNE, SW_VORNE + 3.2, SW_Y - 4.0, SW_Y + 4.0, zc - 3.5, zc + 3.5)
+        kuppel = P(SW_VORNE + 3.2, SW_Y, zc) * Sphere(2.75)
+        for t in (stern, sockel, kuppel):
+            if getattr(t & (vorne + hinten), "volume", 0.0) > 0.01:
+                sw_frei = False
+        # Einschieben von unten: Stern (ohne die 0,4-mm-Rastnase an der Rückseite), Sockel und Kuppel 0–14 mm tiefer
+        weg = (stern - quader(SW_VORNE - SW_STERN[2] - 1, SW_VORNE - SW_STERN[2] + 0.45, 0, 200, -100, 100)) + sockel + kuppel
+        for dy in range(0, 15, 2):
+            if getattr(Pos(0, 0, -dy) * weg & (vorne + hinten), "volume", 0.0) > 0.01:
+                sw_frei = False
+                print(f"  Scheinwerfer {'links' if sz > 0 else 'rechts'}: stößt beim Einschieben {dy} mm unter der Endlage an")
+    print("Scheinwerfer passen in die Halter und lassen sich von unten einschieben:", "ja" if sw_frei else "NEIN")
     for name, t in (("haube_vorne", vorne), ("haube_hinten", hinten), ("streuscheibe", sc)):
         export_stl(t, str(AUS / f"{name}.stl"), tolerance=0.02, angular_tolerance=0.15)
         export_step(t, str(AUS / f"{name}.step"))
